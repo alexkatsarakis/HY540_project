@@ -1,0 +1,22 @@
+---
+BasedOnStyle: Google
+Language: Cpp
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: true
+BreakBeforeBraces: Attach
+ColumnLimit: 0
+DerivePointerAlignment: false
+IndentCaseLabels: true
+IndentPPDirectives: AfterHash
+IndentWidth: 4
+KeepEmptyLinesAtTheStartOfBlocks: false
+ObjCBlockIndentWidth: 4
+PointerAlignment: Right
+SortIncludes: true
+SortUsingDeclarations: true
+SpaceAfterCStyleCast: false
+SpaceAfterTemplateKeyword: false
+SpacesBeforeTrailingComments: 4
+TabWidth: 4
+UseTab: Always
+...
