@@ -98,11 +98,19 @@ public:
 
     std::string ToString(void) const;
 
-    /* TEMP */
-
     double GetNumber(void) const;
 
-    Object & GetObject(void) const;
+    std::string GetString(void) const;
+
+    bool GetBool(void) const;
+
+    Object * GetObject(void) const;
+
+    void * GetNativePointer(void) const;
+
+    unsigned GetUserFunc(void) const;
+
+    std::string GetLibFunc(void) const;
 
     virtual ~Value();
 };

@@ -10,5 +10,6 @@
 #define TYPE_MEMBER "member"
 #define TYPE_CALL "call"
 #define TYPE_NUMCONST "numconst"
+#define TYPE_ASSIGNEXPR "assignexpr"
 
 #endif

@@ -26,18 +26,18 @@ OBJ = $(patsubst %,$(ODIR)/%,$(OBJECTS))
 
 #################################### RULES ####################################
 
-all: interpreter
+all: interpreter.out
 	@echo 'Build successful'
 
 # Create object files of source code
 $(ODIR)/%.o: $(SRCDIR)/%.cpp
 	@echo Compiling $*
 	@mkdir -p $(ODIR)
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $< -g
 
 interpreter.out: $(OBJ)
 	@echo 'Creating interpreter'
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $^ -o $@ -g
 
 # Clean object files
 clean:

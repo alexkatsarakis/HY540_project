@@ -170,9 +170,34 @@ double Value::GetNumber(void) const {
     return data.numVal;
 }
 
-Object & Value::GetObject(void) const {
+std::string Value::GetString(void) const {
+    assert(IsString());
+    return data.stringVal;
+}
+
+bool Value::GetBool(void) const {
+    assert(IsBool());
+    return data.boolVal;
+}
+
+Object * Value::GetObject(void) const {
     assert(IsObject());
-    return *data.objectVal;
+    return data.objectVal;
+}
+
+void * Value::GetNativePointer(void) const {
+    assert(IsNativePointer());
+    return data.nativePointerVal;
+}
+
+unsigned Value::GetUserFunc(void) const {
+    assert(IsUserFunc());
+    return data.userFuncVal;
+}
+
+std::string Value::GetLibFunc(void) const {
+    assert(IsLibFunc());
+    return data.libFuncVal;
 }
 
 Value::~Value() { }

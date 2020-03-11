@@ -40,6 +40,10 @@ public:
 
     void SetValue(const std::string & str, const Value & val);
 
+    void SetValue(unsigned index, const ValuePtr & ptr);
+
+    void SetValue(const std::string & str, const ValuePtr & ptr);
+
     virtual ~Object();
 };
 
