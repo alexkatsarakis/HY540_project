@@ -5,12 +5,15 @@ ODIR=objects
 #source directory
 CDIR=source
 #executable name
-OUT=marmotes
+OUT=Marmotes
+OUTLEXER=$(OUT)Lexer
+OUTPARSER=$(OUT)Parser
 
 #add .h dependency names here
 _DEPS=
 #add .o linker object names here
-_OBJ=$(OUT)_parser.o $(OUT)_scanner.o main.o
+_OBJ=$(OUTPARSER).o $(OUTLEXER).o main.o
+# _OBJ=$(OUTLEXER).o main.o
 
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
@@ -38,11 +41,11 @@ conflicts: YFLAGS+= -v
 conflicts: CXXFLAGS+=-g3 -O0
 conflicts: out
 
-$(CDIR)/$(OUT)_lexer.cpp: $(OUT)_lexer.l
+$(CDIR)/$(OUTLEXER).cpp: $(OUTLEXER).l
 	$(LEX) -o $@ $< $(LFLAGS)
 
-$(IDIR)/$(OUT)_parser.h $(CDIR)/$(OUT)_parser.cpp &: $(OUT)_parser.y
-	$(YACC) --defines=$(IDIR)/$(OUT)_parser.h -o $(CDIR)/$(OUT)_parser.cpp $< $(YFLAGS)
+$(IDIR)/$(OUTPARSER).h $(CDIR)/$(OUTPARSER).cpp &: $(OUTPARSER).y
+	$(YACC) --defines=$(IDIR)/$(OUTPARSER).h -o $(CDIR)/$(OUTPARSER).cpp $< $(YFLAGS)
 
 $(ODIR)/%.o: $(CDIR)/%.cpp $(DEPS)
 	$(CXX) -c -o $@ $< $(CXXFLAGS)
@@ -51,8 +54,8 @@ out: $(OBJ)
 	$(CXX) -o $(OUT) $^ $(CXXFLAGS)
 
 clean:
-	rm -f $(CDIR)/$(OUT)_lexer.cpp
-	rm -f $(IDIR)/$(OUT)_parser.h
-	rm -f $(CDIR)/$(OUT)_parser.cpp
+	rm -f $(CDIR)/$(OUTLEXER).cpp
+	rm -f $(IDIR)/$(OUTPARSER).h
+	rm -f $(CDIR)/$(OUTPARSER).cpp
 	rm -f $(ODIR)/*.o
 	rm -f $(OUT)
