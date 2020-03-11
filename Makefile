@@ -1,58 +1,52 @@
-#includes directory
-IDIR=includes
-#objects directory
-ODIR=objects
-#source directory
-CDIR=source
-#executable name
-OUT=marmotes
+# Compiler
+CC=g++
 
-#add .h dependency names here
-_DEPS=
-#add .o linker object names here
-_OBJ=$(OUT)_parser.o $(OUT)_scanner.o main.o
+# Current directory
+PROJECTDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 
-DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
-OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
+# Project structure
+ODIR=obj
+SRCDIR=src
 
-WFLAGS=-Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith\
--Wcast-align -Wcast-qual -Wstrict-overflow=5 -Wwrite-strings\
--Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code\
--Winit-self -Wundef
+# Specify the include directories
+INCLDIR=-I$(PROJECTDIR)$
 
-LEX=flex
-YACC=bison
-CXX=g++
-LFLAGS=
-YFLAGS=--yacc
-CXXFLAGS=$(WFLAGS) -I$(IDIR) -std=c++11
+# Set compilation flags
+# -Wshadow : Warn whenever a local variable or type declaration shadows another
+#            variable, parameter, type or when a built-in function is shadowed
+CFLAGS=-std=c++14 -Wshadow -Wall -Wold-style-cast -Wpedantic $(INCLDIR)
 
-.PHONY: clean
-default: debug
+# Find all source files
+SRCS:=$(shell cd $(SRCDIR); ls *.cpp)
+# Get all object files by substituting .cpp with .o
+OBJECTS=$(SRCS:%.cpp=%.o)
 
-debug: CXXFLAGS+=-g3 -O0
-debug: out
-release: CXXFLAGS+=-O3 -DNDEBUG
-release: out
-conflicts: YFLAGS+= -v
-conflicts: CXXFLAGS+=-g3 -O0
-conflicts: out
+# Get object file paths
+OBJ = $(patsubst %,$(ODIR)/%,$(OBJECTS))
 
-$(CDIR)/$(OUT)_lexer.cpp: $(OUT)_lexer.l
-	$(LEX) -o $@ $< $(LFLAGS)
+#################################### RULES ####################################
 
-$(IDIR)/$(OUT)_parser.h $(CDIR)/$(OUT)_parser.cpp &: $(OUT)_parser.y
-	$(YACC) --defines=$(IDIR)/$(OUT)_parser.h -o $(CDIR)/$(OUT)_parser.cpp $< $(YFLAGS)
+all: interpreter
+	@echo 'Build successful'
 
-$(ODIR)/%.o: $(CDIR)/%.cpp $(DEPS)
-	$(CXX) -c -o $@ $< $(CXXFLAGS)
+# Create object files of source code
+$(ODIR)/%.o: $(SRCDIR)/%.cpp
+	@echo Compiling $*
+	@mkdir -p $(ODIR)
+	$(CC) $(CFLAGS) -c -o $@ $<
 
-out: $(OBJ)
-	$(CXX) -o $(OUT) $^ $(CXXFLAGS)
+interpreter.out: $(OBJ)
+	@echo 'Creating interpreter'
+	$(CC) $(CFLAGS) $^ -o $@
 
+# Clean object files
 clean:
-	rm -f $(CDIR)/$(OUT)_lexer.cpp
-	rm -f $(IDIR)/$(OUT)_parser.h
-	rm -f $(CDIR)/$(OUT)_parser.cpp
-	rm -f $(ODIR)/*.o
-	rm -f $(OUT)
+	@rm -rf *.o
+	@rm -rf $(ODIR)/*.o
+	@rm -rf $(ODIR)
+	@echo 'Object Files cleaned'
+
+# Clean app
+distclean:
+	@rm -rf *.out
+	@echo 'Executables cleaned'
