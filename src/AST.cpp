@@ -74,12 +74,12 @@ void AST::MergeTrees(const std::string & rel, const AST & ast) {
 void TraverseTree(Object * object, VisitorFunction func) {
     if (!object) return;
 
-    /* TODO: Please change this. It is a really bad implementation AND idea */
-    if(object->ElementExists("child") && object->operator[]("child").IsObject() ) TraverseTree((*object)["child"].GetObject(), func);
-    if(object->ElementExists("lvalue") && object->operator[]("lvalue").IsObject() ) TraverseTree((*object)["lvalue"].GetObject(), func);
-    if(object->ElementExists("rvalue") && object->operator[]("rvalue").IsObject() ) TraverseTree((*object)["rvalue"].GetObject(), func);
-
     func(object);
+
+    /* TODO: Please change this. It is a really bad implementation AND a bad idea */
+    if(object->ElementExists("child") && object->operator[]("child").IsObject() ) TraverseTree((*object)["child"].GetObject(), func);
+    if(object->ElementExists("left") && object->operator[]("left").IsObject() ) TraverseTree((*object)["left"].GetObject(), func);
+    if(object->ElementExists("right") && object->operator[]("right").IsObject() ) TraverseTree((*object)["right"].GetObject(), func);
 }
 
 void AST::AcceptVisitor(VisitorFunction func) {

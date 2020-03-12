@@ -31,6 +31,7 @@ OBJECTS=$(SRCS:%.cpp=%.o)
 # Files related to Bison
 PARSER_NAME=parser
 PARSER_Y=$(SRCDIR)/$(PARSER_NAME).y
+PARSER_H=$(SRCDIR)/$(PARSER_NAME).h
 PARSER_CPP=$(SRCDIR)/$(PARSER_NAME).cpp
 PARSER_OUT=$(SRCDIR)/$(PARSER_NAME).output
 PARSER_O=$(ODIR)/$(PARSER_NAME).o
@@ -63,7 +64,7 @@ $(LEXXER_CPP): $(LEXXER_L)
 	flex --outfile=$@ $<
 
 $(PARSER_CPP): $(PARSER_Y)
-	bison --yacc --defines=$(SRCDIR)/parser.h -v --output=$@ $<
+	bison --yacc --defines=$(PARSER_H) -v --output=$@ $<
 
 $(LEXXER_O): $(LEXXER_CPP)
 	@mkdir -p $(ODIR)
@@ -86,6 +87,7 @@ clean:
 	@rm -rf $(LEXXER_CPP)
 	@rm -rf $(PARSER_CPP)
 	@rm -rf $(PARSER_OUT)
+	@rm -rf $(PARSER_H)
 	@echo 'Bison/Flex products cleaned'
 
 # Clean app

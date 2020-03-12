@@ -1,4 +1,5 @@
 %{
+#include "AST.h"  /* TODO: Check why is this needed!!! */
 #include "parser.h"
 #include "TokenTypes.h"
 #include "Token.h"

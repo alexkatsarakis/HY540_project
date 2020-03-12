@@ -2,6 +2,8 @@
     #include "Token.h"
     #include "SyntaxPrinter.h"
     #include "GrammarRules.h"
+    #include "ManageRules.h"
+    #include "AST.h"
 
     #include <iostream>
     #include <vector>
@@ -25,17 +27,27 @@
     /* Simple flag to indicate if a token list should be created or not */
     bool maintainTokenList = true;
 
+    ManageRules semantics;
+
     SyntaxPrinter rulesPrinter("alpha_GrammarRules.txt");
 %}
 
 %union {
     char * strVal;
     double doubleVal;
+    AST * astVal;
 }
 
 %token <strVal> STRING;
 %token <strVal> ID;
 %token <doubleVal> NUMBER
+
+%type <astVal> const;
+%type <astVal> primary;
+%type <astVal> term;
+%type <astVal> expr;
+%type <astVal> stmt;
+%type <astVal> stmts;
 
 /* Operators */
 %token PLUS
@@ -106,14 +118,18 @@
 
 %%
 
-program : stmts { printf(">> Parsing complete\n"); }
+program : stmts {
+            $1->AcceptVisitor([](Object * obj) {
+                std::cout << "I am traversing the tree and I found a node of type " << obj->operator[]("type").GetString() << std::endl;
+            });
+        }
         ;
 
-stmts : stmts stmt  { PRINT_STMTS; }
+stmts : stmts stmt  { $$ = $2; PRINT_STMTS; }
       | /* Empty */ { PRINT_STMTS_E; }
       ;
 
-stmt : expr SEMICOLON { PRINT_STMT_EXP; }
+stmt : expr SEMICOLON { $$ = semantics.ManageStmt($1); PRINT_STMT_EXP; }
      | ifstmt { PRINT_STMT_IF; }
      | whilestmt { PRINT_STMT_WH; }
      | forstmt { PRINT_STMT_FOR; }
@@ -127,7 +143,7 @@ stmt : expr SEMICOLON { PRINT_STMT_EXP; }
      ;
 
 expr : assignexpr { PRINT_EXPR_ASS; }
-     | expr PLUS expr {PRINT_EXPR_PL; }
+     | expr PLUS expr { $$ = semantics.ManageExprPlusExpr($1, $3); PRINT_EXPR_PL; }
      | expr MINUS expr { PRINT_EXPR_MIN; }
      | expr MUL expr { PRINT_EXPR_MUL; }
      | expr DIV expr { PRINT_EXPR_DIV; }
@@ -140,7 +156,7 @@ expr : assignexpr { PRINT_EXPR_ASS; }
      | expr NOT_EQUAL expr { PRINT_EXPR_NEQ; }
      | expr AND expr { PRINT_EXPR_AND; }
      | expr OR expr { PRINT_EXPR_OR; }
-     | term { PRINT_EXPR_TERM; }
+     | term { $$ = semantics.ManageExpr($1); PRINT_EXPR_TERM; }
      ;
 
 term : LEFT_PAR expr RIGHT_PAR { PRINT_TERM_PAR; }
@@ -150,7 +166,7 @@ term : LEFT_PAR expr RIGHT_PAR { PRINT_TERM_PAR; }
      | lvalue PLUS_PLUS { PRINT_TERM_L_P; }
      | MINUS_MINUS lvalue { PRINT_TERM_M_L; }
      | lvalue MINUS_MINUS { PRINT_TERM_L_M; }
-     | primary { PRINT_TERM_PRIM; }
+     | primary { $$ = semantics.ManageTerm($1); PRINT_TERM_PRIM; }
      ;
 
 assignexpr : lvalue ASSIGN expr { PRINT_ASSIGN; }
@@ -160,7 +176,7 @@ primary : lvalue { PRINT_PRIMARY_LVAL; }
         | call { PRINT_PRIMARY_CALL; }
         | objectdef { PRINT_PRIMARY_OBJ; }
         | LEFT_PAR funcdef RIGHT_PAR { PRINT_PRIMARY_FUNC; }
-        | const { PRINT_PRIMARY_CON; }
+        | const { $$ = semantics.ManagePrimary($1); PRINT_PRIMARY_CON; }
         ;
 
 lvalue : ID { PRINT_LVALUE_ID; }
@@ -237,7 +253,7 @@ func_id : ID { PRINT_FUNCID; }
         | /* Empty */ { PRINT_FUNCID_E; }
         ;
 
-const : NUMBER { PRINT_CON_NU; }
+const : NUMBER { $$ = semantics.ManageConstNumber($1); PRINT_CON_NU; }
       | STRING { PRINT_CON_S; }
       | NIL { PRINT_CON_NI; }
       | TRUE { PRINT_CON_T; }
