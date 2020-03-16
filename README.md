@@ -27,7 +27,7 @@ To download project:
 git clone https://gitlab.com/myronfirst/hy540_project.git
 ```
 
-To build the library along with all test applications:
+To build the interpreter:
 ```bash
 cd hy540_project/
 make
@@ -58,17 +58,22 @@ make
 
 ## Lines of Code
 
-* 16 files
-* 366 blank
-* 80 comment
-* 1202 code
+* 18 files
+* 398 blank
+* 101 comment
+* 1105 code
 
 ## Roadmap
 See the open issues for a list of proposed features (and known issues).
 
 ## Contributors / Authors
 
-* *Comming soon...*
+* Agapakis Manolis
+* Katsarakis Alexandros
+* Papadogiannakis Manos
+* Tsatsarakis Myron
+
+*In alphabetic order*
 
 ## Support
 
