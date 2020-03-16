@@ -228,11 +228,8 @@ indexedelem : LEFT_BRACE expr COLON expr RIGHT_BRACE { PRINT_IND_E; }
 block : LEFT_BRACE { } stmts RIGHT_BRACE { PRINT_BLOCK; }
       ;
 
-funcdef : FUNCTION func_id LEFT_PAR { } idlist { } RIGHT_PAR funcblock { PRINT_FUNCDEF; }
+funcdef : FUNCTION func_id LEFT_PAR idlist RIGHT_PAR block { PRINT_FUNCDEF; }
         ;
-
-funcblock : block { }
-          ;
 
 func_id : ID { PRINT_FUNCID; }
         | /* Empty */ { PRINT_FUNCID_E; }
@@ -256,24 +253,15 @@ comma_ids : comma_ids comma_id { PRINT_C_IDS; }
 comma_id : COMMA ID { PRINT_C_ID; }
          ;
 
-ifstmt : ifcond stmt %prec NO_ELSE { PRINT_IF; }
-       | ifcond stmt ELSE { PRINT_IF_ELSE; }
+ifstmt : IF LEFT_PAR expr RIGHT_PAR stmt %prec NO_ELSE { PRINT_IF; }
+       | IF LEFT_PAR expr RIGHT_PAR stmt ELSE { PRINT_IF_ELSE; }
        ;
 
-ifcond : IF LEFT_PAR expr RIGHT_PAR { }
-       ;
-
-whilestmt : WHILE whilecond stmt { PRINT_WHILE; }
+whilestmt : WHILE LEFT_PAR expr RIGHT_PAR stmt { PRINT_WHILE; }
           ;
 
-whilecond : LEFT_PAR expr RIGHT_PAR { }
-          ;
-
-forstmt : forprefix elist RIGHT_PAR stmt { PRINT_FOR; }
+forstmt : FOR LEFT_PAR elist SEMICOLON expr SEMICOLON elist RIGHT_PAR stmt { PRINT_FOR; }
         ;
-
-forprefix : FOR LEFT_PAR elist SEMICOLON expr SEMICOLON { }
-          ;
 
 returnstmt : RETURN returnvalue SEMICOLON { PRINT_RET_S; }
            ;
