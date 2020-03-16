@@ -1,13 +1,15 @@
 #include "SyntaxPrinter.h"
 #include "TokenTypes.h"
 
+#include <string>
 #include <cassert>
 #include <sstream>
+#include <exception>
 
 SyntaxPrinter::SyntaxPrinter(const std::string & fileName) {
     outputFile.open(fileName, std::ios::out | std::ios::trunc);
 
-    /* TODO: Check that the file is open */
+    if (!outputFile.is_open()) throw::std::runtime_error("Could not open file \"" + fileName + "\".");
 }
 
 SyntaxPrinter::SyntaxPrinter(void) : SyntaxPrinter("output.txt") { }
@@ -18,9 +20,9 @@ void SyntaxPrinter::operator() (const Token & t) {
     std::stringstream ss;
 
     ss << t.GetLineNumber() << ": #"
-        << t.GetTokenNumber() << " \""
-        << (t.GetContent().empty() ? "" : t.GetContent()) << "\" "
-        << t.GetType() << " ";
+       << t.GetTokenNumber() << " \""
+       << (t.GetContent().empty() ? "" : t.GetContent()) << "\" "
+       << t.GetType() << " ";
 
     const std::string type = t.GetType();
 
