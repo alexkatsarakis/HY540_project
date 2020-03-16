@@ -4,45 +4,71 @@
 #include "Value.h"
 
 #include <string>
-#include <vector>
 #include <map>
-#include <memory>
+#include <functional>
 
-typedef std::shared_ptr<Value> ValuePtr;
-typedef std::map<unsigned, ValuePtr> UnsignedValueMap;
+typedef Value * ValuePtr; /* Use typedef so we can use shared_ptr in the future */
+typedef std::map<double, ValuePtr>      NumbericValueMap;
 typedef std::map<std::string, ValuePtr> StringValueMap;
 
 class Object {
 private:
     unsigned refCounter;
-    UnsignedValueMap numHash;
-    StringValueMap stringHash;
+    NumbericValueMap numMap;
+    StringValueMap   strMap;
 
 public:
 
+    using Visitor = std::function<void(const Value & key, Value & val)>;
+    using Applier = std::function<void(const Value & key, Value & val)>;
+
+    /****** Constructors ******/
+
     Object();
 
+    Object (const Object & obj);
+
+    /****** Verifier ******/
+
     bool IsValid(void) const;
+
+    /****** Observers ******/
+
+    bool ElementExists(double key) const;
+
+    bool ElementExists(const std::string & key) const;
+
+    unsigned GetTotal(void) const;
+
+    /****** Modifiers ******/
 
     void IncreaseRefCounter(void);
 
     void DecreaseRefCounter(void);
 
-    bool ElementExists(unsigned index) const;
+    /****** Getters ******/
 
-    bool ElementExists(const std::string & str) const;
+    const Value * operator[] (double key) const;
 
-    const Value & operator[] (unsigned index) const;
+    const Value * operator[] (const std::string & key) const ;
 
-    const Value & operator[] (const std::string & str) const ;
+    /****** Setters ******/
 
-    void SetValue(unsigned index, const Value & val);
+    void Set(double key, const Value & value);
 
-    void SetValue(const std::string & str, const Value & val);
+    void Set(const std::string & key, const Value & value);
 
-    void SetValue(unsigned index, const ValuePtr & ptr);
+    void Remove(double key);
 
-    void SetValue(const std::string & str, const ValuePtr & ptr);
+    void Remove(const std::string & key);
+
+    /****** Visitors ******/
+
+    void Visit(const Visitor & func) const;  /* Read-Only access */
+
+    void Apply(const Applier & func); /* Read-Write access */
+
+    /****** Destructor ******/
 
     virtual ~Object();
 };

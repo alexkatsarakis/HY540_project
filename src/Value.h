@@ -7,112 +7,146 @@ class Object;
 
 class Value {
 
-private:
-    enum class ValueType {
-        TypeNumber,
-        TypeString,
-        TypeBool,
-        TypeObject,
-        TypeNativePtr,
-        TypeUserFunc,
-        TypeLibFunc,
-        TypeNil,
-        TypeUndef
-    };
-
-    union ValueData {
-        double numVal;
-        std::string stringVal;
-        bool boolVal;
-        Object * objectVal;
-        void * nativePointerVal;
-        unsigned userFuncVal;
-        std::string libFuncVal;
-
-        ValueData();
-
-        void Clear(void);
-
-        ~ValueData();
-    };
-
-    ValueType type;
-    ValueData data;
-
 public:
+    enum class Type {
+        UndefType,
+        NumberType,
+        BooleanType,
+        StringType,
+        ObjectType,
+        ProgramFunctionType,
+        LibraryFunctionType,
+        NativePtrType,
+        NilType
+    };
+
+    /****** Constructors ******/
+
     Value();
 
     Value(const Value & val);
 
-    const Value & operator = (const Value & val);
-
     Value(double num);
+
+    Value(bool val);
 
     Value(const char * str);
 
     Value(const std::string & str);
 
-    Value(bool val);
-
     Value(Object * obj);
 
-    Value(void * ptr);
+    Value(Object * ast, Object * closure); // 2 Object ptrs mean program func
+
+    Value(void * ptr, const std::string & type);
+
+    /****** Operators ******/
+
+    const Value & operator = (const Value & val);
+
+    /****** Verifier ******/
 
     bool IsValid(void) const;
 
-    bool IsNumber(void) const;
-
-    bool IsString(void) const;
-
-    bool IsBool(void) const;
-
-    bool IsObject(void) const;
-
-    bool IsNativePointer(void) const;
-
-    bool IsUserFunc(void) const;
-
-    bool IsLibFunc(void) const;
-
-    bool IsNil(void) const;
+    /****** Observers ******/
 
     bool IsUndef(void) const;
 
-    void FromNumber(double num);
+    bool IsNumber(void) const;
 
-    void FromString(const std::string & str);
+    bool IsBoolean(void) const;
 
-    void FromBool(bool val);
+    bool IsString(void) const;
 
-    void FromObject(Object * obj);
+    bool IsObject(void) const;
 
-    void FromNativePointer(void * ptr);
+    bool IsProgramFunction(void) const;
 
-    void FromUserFunc(unsigned index);
+    bool IsLibraryFunction(void) const;
 
-    void FromLibFunc(const std::string & str);
+    bool IsNativePtr(void) const;
 
-    void FromNil(void);
+    bool IsNil(void) const;
+
+    /****** Setters ******/
 
     void FromUndef(void);
 
+    void FromNumber(double num);
+
+    void FromBoolean(bool val);
+
+    void FromString(const std::string & str);
+
+    void FromObject(Object * obj);
+
+    void FromProgramFunction(Object * ast, Object * closure);
+
+    void FromLibraryFunction(const std::string & str);
+
+    void FromNativePointer(void * ptr, const std::string & str);
+
+    void FromNil(void);
+
+    /****** Getters ******/
+
+    Type GetType(void) const;
+
+    double ToNumber(void) const;
+
+    bool ToBoolean(void) const;
+
     std::string ToString(void) const;
 
-    double GetNumber(void) const;
+    const Object * ToObject(void) const;
 
-    std::string GetString(void) const;
+    const Object * ToProgramFunctionAST(void) const;
 
-    bool GetBool(void) const;
+    const Object * ToProgramFunctionClosure(void) const;
 
-    Object * GetObject(void) const;
+    std::string ToLibraryFunction(void) const;
 
-    void * GetNativePointer(void) const;
+    void * ToNativePtr(void) const;
 
-    unsigned GetUserFunc(void) const;
+    std::string ToNativeTypeId(void) const;
 
-    std::string GetLibFunc(void) const;
+    /****** Replicator ******/
+
+    Value * Clone(void) const;
+
+    /****** Destructor ******/
 
     virtual ~Value();
+
+private:
+
+    union Data {
+        double numVal;
+        bool boolVal;
+        std::string stringVal; /* TODO: It would be more efficient if this was a pointer to string */
+        Object * objectVal;
+
+        struct {
+            Object * ast;
+            Object * closure;
+        } programFunctionVal;
+
+        std::string libraryFunctionVal;
+
+        struct {
+            void * ptr;
+            std::string typeId;
+        } nativePtrVal;
+
+        Data();
+
+        void Clear(void);
+
+        ~Data();
+    };
+
+    Type type;
+    Data data;
 };
 
 #endif

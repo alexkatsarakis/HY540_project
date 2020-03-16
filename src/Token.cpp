@@ -5,6 +5,8 @@
 #include <cassert>
 #include <sstream>
 
+/****** Constructor ******/
+
 Token::Token(unsigned _line, unsigned _number, const std::string & _content, const std::string & _type, const std::string & _attribute) {
     line = _line;
     number = _number;
@@ -14,9 +16,13 @@ Token::Token(unsigned _line, unsigned _number, const std::string & _content, con
     assert(IsValid());
 }
 
+/****** Verifier ******/
+
 bool Token::IsValid(void) const {
     return !type.empty() && !attribute.empty() && line > 0 && number > 0;
 }
+
+/****** Getters ******/
 
 unsigned Token::GetLineNumber(void) const {
     return line;
@@ -37,6 +43,8 @@ const std::string & Token::GetType(void) const {
 const std::string & Token::GetAttribute(void) const {
     return attribute;
 }
+
+/****** Setters ******/
 
 void Token::SetLineNumber(unsigned num) {
     assert(num);
@@ -67,10 +75,15 @@ void Token::SetAttribute(const std::string & str) {
     assert(IsValid());
 }
 
+/****** Visitor ******/
+
 void Token::Accept(VisitorFunction func) {
     assert(func);
+    assert(IsValid());
     func(*this);
 }
+
+/****** Observer ******/
 
 std::string Token::ToString(void) const {
     assert(IsValid());
@@ -79,4 +92,15 @@ std::string Token::ToString(void) const {
 
     ss << line << ": #" << number << " \"" << (content.empty() ? "" : content) << "\" " << type << " " << attribute;
     return ss.str();
+}
+
+/****** Destructor ******/
+
+Token::~Token() {
+    assert(IsValid());
+    line = 0;
+    number = 0;
+    content.clear();
+    type.clear();
+    attribute.clear();
 }

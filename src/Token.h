@@ -15,9 +15,15 @@ private:
 public:
     typedef std::function<void(const Token &)> VisitorFunction;
 
+    /****** Constructor ******/
+
     Token(unsigned _line, unsigned _number, const std::string & _content, const std::string & _type, const std::string & _attribute);
 
+    /****** Verifier ******/
+
     bool IsValid(void) const;
+
+    /****** Getters ******/
 
     unsigned GetLineNumber(void) const;
 
@@ -29,6 +35,8 @@ public:
 
     const std::string & GetAttribute(void) const;
 
+    /****** Setters ******/
+
     void SetLineNumber(unsigned num);
 
     void SetTokenNumber(unsigned num);
@@ -39,9 +47,17 @@ public:
 
     void SetAttribute(const std::string & str);
 
+    /****** Visitor ******/
+
     void Accept(VisitorFunction func);
 
+    /****** Observer ******/
+
     std::string ToString(void) const;
+
+    /****** Destructor ******/
+
+    virtual ~Token();
 };
 
 #endif
