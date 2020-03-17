@@ -254,7 +254,7 @@ comma_id : COMMA ID { PRINT_C_ID; }
          ;
 
 ifstmt : IF LEFT_PAR expr RIGHT_PAR stmt %prec NO_ELSE { PRINT_IF; }
-       | IF LEFT_PAR expr RIGHT_PAR stmt ELSE { PRINT_IF_ELSE; }
+       | IF LEFT_PAR expr RIGHT_PAR stmt ELSE stmt { PRINT_IF_ELSE; }
        ;
 
 whilestmt : WHILE LEFT_PAR expr RIGHT_PAR stmt { PRINT_WHILE; }
