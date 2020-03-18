@@ -18,6 +18,7 @@
 #define AST_TAG_CONDITION "condition"
 
 #define AST_TAG_RETURN "return"
+#define AST_TAG_RETURN_VALUE "return_value"
 
 #define AST_TAG_WHILE "while"
 
