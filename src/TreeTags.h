@@ -99,7 +99,7 @@
 
 #define AST_TAG_CALL_SUFFIX "call_suffix"
 #define AST_TAG_NORMAL_CALL "normal_call"
-#define AST_TAG_METHOD_CALL_ID "method_call_id"
+#define AST_TAG_METHOD_CALL "method_call"
 #define AST_TAG_CALL "call"
 
 #define AST_TAG_SUFFIX "suffix"

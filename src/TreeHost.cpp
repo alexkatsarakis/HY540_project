@@ -324,11 +324,6 @@ void TreeHost::AcceptCommaExpressions(const Object& node){
     visitor->VisitCommaExpressions(node);    
 }
 
-void TreeHost::AcceptObjectDef(const Object& node){
-    Accept(*node[AST_TAG_OBJECT_DEF_VAL]->ToObject());
-    visitor->VisitObjectDef(node);
-}
-
 void TreeHost::AcceptIndexed(const Object& node){
     Accept(*node[AST_TAG_INDEXED_ELEM]->ToObject());
     Accept(*node[AST_TAG_COMMA_INDEXED_ELEMS]->ToObject());
