@@ -14,7 +14,7 @@
 #define AST_TAG_EXPR "expr"
 
 #define AST_TAG_IF "if"
-#define AST_TAG_IF_ELSE_STMT "else"
+#define AST_TAG_ELSE_STMT "else"
 #define AST_TAG_CONDITION "condition"
 
 #define AST_TAG_RETURN "return"
@@ -98,7 +98,7 @@
 
 #define AST_TAG_CALL_SUFFIX "call_suffix"
 #define AST_TAG_NORMAL_CALL "normal_call"
-#define AST_TAG_METHOD_CALL_ID "method_call_id"
+#define AST_TAG_METHOD_CALL "method_call"
 #define AST_TAG_CALL "call"
 
 #define AST_TAG_SUFFIX "suffix"

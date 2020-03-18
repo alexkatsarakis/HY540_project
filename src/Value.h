@@ -6,7 +6,7 @@
 class Object;
 
 /* Used only to indicate that we want to create a Value objec with Nil type */
-enum class NilTypeValue { UnusedValue };
+enum class NilTypeValue { Nil };
 
 class Value {
 

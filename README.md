@@ -4,7 +4,10 @@
 
 This repository is for the project of the course HY-540: Advanced Topics In Programming Languages Development. It will be used as following:
 
-* *Comming soon...*
+* We will all have one **branch** named after our credentials for developing. These branches will be only for their "owner" and we are allowed to make any mistakes there.
+* The master branch will contain the latest stable version of our project. All of us are allowed to update the master branch with changes from other branches but only when we are **certain** that everything works as expected.
+* The master branch will only contain, at any time, the **final** version of the project. Versions that arise during development will stay in their branches until they are finished. Therefore, the code that we will submit will be the code in the master branch.
+* We will use **tags** to indicate the process of development.
 
 ## Prerequisites
 
@@ -59,9 +62,9 @@ make
 ## Lines of Code
 
 * 18 files
-* 398 blank
-* 101 comment
-* 1105 code
+* 608 blank
+* 104 comment
+* 1556 code
 
 ## Roadmap
 See the open issues for a list of proposed features (and known issues).

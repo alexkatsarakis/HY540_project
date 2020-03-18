@@ -61,6 +61,16 @@ unsigned Object::GetTotal(void) const {
     return numMap.size() + strMap.size();
 }
 
+unsigned Object::GetNumericSize(void) const {
+    assert(IsValid());
+    return numMap.size();
+}
+
+unsigned Object::GetStringSize(void) const {
+    assert(IsValid());
+    return numMap.size();
+}
+
 /****** Modifiers ******/
 
 void Object::IncreaseRefCounter(void) { refCounter += 1; }
@@ -97,7 +107,7 @@ void Object::Set(double key, const Value & value) {
     assert(value.IsValid());
     assert(IsValid());
 
-    auto val = new Value(value);  /* TODISCUSS: Should values be copied */
+    auto val = new Value(value);
     numMap.insert(std::pair<double, ValuePtr>(key, val));
 
     assert(numMap.size() > 0);
