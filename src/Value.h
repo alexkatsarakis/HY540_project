@@ -5,6 +5,9 @@
 
 class Object;
 
+/* Used only to indicate that we want to create a Value objec with Nil type */
+enum class NilTypeValue { UnusedValue };
+
 class Value {
 
 public:
@@ -39,6 +42,8 @@ public:
     Value(Object * ast, Object * closure); // 2 Object ptrs mean program func
 
     Value(void * ptr, const std::string & type);
+
+    Value(NilTypeValue);
 
     /****** Operators ******/
 

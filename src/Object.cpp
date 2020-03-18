@@ -94,6 +94,7 @@ const Value * Object::operator[] (const std::string & key) const {
 /****** Setters ******/
 
 void Object::Set(double key, const Value & value) {
+    assert(value.IsValid());
     assert(IsValid());
 
     auto val = new Value(value);  /* TODISCUSS: Should values be copied */
@@ -104,6 +105,7 @@ void Object::Set(double key, const Value & value) {
 }
 
 void Object::Set(const std::string & key, const Value & value) {
+    assert(value.IsValid());
     assert(IsValid());
 
     auto val = new Value(value);
