@@ -30,9 +30,40 @@
 %}
 
 %union {
+    Object * objectVal;
     char * strVal;
     double doubleVal;
 }
+
+%type <objectVal> program;
+%type <objectVal> stmts;
+%type <objectVal> stmt;
+%type <objectVal> expr;
+%type <objectVal> term;
+%type <objectVal> primary;
+%type <objectVal> lvalue;
+%type <objectVal> member;
+%type <objectVal> call;
+%type <objectVal> callsuffix;
+%type <objectVal> normcall;
+%type <objectVal> methodcall;
+%type <objectVal> elist;
+%type <objectVal> comma_exprs;
+%type <objectVal> objectdef;
+%type <objectVal> indexed;
+%type <objectVal> comma_indexedelems;
+%type <objectVal> indexedelem;
+%type <objectVal> block;
+%type <objectVal> funcdef;
+%type <objectVal> const;
+%type <objectVal> idlist;
+%type <objectVal> comma_ids;
+%type <objectVal> ifstmt;
+%type <objectVal> whilestmt;
+%type <objectVal> forstmt;
+%type <objectVal> returnstmt;
+%type <objectVal> breakstmt;
+%type <objectVal> continuestmt;
 
 %token <strVal> STRING;
 %token <strVal> ID;
@@ -119,15 +150,15 @@ stmt : expr SEMICOLON { PRINT_STMT_EXP; }
      | whilestmt { PRINT_STMT_WH; }
      | forstmt { PRINT_STMT_FOR; }
      | returnstmt { PRINT_STMT_RET; }
-     | BREAK SEMICOLON { PRINT_STMT_BR; }
-     | CONTINUE SEMICOLON { PRINT_STMT_CON; }
+     | breakstmt { PRINT_STMT_BR; }
+     | continuestmt { PRINT_STMT_CON; }
      | block { PRINT_STMT_BLO; }
      | funcdef { PRINT_STMT_FUNC; }
      | SEMICOLON { PRINT_STMT_SEMI; }
      | error SEMICOLON { yyerrok; yyclearin; }
      ;
 
-expr : assignexpr { PRINT_EXPR_ASS; }
+expr : lvalue ASSIGN expr { PRINT_EXPR_ASS; }
      | expr PLUS expr { PRINT_EXPR_PL; }
      | expr MINUS expr { PRINT_EXPR_MIN; }
      | expr MUL expr { PRINT_EXPR_MUL; }
@@ -153,9 +184,6 @@ term : LEFT_PAR expr RIGHT_PAR { PRINT_TERM_PAR; }
      | lvalue MINUS_MINUS { PRINT_TERM_L_M; }
      | primary { PRINT_TERM_PRIM; }
      ;
-
-assignexpr : lvalue ASSIGN expr { PRINT_ASSIGN; }
-           ;
 
 primary : lvalue { PRINT_PRIMARY_LVAL; }
         | call { PRINT_PRIMARY_CALL; }
@@ -188,39 +216,27 @@ callsuffix : normcall { PRINT_CALLS_N; }
 normcall : LEFT_PAR elist RIGHT_PAR { PRINT_NORMCALL; }
 	     ;
 
-methodcall : DOUBLE_DOT methodcall_id LEFT_PAR elist RIGHT_PAR { PRINT_METHODCALL; }
+methodcall : DOUBLE_DOT ID LEFT_PAR elist RIGHT_PAR { PRINT_METHODCALL; }
            ;
-
-methodcall_id : ID { }
-              ;
 
 elist : expr comma_exprs { PRINT_ELIST; }
       | /* Empty */      { PRINT_ELIST_E; }
       ;
 
-comma_exprs : comma_exprs comma_expr { PRINT_COM_EXPS; }
+comma_exprs : comma_exprs COMMA expr { PRINT_COM_EXPS; }
             | /* Empty */            { PRINT_COM_EXPS_E; }
             ;
 
-comma_expr : COMMA expr { PRINT_COM_EXP; }
-           ;
-
-objectdef : LEFT_BRACKET objectdef_val RIGHT_BRACKET { PRINT_OBJDEF; }
+objectdef : LEFT_BRACKET elist RIGHT_BRACKET { PRINT_OBJDEF; }
+          | LEFT_BRACKET indexed RIGHT_BRACKET { PRINT_OBJDEF; }
           ;
-
-objectdef_val : elist   { PRINT_OBJ_VAL_E; }
-              | indexed { PRINT_OBJ_VAL_I; }
-              ;
 
 indexed : indexedelem comma_indexedelems { PRINT_INDEXED; }
         ;
 
-comma_indexedelems : comma_indexedelems comma_indexedelem { PRINT_C_IND_ES; }
+comma_indexedelems : comma_indexedelems COMMA indexedelem { PRINT_C_IND_ES; }
                    | /* Empty */                          { PRINT_C_IND_ES_E; }
                    ;
-
-comma_indexedelem : COMMA indexedelem { PRINT_C_IND_E; }
-                  ;
 
 indexedelem : LEFT_BRACE expr COLON expr RIGHT_BRACE { PRINT_IND_E; }
             ;
@@ -228,11 +244,8 @@ indexedelem : LEFT_BRACE expr COLON expr RIGHT_BRACE { PRINT_IND_E; }
 block : LEFT_BRACE { } stmts RIGHT_BRACE { PRINT_BLOCK; }
       ;
 
-funcdef : FUNCTION func_id LEFT_PAR idlist RIGHT_PAR block { PRINT_FUNCDEF; }
-        ;
-
-func_id : ID { PRINT_FUNCID; }
-        | /* Empty */ { PRINT_FUNCID_E; }
+funcdef : FUNCTION ID LEFT_PAR idlist RIGHT_PAR block { PRINT_FUNCDEF; }
+        | FUNCTION LEFT_PAR idlist RIGHT_PAR block { PRINT_FUNCID_E; }
         ;
 
 const : NUMBER { PRINT_CON_NU; }
@@ -246,15 +259,12 @@ idlist : ID comma_ids { PRINT_IDLIST; }
        | /* Empty */  { PRINT_IDLIST_E; }
        ;
 
-comma_ids : comma_ids comma_id { PRINT_C_IDS; }
+comma_ids : comma_ids COMMA ID { PRINT_C_IDS; }
           | /* Empty */        { PRINT_C_IDS_E; }
           ;
 
-comma_id : COMMA ID { PRINT_C_ID; }
-         ;
-
 ifstmt : IF LEFT_PAR expr RIGHT_PAR stmt %prec NO_ELSE { PRINT_IF; }
-       | IF LEFT_PAR expr RIGHT_PAR stmt ELSE { PRINT_IF_ELSE; }
+       | IF LEFT_PAR expr RIGHT_PAR stmt ELSE stmt { PRINT_IF_ELSE; }
        ;
 
 whilestmt : WHILE LEFT_PAR expr RIGHT_PAR stmt { PRINT_WHILE; }
@@ -263,12 +273,15 @@ whilestmt : WHILE LEFT_PAR expr RIGHT_PAR stmt { PRINT_WHILE; }
 forstmt : FOR LEFT_PAR elist SEMICOLON expr SEMICOLON elist RIGHT_PAR stmt { PRINT_FOR; }
         ;
 
-returnstmt : RETURN returnvalue SEMICOLON { PRINT_RET_S; }
+returnstmt : RETURN expr SEMICOLON { PRINT_RET_S; }
+           | RETURN /* Empty */ SEMICOLON { PRINT_RET_V_E; }
            ;
 
-returnvalue : expr { PRINT_RET_V; }
-            | /* Empty */ { PRINT_RET_V_E; }
-            ;
+breakstmt : BREAK SEMICOLON { ; }
+          ;
+
+continuestmt : CONTINUE SEMICOLON { ; }
+             ;
 
 %%
 

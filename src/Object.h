@@ -19,7 +19,7 @@ private:
 
 public:
 
-    using Visitor = std::function<void(const Value & key, Value & val)>;
+    using Visitor = std::function<void(const Value & key, const Value & val)>;
     using Applier = std::function<void(const Value & key, Value & val)>;
 
     /****** Constructors ******/

@@ -15,9 +15,7 @@ Value::Data::~Data() { this->Clear(); }
 
 /****** Constructors ******/
 
-Value::Value() {
-    type = Type::UndefType;
-}
+Value::Value() { FromUndef(); }
 
 Value::Value(const Value & val) {
     assert(val.IsValid());
@@ -40,6 +38,8 @@ Value::Value(Object * obj) { FromObject(obj); }
 Value::Value(Object * ast, Object * closure) { FromProgramFunction(ast, closure); }
 
 Value::Value(void * ptr, const std::string & type) { FromNativePointer(ptr, type); }
+
+Value::Value(NilTypeValue) { FromNil(); }
 
 /****** Operators ******/
 
