@@ -2,6 +2,8 @@
 #include "Object.h"
 #include "TreeTags.h"
 
+#define LAMBDA(f) [this](const Object& node) { f(node); }
+
 void TreeHost::Accept (const Object& node){ 
     acceptors[node[AST_TAG_TYPE_KEY]->ToString()](node); 
 }
@@ -11,7 +13,62 @@ void TreeHost::InstallAcceptor (const std::string& tag, const Acceptor& f){
 }
 
 void TreeHost::InstallAllAcceptors (void){
-    /* todo when I finish the rest of the accept functions */
+    InstallAcceptor(AST_TAG_PROGRAM,  LAMBDA(AcceptProgram));
+    InstallAcceptor(AST_TAG_STMTS, LAMBDA(AcceptStatements));
+    InstallAcceptor(AST_TAG_STMT, LAMBDA(AcceptStatement));
+    InstallAcceptor(AST_TAG_EXPR, LAMBDA(AcceptExpression));
+    InstallAcceptor(AST_TAG_ASSIGN, LAMBDA(AcceptAssign));
+    InstallAcceptor(AST_TAG_PLUS, LAMBDA(AcceptPlus));
+    InstallAcceptor(AST_TAG_MINUS, LAMBDA(AcceptMinus));
+    InstallAcceptor(AST_TAG_MUL, LAMBDA(AcceptMul));
+    InstallAcceptor(AST_TAG_DIV, LAMBDA(AcceptDiv));
+    InstallAcceptor(AST_TAG_MODULO, LAMBDA(AcceptModulo));
+    InstallAcceptor(AST_TAG_GREATER, LAMBDA(AcceptGreater));
+    InstallAcceptor(AST_TAG_LESS, LAMBDA(AcceptGreaterEqual));
+    InstallAcceptor(AST_TAG_GEQUAL, LAMBDA(AcceptLess));
+    InstallAcceptor(AST_TAG_LEQUAL, LAMBDA(AcceptLessEqual));
+    InstallAcceptor(AST_TAG_EQUAL, LAMBDA(AcceptEqual));
+    InstallAcceptor(AST_TAG_NEQUAL, LAMBDA(AcceptNotEqual));
+    InstallAcceptor(AST_TAG_AND, LAMBDA(AcceptAnd));
+    InstallAcceptor(AST_TAG_OR, LAMBDA(AcceptOr));
+    InstallAcceptor(AST_TAG_TERM, LAMBDA(AcceptTerm));
+    InstallAcceptor(AST_TAG_UMINUS, LAMBDA(AcceptUnaryMinus));
+    InstallAcceptor(AST_TAG_NOT, LAMBDA(AcceptNot));
+    InstallAcceptor(AST_TAG_BPLUSPLUS, LAMBDA(AcceptPlusPlusBefore));
+    InstallAcceptor(AST_TAG_APLUSPLUS, LAMBDA(AcceptPlusPlusAfter));
+    InstallAcceptor(AST_TAG_BMINUSMINUS, LAMBDA(AcceptMinusMinusBefore));
+    InstallAcceptor(AST_TAG_AMINUSMINUS, LAMBDA(AcceptMinusMinusAfter));
+    InstallAcceptor(AST_TAG_PRIMARY, LAMBDA(AcceptPrimary));
+    InstallAcceptor(AST_TAG_LVALUE, LAMBDA(AcceptLValue));
+    InstallAcceptor(AST_TAG_ID, LAMBDA(AcceptId));
+    InstallAcceptor(AST_TAG_LOCAL_ID, LAMBDA(AcceptLocal));
+    InstallAcceptor(AST_TAG_DOUBLECOLON_ID, LAMBDA(AcceptDoubleColon));
+    InstallAcceptor(AST_TAG_MEMBER, LAMBDA(AcceptMember));
+    InstallAcceptor(AST_TAG_DOT, LAMBDA(AcceptDot));
+    InstallAcceptor(AST_TAG_BRACKET, LAMBDA(AcceptBracket));
+    InstallAcceptor(AST_TAG_CALL, LAMBDA(AcceptCall));
+    InstallAcceptor(AST_TAG_SUFFIX, LAMBDA(AcceptCallSuffix));
+    InstallAcceptor(AST_TAG_NORMAL_CALL, LAMBDA(AcceptNormalCall));
+    InstallAcceptor(AST_TAG_METHOD_CALL, LAMBDA(AcceptMethodCall));
+    InstallAcceptor(AST_TAG_ELIST, LAMBDA(AcceptExpressionList));
+    InstallAcceptor(AST_TAG_OBJECT_DEF, LAMBDA(AcceptObjectDef));
+    InstallAcceptor(AST_TAG_INDEXED, LAMBDA(AcceptIndexed));
+    InstallAcceptor(AST_TAG_INDEXED_ELEM, LAMBDA(AcceptIndexedElem));
+    InstallAcceptor(AST_TAG_BLOCK, LAMBDA(AcceptBlock));
+    InstallAcceptor(AST_TAG_FUNCTION_DEF, LAMBDA(AcceptFunctionDef));
+    InstallAcceptor(AST_TAG_CONST, LAMBDA(AcceptConst));
+    InstallAcceptor(AST_TAG_NUMBER, LAMBDA(AcceptNumber));
+    InstallAcceptor(AST_TAG_STRING, LAMBDA(AcceptString));
+    InstallAcceptor(AST_TAG_NILL, LAMBDA(AcceptNill));
+    InstallAcceptor(AST_TAG_TRUE, LAMBDA(AcceptTrue));
+    InstallAcceptor(AST_TAG_FALSE, LAMBDA(AcceptFalse));
+    InstallAcceptor(AST_TAG_ID_LIST, LAMBDA(AcceptIdList));
+    InstallAcceptor(AST_TAG_IF, LAMBDA(AcceptIf));
+    InstallAcceptor(AST_TAG_WHILE, LAMBDA(AcceptWhile));
+    InstallAcceptor(AST_TAG_FOR, LAMBDA(AcceptFor));
+    InstallAcceptor(AST_TAG_RETURN, LAMBDA(AcceptReturn));
+    InstallAcceptor(AST_TAG_BREAK, LAMBDA(AcceptBreak));
+    InstallAcceptor(AST_TAG_CONTINUE, LAMBDA(AcceptContinue));
 }
 
 void TreeHost::AcceptProgram(const Object& node){

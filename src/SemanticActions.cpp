@@ -225,7 +225,7 @@ Object * ParseDoubleColonID(const char * value) {
 }
 
 Object * ParseMember(Object * member) {
-    return ParseSingleChild(AST_TAG_CHILD, member);
+    return ParseSingleChild(AST_TAG_MEMBER, member);
 }
 
 Object * ParseMemberDot(Object * lvalue, Object * id) {
