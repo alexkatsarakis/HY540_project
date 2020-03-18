@@ -217,11 +217,11 @@ Object * ParseSimpleID(const char * value) {
 }
 
 Object * ParseLocalID(const char * value) {
-    return ParseID(AST_TAG_ID, value);
+    return ParseID(AST_TAG_LOCAL_ID, value);
 }
 
 Object * ParseDoubleColonID(const char * value) {
-    return ParseID(AST_TAG_LOCAL_ID, value);
+    return ParseID(AST_TAG_DOUBLECOLON_ID, value);
 }
 
 Object * ParseMember(Object * member) {
@@ -312,7 +312,7 @@ Object * ParseFuncDef(Object * id, Object * idlist, Object * block) {
 }
 
 Object * ParseConst(Object * child) {
-    return ParseSingleChild(AST_TAG_DOUBLECOLON_ID, child);
+    return ParseSingleChild(AST_TAG_CONST, child);
 }
 
 Object * ParseNumber(double value) {
@@ -370,7 +370,7 @@ Object * ParseCommaIds(Object * rest, Object * id) {
     return ParseRecursion(rest, id);
 }
 
-Object * ParseIdist(Object * id, Object * rest) {
+Object * ParseIdList(Object * id, Object * rest) {
     return ParseCompleteRecursion(AST_TAG_ID_LIST, id, rest);
 }
 
@@ -390,7 +390,7 @@ Object * ParseIfStmt(Object * cond, Object * stmt, Object * elseStmt) {
 }
 
 Object * ParseWhileStmt(Object * cond, Object * stmt) {
-    return ParseTwoChildren(AST_TAG_WHILE, AST_TAG_EXPR, cond, AST_TAG_STMT, stmt);
+    return ParseTwoChildren(AST_TAG_WHILE, AST_TAG_CONDITION, cond, AST_TAG_STMT, stmt);
 }
 
 Object * ParseForStmt(Object * elist1, Object * expr, Object * elist2, Object * stmt) {
@@ -401,9 +401,9 @@ Object * ParseForStmt(Object * elist1, Object * expr, Object * elist2, Object * 
 
     auto node = new Object();
     node->Set(AST_TAG_TYPE_KEY, AST_TAG_FOR);
-    node->Set(AST_TAG_CONDITION, Value(elist1));
-    node->Set(AST_TAG_STMT, Value(expr));
-    node->Set(AST_TAG_CONDITION, Value(elist2));
+    node->Set(AST_TAG_FOR_PRE_ELIST, Value(elist1));
+    node->Set(AST_TAG_CONDITION, Value(expr));
+    node->Set(AST_TAG_FOR_POST_ELIST, Value(elist2));
     node->Set(AST_TAG_STMT, Value(stmt));
 
     assert(node->IsValid());
