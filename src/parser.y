@@ -1,8 +1,8 @@
 %{
+    #include "Object.h"
     #include "Token.h"
     #include "SyntaxPrinter.h"
     #include "GrammarRules.h"
-    #include "Object.h"
 
     #include <iostream>
     #include <vector>
@@ -30,9 +30,9 @@
 %}
 
 %union {
-    Object * objectVal;
     char * strVal;
     double doubleVal;
+    Object * objectVal;
 }
 
 %type <objectVal> program;

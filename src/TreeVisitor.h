@@ -6,10 +6,10 @@ class Object;
 class TreeVisitor {
 public:
 
-    virtual void VisitProgram (const Object& node) = 0;
-    virtual void VisitStmts (const Object& node) = 0;
-	virtual void VisitStmt (const Object& node) = 0; 
-	virtual void VisitExpr (const Object& node) = 0; 
+    virtual void VisitProgram (const Object& node) = 0;    
+    virtual void VisitStatements (const Object& node) = 0;
+	virtual void VisitStatement (const Object& node) = 0;
+	virtual void VisitExpression (const Object& node) = 0; 
 	virtual void VisitIf (const Object& node) = 0; 
 	virtual void VisitWhile (const Object& node) = 0;
     virtual void VisitFor (const Object& node) = 0; 
@@ -44,8 +44,8 @@ public:
 	virtual void VisitMinusMinusAfter (const Object& node) = 0;
 	virtual void VisitPrimary (const Object& node) = 0;
     virtual void VisitObjectDefList (const Object& node) = 0;
-    virtual void VisitObjectDefIndex (const Object& node) = 0;
-    virtual void VisitLvalue (const Object& node) = 0;
+    virtual void VisitObjectDef (const Object& node) = 0;
+    virtual void VisitLValue (const Object& node) = 0;
     virtual void VisitConsts (const Object& node) = 0;
     virtual void VisitConst (const Object& node) = 0;
     virtual void VisitNumber (const Object& node) = 0;
@@ -54,8 +54,8 @@ public:
     virtual void VisitTrue (const Object& node) = 0;
     virtual void VisitFalse (const Object& node) = 0;
     virtual void VisitId (const Object& node) = 0;
-    virtual void VisitLocalId (const Object& node) = 0;
-    virtual void VisitDoubleColonId (const Object& node) = 0;
+    virtual void VisitLocal (const Object& node) = 0;
+    virtual void VisitDoubleColon (const Object& node) = 0;
     virtual void VisitMember (const Object& node) = 0;
     virtual void VisitDot (const Object& node) = 0;
     virtual void VisitBracket (const Object& node) = 0;
@@ -70,8 +70,7 @@ public:
     virtual void VisitCommaIndexedElems (const Object& node) = 0;
     virtual void VisitIndexedElem (const Object& node) = 0;
     virtual void VisitIdList (const Object& node) = 0;
-    virtual void VisitCommaIds (const Object& node) = 0;
-   
+    
 	virtual TreeVisitor* Clone (void) const = 0;
 	TreeVisitor(void);
 	TreeVisitor (const TreeVisitor&)=default;
