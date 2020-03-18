@@ -20,8 +20,9 @@ Value::Value() { FromUndef(); }
 Value::Value(const Value & val) {
     assert(val.IsValid());
     this->type = val.type;
-    /* TODO: Is this the correct way to do it ?. Will it work for std::strings? */
-    std::memcpy(&data, &val.data, sizeof(Data));
+    /* TODO: Is this the correct way to do it ? */
+    if (type == Type::StringType) data.stringVal = val.data.stringVal;
+    else std::memcpy(&data, &val.data, sizeof(Data));
     assert(IsValid());
 }
 

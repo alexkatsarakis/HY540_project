@@ -40,6 +40,10 @@ public:
 
     unsigned GetTotal(void) const;
 
+    unsigned GetNumericSize(void) const;
+
+    unsigned GetStringSize(void) const;
+
     /****** Modifiers ******/
 
     void IncreaseRefCounter(void);
