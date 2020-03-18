@@ -260,7 +260,7 @@ const : NUMBER { $$ = ParseConst(ParseNumber($1)); }
       | FALSE  { $$ = ParseConst(ParseFalse()); }
       ;
 
-idlist : ID comma_ids { $$ = ParseIdist(ParseSimpleID($1), $2); }
+idlist : ID comma_ids { $$ = ParseIdList(ParseSimpleID($1), $2); }
        | /* Empty */  { $$ = ParseEmptyIdlist(); }
        ;
 

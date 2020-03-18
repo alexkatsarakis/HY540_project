@@ -123,7 +123,7 @@ Object * ParseEmptyIdlist(void);
 
 Object * ParseCommaIds(Object * rest, Object * id);
 
-Object * ParseIdist(Object * id, Object * rest);
+Object * ParseIdList(Object * id, Object * rest);
 
 Object * ParseIfStmt(Object * cond, Object * stmt, Object * elseStmt = nullptr);
 

@@ -33,53 +33,6 @@ void TreeHost::AcceptStatement(const Object& node){
     visitor->VisitStatement(node);
 }
 
-void TreeHost::AcceptIf(const Object& node){
-    Accept(*node[AST_TAG_CONDITION]->ToObject());
-    Accept(*node[AST_TAG_STMT]->ToObject());
-    if (node.ElementExists(AST_TAG_ELSE_STMT))
-        Accept(*node[AST_TAG_ELSE_STMT]->ToObject());
-    visitor->VisitIf(node);
-}
-
-void TreeHost::AcceptReturn(const Object& node){
-    Accept(*node[AST_TAG_CHILD]->ToObject());
-    visitor->VisitReturn(node);
-}
-
-void TreeHost::AcceptWhile(const Object& node){
-    Accept(*node[AST_TAG_CONDITION]->ToObject());
-    Accept(*node[AST_TAG_STMT]->ToObject());
-    visitor->VisitWhile(node);
-}
-
-void TreeHost::AcceptFor(const Object& node){
-    Accept(*node[AST_TAG_FOR_PRE_ELIST]->ToObject());
-    Accept(*node[AST_TAG_CONDITION]->ToObject());
-    Accept(*node[AST_TAG_FOR_POST_ELIST]->ToObject());
-    Accept(*node[AST_TAG_STMT]->ToObject());
-    visitor->VisitFor(node);
-}
-
-void TreeHost::AcceptFunctionDef(const Object& node){
-    Accept(*node[AST_TAG_FUNCTION_ID]->ToObject());
-    Accept(*node[AST_TAG_FUNCTION_FORMALS]->ToObject());
-    Accept(*node[AST_TAG_STMT]->ToObject());
-    visitor->VisitFunctionDef(node);
-}
-
-void TreeHost::AcceptBlock(const Object& node){
-    Accept(*node[AST_TAG_CHILD]->ToObject());
-    visitor->VisitBlock(node);
-}
-
-void TreeHost::AcceptBreak(const Object& node){
-    visitor->VisitBreak(node);
-}
-
-void TreeHost::AcceptContinue(const Object& node){
-    visitor->VisitContinue(node);
-}
-
 void TreeHost::AcceptExpression(const Object& node){
     Accept(*node[AST_TAG_CHILD]->ToObject());
     visitor->VisitExpression(node);
@@ -209,64 +162,23 @@ void TreeHost::AcceptPrimary(const Object& node){
     visitor->VisitPrimary(node);
 }
 
-void TreeHost::AcceptObjectDefList(const Object& node){
-    for (int i = 0; i < node.GetTotal() - 1; i++)
-        Accept(*node[i]->ToObject());
-    visitor->VisitObjectDefList(node);
-}
-
-void TreeHost::AcceptObjectDef(const Object& node){
-    Accept(*node[AST_TAG_CHILD]->ToObject());
-    visitor->VisitObjectDef(node);
-}
-
 void TreeHost::AcceptLValue(const Object& node){
     Accept(*node[AST_TAG_CHILD]->ToObject());
     visitor->VisitLValue(node);
 }
 
-void TreeHost::AcceptConst(const Object& node){
-    Accept(*node[AST_TAG_CHILD]->ToObject());
-    visitor->VisitConst(node);
-}
-
-void TreeHost::AcceptNumber(const Object& node){
-    Accept(*node[AST_TAG_CHILD]->ToObject());
-    visitor->VisitNumber(node);
-}
-
-void TreeHost::AcceptString(const Object& node){
-    Accept(*node[AST_TAG_CHILD]->ToObject());
-    visitor->VisitString(node);
-}
-
-void TreeHost::AcceptNill(const Object& node){
-    Accept(*node[AST_TAG_CHILD]->ToObject());
-    visitor->VisitNill(node);
-}
-
-void TreeHost::AcceptTrue(const Object& node){
-    Accept(*node[AST_TAG_CHILD]->ToObject());
-    visitor->VisitTrue(node);
-}
-
-void TreeHost::AcceptFalse(const Object& node){
-    Accept(*node[AST_TAG_CHILD]->ToObject());
-    visitor->VisitFalse(node);
-}
-
 void TreeHost::AcceptId(const Object& node){
-    Accept(*node[AST_TAG_CHILD]->ToObject());
+    Accept(*node[AST_TAG_ID]->ToObject());
     visitor->VisitId(node);
 }
 
 void TreeHost::AcceptLocal(const Object& node){
-    Accept(*node[AST_TAG_CHILD]->ToObject());
+    Accept(*node[AST_TAG_LOCAL_ID]->ToObject());
     visitor->VisitLocal(node);
 }
 
 void TreeHost::AcceptDoubleColon(const Object& node){
-    Accept(*node[AST_TAG_CHILD]->ToObject());
+    Accept(*node[AST_TAG_DOUBLECOLON_ID]->ToObject());
     visitor->VisitDoubleColon(node);
 }
 
@@ -287,22 +199,6 @@ void TreeHost::AcceptBracket(const Object& node){
     visitor->VisitBracket(node);
 }
 
-void TreeHost::AcceptCallSuffix(const Object& node){
-    Accept(*node[AST_TAG_CHILD]->ToObject());
-    visitor->VisitCallSuffix(node);
-}
-
-void TreeHost::AcceptNormalCall(const Object& node){
-    Accept(*node[AST_TAG_ARGUMENTS]->ToObject());
-    visitor->VisitNormalCall(node);
-}
-
-void TreeHost::AcceptMethodCall(const Object& node){
-    Accept(*node[AST_TAG_FUNCTION]->ToObject());
-    Accept(*node[AST_TAG_ARGUMENTS]->ToObject());
-    visitor->VisitMethodCall(node);
-}
-
 void TreeHost::AcceptCall(const Object& node){
     Accept(*node[AST_TAG_FUNCTION]->ToObject());
     if (node.ElementExists(AST_TAG_SUFFIX))
@@ -312,38 +208,124 @@ void TreeHost::AcceptCall(const Object& node){
     visitor->VisitCall(node);
 }
 
+void TreeHost::AcceptCallSuffix(const Object& node){
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitCallSuffix(node);
+}
+
+void TreeHost::AcceptNormalCall(const Object& node){
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitNormalCall(node);
+}
+
+void TreeHost::AcceptMethodCall(const Object& node){
+    Accept(*node[AST_TAG_FUNCTION]->ToObject());
+    Accept(*node[AST_TAG_ARGUMENTS]->ToObject());
+    visitor->VisitMethodCall(node);
+}
+
 void TreeHost::AcceptExpressionList(const Object& node){
     for (int i = 0; i < node.GetTotal() - 1; i++)
         Accept(*node[i]->ToObject());
     visitor->VisitExpressionList(node);    
 }
 
-void TreeHost::AcceptCommaExpressions(const Object& node){
-    for (int i = 0; i < node.GetTotal() - 1; i++)
-        Accept(*node[i]->ToObject());
-    visitor->VisitCommaExpressions(node);    
+void TreeHost::AcceptObjectDef(const Object& node){
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitObjectDef(node);
 }
 
 void TreeHost::AcceptIndexed(const Object& node){
-    Accept(*node[AST_TAG_INDEXED_ELEM]->ToObject());
-    Accept(*node[AST_TAG_COMMA_INDEXED_ELEMS]->ToObject());
-    visitor->VisitIndexed(node);
-}
-
-void TreeHost::AcceptCommaIndexedElems(const Object& node){
     for (int i = 0; i < node.GetTotal() - 1; i++)
         Accept(*node[i]->ToObject());
-    visitor->VisitCommaIndexedElems(node);
+    visitor->VisitIndexed(node);
 }
 
 void TreeHost::AcceptIndexedElem(const Object& node){
     Accept(*node[AST_TAG_OBJECT_KEY]->ToObject());
     Accept(*node[AST_TAG_OBJECT_VALUE]->ToObject());
-    visitor->VisitCommaIndexedElems(node);
+    visitor->VisitIndexedElem(node);
+}
+
+void TreeHost::AcceptBlock(const Object& node){
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitBlock(node);
+}
+
+void TreeHost::AcceptFunctionDef(const Object& node){
+    Accept(*node[AST_TAG_FUNCTION_ID]->ToObject());
+    Accept(*node[AST_TAG_FUNCTION_FORMALS]->ToObject());
+    Accept(*node[AST_TAG_STMT]->ToObject());
+    visitor->VisitFunctionDef(node);
+}
+
+void TreeHost::AcceptConst(const Object& node){
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitConst(node);
+}
+
+void TreeHost::AcceptNumber(const Object& node){
+    Accept(*node[AST_TAG_VALUE]->ToObject());
+    visitor->VisitNumber(node);
+}
+
+void TreeHost::AcceptString(const Object& node){
+    Accept(*node[AST_TAG_VALUE]->ToObject());
+    visitor->VisitString(node);
+}
+
+void TreeHost::AcceptNill(const Object& node){
+    Accept(*node[AST_TAG_VALUE]->ToObject());
+    visitor->VisitNill(node);
+}
+
+void TreeHost::AcceptTrue(const Object& node){
+    Accept(*node[AST_TAG_VALUE]->ToObject());
+    visitor->VisitTrue(node);
+}
+
+void TreeHost::AcceptFalse(const Object& node){
+    Accept(*node[AST_TAG_VALUE]->ToObject());
+    visitor->VisitFalse(node);
 }
 
 void TreeHost::AcceptIdList(const Object& node){
     for (int i = 0; i < node.GetTotal() - 1; i++)
         Accept(*node[i]->ToObject());
     visitor->VisitIdList(node);
+}
+
+void TreeHost::AcceptIf(const Object& node){
+    Accept(*node[AST_TAG_CONDITION]->ToObject());
+    Accept(*node[AST_TAG_STMT]->ToObject());
+    if (node.ElementExists(AST_TAG_ELSE_STMT))
+        Accept(*node[AST_TAG_ELSE_STMT]->ToObject());
+    visitor->VisitIf(node);
+}
+
+void TreeHost::AcceptWhile(const Object& node){
+    Accept(*node[AST_TAG_CONDITION]->ToObject());
+    Accept(*node[AST_TAG_STMT]->ToObject());
+    visitor->VisitWhile(node);
+}
+
+void TreeHost::AcceptFor(const Object& node){
+    Accept(*node[AST_TAG_FOR_PRE_ELIST]->ToObject());
+    Accept(*node[AST_TAG_CONDITION]->ToObject());
+    Accept(*node[AST_TAG_FOR_POST_ELIST]->ToObject());
+    Accept(*node[AST_TAG_STMT]->ToObject());
+    visitor->VisitFor(node);
+}
+
+void TreeHost::AcceptReturn(const Object& node){
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitReturn(node);
+}
+
+void TreeHost::AcceptBreak(const Object& node){
+    visitor->VisitBreak(node);
+}
+
+void TreeHost::AcceptContinue(const Object& node){
+    visitor->VisitContinue(node);
 }
