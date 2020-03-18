@@ -30,8 +30,8 @@ public: // move it later, stupid vs code intellisense
     void AcceptDiv(const Object& node);
     void AcceptModulo(const Object& node);
     void AcceptGreater(const Object& node);
-    void AcceptLess(const Object& node);
     void AcceptGreaterEqual(const Object& node);
+    void AcceptLess(const Object& node);
     void AcceptLessEqual(const Object& node);
     void AcceptEqual(const Object& node);
     void AcceptNotEqual(const Object& node);
