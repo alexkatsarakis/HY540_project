@@ -1,6 +1,2 @@
-
-objects/
-
-main
-
-source/MarmotesLexer.cpp
+obj/*
+*.out
