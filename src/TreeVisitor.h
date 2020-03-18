@@ -63,19 +63,14 @@ public:
     virtual void VisitCallSuffix (const Object& node) = 0;
     virtual void VisitNormalCall (const Object& node) = 0;
     virtual void VisitMethodCall (const Object& node) = 0;
-    virtual void VisitMethodCallId (const Object& node) = 0;
     virtual void VisitExpressionList (const Object& node) = 0;
     virtual void VisitCommaExpressions (const Object& node) = 0;
-    virtual void VisitCommaExpression (const Object& node) = 0;
     virtual void VisitObjectDef (const Object& node) = 0;
-    virtual void VisitObjectDefVal (const Object& node) = 0;
     virtual void VisitIndexed (const Object& node) = 0;
     virtual void VisitCommaIndexedElems (const Object& node) = 0;
-    virtual void VisitCommaIndexedElem (const Object& node) = 0;
     virtual void VisitIndexedElem (const Object& node) = 0;
     virtual void VisitIdList (const Object& node) = 0;
     virtual void VisitCommaIds (const Object& node) = 0;
-    virtual void VisitCommaId (const Object& node) = 0;
    
 	virtual TreeVisitor* Clone (void) const = 0;
 	TreeVisitor(void);
