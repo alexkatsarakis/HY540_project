@@ -1,8 +1,9 @@
 %{
+    #include "Object.h"
     #include "Token.h"
     #include "SyntaxPrinter.h"
     #include "GrammarRules.h"
-    #include "Object.h"
+    #include "SemanticActions.h"
 
     #include <iostream>
     #include <vector>
@@ -26,13 +27,17 @@
     /* Simple flag to indicate if a token list should be created or not */
     bool maintainTokenList = true;
 
+    unsigned namelessFunctions;
+
     SyntaxPrinter rulesPrinter("alpha_GrammarRules.txt");
+
+    class Object;
 %}
 
 %union {
-    Object * objectVal;
     char * strVal;
     double doubleVal;
+    Object * objectVal;
 }
 
 %type <objectVal> program;
@@ -138,149 +143,149 @@
 
 %%
 
-program : stmts { }
+program : stmts { $$ = ParseProgram($1); }
         ;
 
-stmts : stmts stmt  { PRINT_STMTS; }
-      | /* Empty */ { PRINT_STMTS_E; }
+stmts : stmts stmt  { $$ = ParseStmts($1, $2); }
+      | /* Empty */ { $$ = ParseEmptyStmts(); }
       ;
 
-stmt : expr SEMICOLON { PRINT_STMT_EXP; }
-     | ifstmt { PRINT_STMT_IF; }
-     | whilestmt { PRINT_STMT_WH; }
-     | forstmt { PRINT_STMT_FOR; }
-     | returnstmt { PRINT_STMT_RET; }
-     | breakstmt { PRINT_STMT_BR; }
-     | continuestmt { PRINT_STMT_CON; }
-     | block { PRINT_STMT_BLO; }
-     | funcdef { PRINT_STMT_FUNC; }
-     | SEMICOLON { PRINT_STMT_SEMI; }
+stmt : expr SEMICOLON  { $$ = ParseStmt($1); }
+     | ifstmt          { $$ = ParseStmt($1); }
+     | whilestmt       { $$ = ParseStmt($1); }
+     | forstmt         { $$ = ParseStmt($1); }
+     | returnstmt      { $$ = ParseStmt($1); }
+     | breakstmt       { $$ = ParseStmt($1); }
+     | continuestmt    { $$ = ParseStmt($1); }
+     | block           { $$ = ParseStmt($1); }
+     | funcdef         { $$ = ParseStmt($1); }
+     | SEMICOLON       { $$ = ParseSemicolon(); }
      | error SEMICOLON { yyerrok; yyclearin; }
      ;
 
-expr : lvalue ASSIGN expr { PRINT_EXPR_ASS; }
-     | expr PLUS expr { PRINT_EXPR_PL; }
-     | expr MINUS expr { PRINT_EXPR_MIN; }
-     | expr MUL expr { PRINT_EXPR_MUL; }
-     | expr DIV expr { PRINT_EXPR_DIV; }
-     | expr MODULO expr { PRINT_EXPR_MOD; }
-     | expr GREATER expr { PRINT_EXPR_GR; }
-     | expr LESS expr { PRINT_EXPR_LE; }
-     | expr GREATER_EQUAL expr { PRINT_EXPR_GR_E; }
-     | expr LESS_EQUAL expr { PRINT_EXPR_LE_E; }
-     | expr EQUAL expr { PRINT_EXPR_EQ; }
-     | expr NOT_EQUAL expr { PRINT_EXPR_NEQ; }
-     | expr AND expr { PRINT_EXPR_AND; }
-     | expr OR expr { PRINT_EXPR_OR; }
-     | term { PRINT_EXPR_TERM; }
+expr : lvalue ASSIGN expr      { $$ = ParseExpr(ParseAssign($1, $3)); }
+     | expr PLUS expr          { $$ = ParseExpr(ParsePlus($1, $3)); }
+     | expr MINUS expr         { $$ = ParseExpr(ParseMinus($1, $3)); }
+     | expr MUL expr           { $$ = ParseExpr(ParseMul($1, $3)); }
+     | expr DIV expr           { $$ = ParseExpr(ParseDiv($1, $3)); }
+     | expr MODULO expr        { $$ = ParseExpr(ParseModulo($1, $3)); }
+     | expr GREATER expr       { $$ = ParseExpr(ParseGreater($1, $3)); }
+     | expr LESS expr          { $$ = ParseExpr(ParseLess($1, $3)); }
+     | expr GREATER_EQUAL expr { $$ = ParseExpr(ParseGreaterEqual($1, $3)); }
+     | expr LESS_EQUAL expr    { $$ = ParseExpr(ParseLessEqual($1, $3)); }
+     | expr EQUAL expr         { $$ = ParseExpr(ParseEqual($1, $3)); }
+     | expr NOT_EQUAL expr     { $$ = ParseExpr(ParseNotEqual($1, $3)); }
+     | expr AND expr           { $$ = ParseExpr(ParseAnd($1, $3)); }
+     | expr OR expr            { $$ = ParseExpr(ParseOr($1, $3)); }
+     | term                    { $$ = ParseExpr($1); }
      ;
 
-term : LEFT_PAR expr RIGHT_PAR { PRINT_TERM_PAR; }
-     | MINUS expr %prec UMINUS { PRINT_TERM_UM; }
-     | NOT expr { PRINT_TERM_NOT; }
-     | PLUS_PLUS lvalue { PRINT_TERM_P_L; }
-     | lvalue PLUS_PLUS { PRINT_TERM_L_P; }
-     | MINUS_MINUS lvalue { PRINT_TERM_M_L; }
-     | lvalue MINUS_MINUS { PRINT_TERM_L_M; }
-     | primary { PRINT_TERM_PRIM; }
+term : LEFT_PAR expr RIGHT_PAR { $$ = ParseTerm($2); }
+     | MINUS expr %prec UMINUS { $$ = ParseTerm(ParseUminus($2)); }
+     | NOT expr                { $$ = ParseTerm(ParseNot($2)); }
+     | PLUS_PLUS lvalue        { $$ = ParseTerm(ParsePlusPlusLvalue($2)); }
+     | lvalue PLUS_PLUS        { $$ = ParseTerm(ParseLvaluePlusPlus($1)); }
+     | MINUS_MINUS lvalue      { $$ = ParseTerm(ParseMinusMinusLvalue($2)); }
+     | lvalue MINUS_MINUS      { $$ = ParseTerm(ParseLvalueMinusMinus($1)); }
+     | primary                 { $$ = ParseTerm($1); }
      ;
 
-primary : lvalue { PRINT_PRIMARY_LVAL; }
-        | call { PRINT_PRIMARY_CALL; }
-        | objectdef { PRINT_PRIMARY_OBJ; }
-        | LEFT_PAR funcdef RIGHT_PAR { PRINT_PRIMARY_FUNC; }
-        | const { PRINT_PRIMARY_CON; }
+primary : lvalue                     { $$ = ParsePrimary($1); }
+        | call                       { $$ = ParsePrimary($1); }
+        | objectdef                  { $$ = ParsePrimary($1); }
+        | LEFT_PAR funcdef RIGHT_PAR { $$ = ParsePrimary($2); }
+        | const                      { $$ = ParsePrimary($1); }
         ;
 
-lvalue : ID { PRINT_LVALUE_ID; }
-       | LOCAL ID { PRINT_LVALUE_LID; }
-       | DOUBLE_COLON ID { PRINT_LVALUE_GID; }
-       | member { PRINT_LVALUE_MEM; }
+lvalue : ID              { $$ = ParseLvalue(ParseSimpleID($1)); }
+       | LOCAL ID        { $$ = ParseLvalue(ParseLocalID($2)); }
+       | DOUBLE_COLON ID { $$ = ParseLvalue(ParseDoubleColonID($2)); }
+       | member          { $$ = ParseLvalue($1); }
        ;
 
-member : lvalue DOT ID { PRINT_MEMBER_LID; }
-       | lvalue LEFT_BRACKET expr RIGHT_BRACKET { PRINT_MEMBER_LEXPR; }
-       | call DOT ID { PRINT_MEMBER_CID; }
-       | call LEFT_BRACKET expr RIGHT_BRACKET { PRINT_MEMBER_CEXPR; }
+member : lvalue DOT ID                          { $$ = ParseMember(ParseMemberDot($1, ParseSimpleID($3))); }
+       | lvalue LEFT_BRACKET expr RIGHT_BRACKET { $$ = ParseMember(ParseMemberBracket($1, $3)); }
+       | call DOT ID                            { $$ = ParseMember(ParseMemberDot($1, ParseSimpleID($3)));; }
+       | call LEFT_BRACKET expr RIGHT_BRACKET   { $$ = ParseMember(ParseMemberBracket($1, $3));; }
        ;
 
-call : call LEFT_PAR elist RIGHT_PAR { PRINT_CALL; }
-     | lvalue callsuffix { PRINT_CALL_LV; }
-     | LEFT_PAR funcdef RIGHT_PAR LEFT_PAR elist RIGHT_PAR { PRINT_CALL_FUN; }
+call : call LEFT_PAR elist RIGHT_PAR                       { $$ = ParseCallCall($1, $3); }
+     | lvalue callsuffix                                   { $$ = ParseLvalueCall($1, $2); }
+     | LEFT_PAR funcdef RIGHT_PAR LEFT_PAR elist RIGHT_PAR { $$ = ParseFuncdefCall($2, $5); }
      ;
 
-callsuffix : normcall { PRINT_CALLS_N; }
-           | methodcall { PRINT_CALLS_M; }
+callsuffix : normcall   { $$ = ParseCallSuffix($1); }
+           | methodcall { $$ = ParseCallSuffix($1); }
            ;
 
-normcall : LEFT_PAR elist RIGHT_PAR { PRINT_NORMCALL; }
-	     ;
+normcall : LEFT_PAR elist RIGHT_PAR { $$ = ParseNormCall($2); }
+         ;
 
-methodcall : DOUBLE_DOT ID LEFT_PAR elist RIGHT_PAR { PRINT_METHODCALL; }
+methodcall : DOUBLE_DOT ID LEFT_PAR elist RIGHT_PAR { $$ = ParseMethodCall(ParseSimpleID($2), $4); }
            ;
 
-elist : expr comma_exprs { PRINT_ELIST; }
-      | /* Empty */      { PRINT_ELIST_E; }
+elist : expr comma_exprs { $$ = ParseElist($1, $2); }
+      | /* Empty */      { $$ = ParseEmptyElist(); }
       ;
 
-comma_exprs : comma_exprs COMMA expr { PRINT_COM_EXPS; }
-            | /* Empty */            { PRINT_COM_EXPS_E; }
+comma_exprs : comma_exprs COMMA expr { $$ = ParseCommaExprs($1, $3); }
+            | /* Empty */            { $$ = ParseEmptyElist(); }
             ;
 
-objectdef : LEFT_BRACKET elist RIGHT_BRACKET { PRINT_OBJDEF; }
-          | LEFT_BRACKET indexed RIGHT_BRACKET { PRINT_OBJDEF; }
+objectdef : LEFT_BRACKET elist RIGHT_BRACKET   { $$ = ParseObjectDef($2); }
+          | LEFT_BRACKET indexed RIGHT_BRACKET { $$ = ParseObjectDef($2); }
           ;
 
-indexed : indexedelem comma_indexedelems { PRINT_INDEXED; }
+indexed : indexedelem comma_indexedelems { $$ = ParseIndexed($1, $2); }
         ;
 
-comma_indexedelems : comma_indexedelems COMMA indexedelem { PRINT_C_IND_ES; }
-                   | /* Empty */                          { PRINT_C_IND_ES_E; }
+comma_indexedelems : comma_indexedelems COMMA indexedelem { $$ = ParseCommaIndexed($1, $3); }
+                   | /* Empty */                          { $$ = ParseEmptyIndexed(); }
                    ;
 
-indexedelem : LEFT_BRACE expr COLON expr RIGHT_BRACE { PRINT_IND_E; }
+indexedelem : LEFT_BRACE expr COLON expr RIGHT_BRACE { $$ = ParseIndexedElem($2, $4); }
             ;
 
-block : LEFT_BRACE { } stmts RIGHT_BRACE { PRINT_BLOCK; }
+block : LEFT_BRACE stmts RIGHT_BRACE { $$ = ParseBlock($2); }
       ;
 
-funcdef : FUNCTION ID LEFT_PAR idlist RIGHT_PAR block { PRINT_FUNCDEF; }
-        | FUNCTION LEFT_PAR idlist RIGHT_PAR block { PRINT_FUNCID_E; }
+funcdef : FUNCTION ID LEFT_PAR idlist RIGHT_PAR block { $$ = ParseFuncDef(ParseSimpleID($2), $4, $6); }
+        | FUNCTION LEFT_PAR idlist RIGHT_PAR block    { $$ = ParseFuncDef(ParseSimpleID(std::string("$" + std::to_string(namelessFunctions++)).c_str()), $3, $5); }
         ;
 
-const : NUMBER { PRINT_CON_NU; }
-      | STRING { PRINT_CON_S; }
-      | NIL { PRINT_CON_NI; }
-      | TRUE { PRINT_CON_T; }
-      | FALSE { PRINT_CON_F; }
+const : NUMBER { $$ = ParseConst(ParseNumber($1)); }
+      | STRING { $$ = ParseConst(ParseString($1)); }
+      | NIL    { $$ = ParseConst(ParseNill()); }
+      | TRUE   { $$ = ParseConst(ParseTrue()); }
+      | FALSE  { $$ = ParseConst(ParseFalse()); }
       ;
 
-idlist : ID comma_ids { PRINT_IDLIST; }
-       | /* Empty */  { PRINT_IDLIST_E; }
+idlist : ID comma_ids { $$ = ParseIdist(ParseSimpleID($1), $2); }
+       | /* Empty */  { $$ = ParseEmptyIdlist(); }
        ;
 
-comma_ids : comma_ids COMMA ID { PRINT_C_IDS; }
-          | /* Empty */        { PRINT_C_IDS_E; }
+comma_ids : comma_ids COMMA ID { $$ = ParseCommaIds($1, ParseSimpleID($3)); }
+          | /* Empty */        { $$ = ParseEmptyIdlist(); }
           ;
 
-ifstmt : IF LEFT_PAR expr RIGHT_PAR stmt %prec NO_ELSE { PRINT_IF; }
-       | IF LEFT_PAR expr RIGHT_PAR stmt ELSE stmt { PRINT_IF_ELSE; }
+ifstmt : IF LEFT_PAR expr RIGHT_PAR stmt %prec NO_ELSE { $$ = ParseIfStmt($3, $5); }
+       | IF LEFT_PAR expr RIGHT_PAR stmt ELSE stmt     { $$ = ParseIfStmt($3, $5, $7); }
        ;
 
-whilestmt : WHILE LEFT_PAR expr RIGHT_PAR stmt { PRINT_WHILE; }
+whilestmt : WHILE LEFT_PAR expr RIGHT_PAR stmt { $$ = ParseWhileStmt($3, $5); }
           ;
 
-forstmt : FOR LEFT_PAR elist SEMICOLON expr SEMICOLON elist RIGHT_PAR stmt { PRINT_FOR; }
+forstmt : FOR LEFT_PAR elist SEMICOLON expr SEMICOLON elist RIGHT_PAR stmt { $$ = ParseForStmt($3, $5, $7, $9); }
         ;
 
-returnstmt : RETURN expr SEMICOLON { PRINT_RET_S; }
-           | RETURN /* Empty */ SEMICOLON { PRINT_RET_V_E; }
+returnstmt : RETURN expr SEMICOLON        { $$ = ParseReturnStmt($2); }
+           | RETURN /* Empty */ SEMICOLON { $$ = ParseReturnStmt(); }
            ;
 
-breakstmt : BREAK SEMICOLON { ; }
+breakstmt : BREAK SEMICOLON { $$ = ParseBreakStmt(); }
           ;
 
-continuestmt : CONTINUE SEMICOLON { ; }
+continuestmt : CONTINUE SEMICOLON { $$ = ParseContinueStmt(); }
              ;
 
 %%

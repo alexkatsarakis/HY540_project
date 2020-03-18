@@ -1,4 +1,5 @@
 %{
+#include "Object.h"  /* TODO: Why is this necessary? */
 #include "parser.h"
 #include "TokenTypes.h"
 #include "Token.h"
@@ -109,7 +110,11 @@ line_comment    \/\/[^\n]*
   return NUMBER;
 }
 
-{id} { HandleToken(C_IDENTIFIER, A_NA); return ID; }
+{id} {
+  HandleToken(C_IDENTIFIER, A_NA);
+  yylval.strVal = yytext;
+  return ID;
+}
 
 {string} {
   unsigned int i, pos;
