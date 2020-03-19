@@ -207,8 +207,8 @@ primary : lvalue                     { $$ = ParsePrimary($1); }
         ;
 
 lvalue : ID              { $$ = ParseLvalue(ParseSimpleID($1)); }
-       | LOCAL ID        { $$ = ParseLvalue(ParseLocalID($2)); }
-       | DOUBLE_COLON ID { $$ = ParseLvalue(ParseDoubleColonID($2)); }
+       | LOCAL ID        { $$ = ParseLvalue(ParseLocalID($2)); } //Parse Simple Id
+       | DOUBLE_COLON ID { $$ = ParseLvalue(ParseDoubleColonID($2)); } //Parse Simple Id
        | member          { $$ = ParseLvalue($1); }
        ;
 
