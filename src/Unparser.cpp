@@ -8,8 +8,32 @@
 using namespace std;
 
 void Unparser::VisitProgram(const Object &node) {}
-void Unparser::VisitStatements(const Object &node) {}
-void Unparser::VisitStatement(const Object &node) {}
+void Unparser::VisitStatements(const Object &node) {
+	ostringstream code;
+	string stmt = stack.top();
+	stack.pop();
+	string stmts = stack.top();
+	stack.pop();
+	code << stmts << stmt;
+	stack.push(code.str());
+}
+void Unparser::VisitStatement(const Object &node) {
+	ostringstream code;
+	if (node.ElementExists(AST_TAG_CHILD) == false) {
+		//don't pop stack?
+		code << ";";
+		stack.push(code.str());
+		return;
+	}
+	//else has child
+	auto child = *(node[AST_TAG_CHILD]->ToObject());
+	if (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR) {
+		string expr = stack.top();
+		stack.pop();
+		code << expr << ";";
+		stack.push(code.str());
+	}
+}
 void Unparser::VisitExpression(const Object &node) {}
 void Unparser::VisitAssign(const Object &node) {
 	ostringstream code;
@@ -180,7 +204,16 @@ void Unparser::VisitMinusMinusAfter(const Object &node) {
 	code << lvalue << "--";
 	stack.push(code.str());
 }
-void Unparser::VisitPrimary(const Object &node) {}
+void Unparser::VisitPrimary(const Object &node) {
+	auto child = *(node[AST_TAG_CHILD]->ToObject());
+	if (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FUNCTION_DEF) {
+		ostringstream code;
+		string funcdef = stack.top();
+		stack.pop();
+		code << "(" << funcdef << ")";
+		stack.push(code.str());
+	}
+}
 void Unparser::VisitLValue(const Object &node) {}
 void Unparser::VisitId(const Object &node) {
 	ostringstream code;
