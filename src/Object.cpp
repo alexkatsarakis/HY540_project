@@ -68,7 +68,7 @@ unsigned Object::GetNumericSize(void) const {
 
 unsigned Object::GetStringSize(void) const {
     assert(IsValid());
-    return numMap.size();
+    return strMap.size();
 }
 
 /****** Modifiers ******/

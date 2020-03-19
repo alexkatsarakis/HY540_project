@@ -97,3 +97,6 @@ distclean:
 	@echo 'Files cleaned'
 
 clear: clean distclean
+
+viz: run
+	xdot alpha_AST.dot

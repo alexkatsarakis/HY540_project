@@ -4,17 +4,32 @@
 #include "TreeVisitor.h"
 
 #include <fstream>
+#include <sstream>
 #include <stack>
 
 class VisualizeVisitor : public TreeVisitor {
 
 private:
     unsigned lastNode;
-    std::ofstream outputFile;
-    std::stack<unsigned> statements;
-    std::stack<unsigned> expressions;
-    std::stack<unsigned> ids;
-    std::stack<unsigned> idlists;
+    std::stringstream output;
+    std::string outputFile;
+    std::stack<unsigned> orphans;
+
+    void CreateNewNode(const std::string & str);
+
+    void LinkToPreviousNode(void);
+
+    void LinkToOrphan();
+
+    void LinkToNode(unsigned node);
+
+    void SaveOrphan(void);
+
+    void VisitEmptyStatement(const Object& node);
+
+    void VisitNormalStatemens(const Object& node);
+
+    void DumpToFile(void);
 
 public:
     virtual void VisitProgram (const Object& node);
