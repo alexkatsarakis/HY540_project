@@ -4,10 +4,14 @@
     #include "SyntaxPrinter.h"
     #include "GrammarRules.h"
     #include "SemanticActions.h"
+    #include "TreeHost.h"
+    #include "VisualizeVisitor.h"
 
     #include <iostream>
     #include <vector>
     #include <algorithm>
+    #include <string>
+    #include <cstring>
 
     /* Parser detected syntax or parse errors */
     int yyerror (char * yaccProvidedMessage);
@@ -21,6 +25,9 @@
     /* Holds the text of the current token. It may be modified but not lengthened */
     extern char * yytext;
 
+    /* The file from which FLEX reads */
+    extern FILE * yyin;
+
     /* A list of tokens recognized by YACC */
     std::vector<Token> tokenList;
 
@@ -31,7 +38,7 @@
 
     SyntaxPrinter rulesPrinter("alpha_GrammarRules.txt");
 
-    class Object;
+    TreeHost * host = nullptr;
 %}
 
 %union {
@@ -143,7 +150,9 @@
 
 %%
 
-program : stmts { $$ = ParseProgram($1); }
+program : stmts { $$ = ParseProgram($1);
+                  host->Accept(*$$);
+                }
         ;
 
 stmts : stmts stmt  { $$ = ParseStmts($1, $2); }
@@ -250,7 +259,7 @@ block : LEFT_BRACE stmts RIGHT_BRACE { $$ = ParseBlock($2); }
       ;
 
 funcdef : FUNCTION ID LEFT_PAR idlist RIGHT_PAR block { $$ = ParseFuncDef(ParseSimpleID($2), $4, $6); }
-        | FUNCTION LEFT_PAR idlist RIGHT_PAR block    { $$ = ParseFuncDef(ParseSimpleID(std::string("$" + std::to_string(namelessFunctions++)).c_str()), $3, $5); }
+        | FUNCTION LEFT_PAR idlist RIGHT_PAR block    { $$ = ParseFuncDef(ParseSimpleID(strdup(std::string("$" + std::to_string(namelessFunctions++)).c_str())), $3, $5); }
         ;
 
 const : NUMBER { $$ = ParseConst(ParseNumber($1)); }
@@ -290,9 +299,33 @@ continuestmt : CONTINUE SEMICOLON { $$ = ParseContinueStmt(); }
 
 %%
 
-int yyerror (char * yaccProvidedMessage) { }
+int yyerror (char * yaccProvidedMessage) {
+    std::cerr << "Invalid syntax befor " << yytext << std::endl;
+    exit(EXIT_FAILURE);
+}
+
+void Usage(const std::string & str) {
+    std::cout << "Usage: " << (str.empty() ? "interpreter.out" : str) << "[input_file]" << std::endl
+              << "Options:" << std::endl
+              << "    input_file:  The file containing the source code to be compiled" << std::endl;
+}
 
 int main(int argc, char ** argv) {
+
+    if (argc > 2) {
+        Usage(argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    if (argc < 2) yyin = stdin;
+    else if (!(yyin = fopen(argv[1], "r"))) {
+        std::cerr << "Coult not read input file \"" << argv[1] << "\"" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    host = new TreeHost();
+    host->visitor = new VisualizeVisitor();
+    host->InstallAllAcceptors();
 
     /* The Bison parser */
     yyparse();

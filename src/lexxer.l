@@ -8,6 +8,8 @@
 #include <vector>
 #include <cstring>
 
+#include <iostream>
+
 /* Counter for the number of opened block comments (at any time) */
 int comment_count = 0;
 
@@ -112,7 +114,7 @@ line_comment    \/\/[^\n]*
 
 {id} {
   HandleToken(C_IDENTIFIER, A_NA);
-  yylval.strVal = yytext;
+  yylval.strVal = strdup(yytext);
   return ID;
 }
 

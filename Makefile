@@ -51,7 +51,7 @@ all: $(EXECUTABLE)
 	@echo 'Build successful'
 
 run: $(EXECUTABLE)
-	./$(EXECUTABLE) < $(SAMPLE_TEST)
+	./$(EXECUTABLE) $(SAMPLE_TEST)
 
 # Create object files of source code
 $(ODIR)/%.o: $(SRCDIR)/%.cpp
@@ -97,3 +97,6 @@ distclean:
 	@echo 'Files cleaned'
 
 clear: clean distclean
+
+viz: run
+	xdot alpha_AST.dot
