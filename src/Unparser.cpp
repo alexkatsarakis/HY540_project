@@ -32,19 +32,49 @@ void Unparser::VisitPlusPlusBefore(const Object &node) {}
 void Unparser::VisitPlusPlusAfter(const Object &node) {}
 void Unparser::VisitMinusMinusBefore(const Object &node) {}
 void Unparser::VisitMinusMinusAfter(const Object &node) {}
-void Unparser::VisitPrimary(const Object &node) {}
+void Unparser::VisitPrimary(const Object &node) {
+}
 void Unparser::VisitLValue(const Object &node) {}
-void Unparser::VisitId(const Object &node) {}
-void Unparser::VisitLocal(const Object &node) {}
-void Unparser::VisitDoubleColon(const Object &node) {}
-void Unparser::VisitMember(const Object &node) {}
-void Unparser::VisitDot(const Object &node) {}
-void Unparser::VisitBracket(const Object &node) {}
-void Unparser::VisitCall(const Object &node) {
+void Unparser::VisitId(const Object &node) {
 	ostringstream code;
-	string elist = stack.top();
+	string id = node[AST_TAG_ID]->ToString();
+	code << id;
+	stack.push(code.str());
+}
+void Unparser::VisitLocal(const Object &node) {
+	ostringstream code;
+	string id = node[AST_TAG_ID]->ToString();
+	code << "local " << id;
+	stack.push(code.str());
+}
+void Unparser::VisitDoubleColon(const Object &node) {
+	ostringstream code;
+	string id = node[AST_TAG_ID]->ToString();
+	code << "::" << id;
+	stack.push(code.str());
+}
+void Unparser::VisitMember(const Object &node) {}
+void Unparser::VisitDot(const Object &node) {
+	ostringstream code;
+	string id = stack.top();
 	stack.pop();
-	code << "(" << elist << ")";
+	string dot = stack.top();
+	stack.pop();
+	code << dot << id;
+	stack.push(code.str());
+}
+void Unparser::VisitBracket(const Object &node) {
+	ostringstream code;
+	string expr = stack.top();
+	stack.pop();
+	code << "{" << expr << "}";
+	stack.push(code.str());
+}
+void Unparser::VisitCall(const Object &node) {	//can't distinguish rvalues, resolve later
+	ostringstream code;
+	/* string elist = stack.top();
+	stack.pop();
+	code << "(" << elist << ")"; */
 	stack.push(code.str());
 }
 void Unparser::VisitCallSuffix(const Object &node) {}
@@ -57,9 +87,9 @@ void Unparser::VisitNormalCall(const Object &node) {
 }
 void Unparser::VisitMethodCall(const Object &node) {
 	ostringstream code;
-	string id = stack.top();
-	stack.pop();
 	string elist = stack.top();
+	stack.pop();
+	string id = stack.top();
 	stack.pop();
 	code << ".." << id << "(" << elist << ")";
 	stack.push(code.str());
