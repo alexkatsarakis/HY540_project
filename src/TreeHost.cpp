@@ -349,7 +349,7 @@ void TreeHost::AcceptMember(const Object& node){
 }
 
 void TreeHost::AcceptDot(const Object& node){
-    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NOT);
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_DOT);
     assert(node.ElementExists(AST_TAG_LVALUE));
     assert(node.ElementExists(AST_TAG_ID));
 
@@ -550,9 +550,9 @@ void TreeHost::AcceptFor(const Object& node){
 
 void TreeHost::AcceptReturn(const Object& node){
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_RETURN);
-    assert(node.ElementExists(AST_TAG_CHILD));
-
-    Accept(*node[AST_TAG_CHILD]->ToObject());
+    
+    if (node.ElementExists(AST_TAG_CHILD))
+        Accept(*node[AST_TAG_CHILD]->ToObject());
     visitor->VisitReturn(node);
 }
 
