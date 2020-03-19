@@ -50,7 +50,7 @@ void Unparser::VisitPlus(const Object &node) {
 	stack.pop();
 	string expr2 = stack.top();
 	stack.pop();
-	code << expr1 << "+" << expr2;
+	code << expr2 << "+" << expr1;
 	stack.push(code.str());
 }
 void Unparser::VisitMinus(const Object &node) {
@@ -59,7 +59,7 @@ void Unparser::VisitMinus(const Object &node) {
 	stack.pop();
 	string expr2 = stack.top();
 	stack.pop();
-	code << expr1 << "-" << expr2;
+	code << expr2 << "-" << expr1;
 	stack.push(code.str());
 }
 void Unparser::VisitMul(const Object &node) {
@@ -68,7 +68,7 @@ void Unparser::VisitMul(const Object &node) {
 	stack.pop();
 	string expr2 = stack.top();
 	stack.pop();
-	code << expr1 << "*" << expr2;
+	code << expr2 << "*" << expr1;
 	stack.push(code.str());
 }
 void Unparser::VisitDiv(const Object &node) {
@@ -77,7 +77,7 @@ void Unparser::VisitDiv(const Object &node) {
 	stack.pop();
 	string expr2 = stack.top();
 	stack.pop();
-	code << expr1 << "/" << expr2;
+	code << expr2 << "/" << expr1;
 	stack.push(code.str());
 }
 void Unparser::VisitModulo(const Object &node) {
@@ -86,7 +86,7 @@ void Unparser::VisitModulo(const Object &node) {
 	stack.pop();
 	string expr2 = stack.top();
 	stack.pop();
-	code << expr1 << "%" << expr2;
+	code << expr2 << "%" << expr1;
 	stack.push(code.str());
 }
 void Unparser::VisitGreater(const Object &node) {
@@ -95,7 +95,7 @@ void Unparser::VisitGreater(const Object &node) {
 	stack.pop();
 	string expr2 = stack.top();
 	stack.pop();
-	code << expr1 << ">" << expr2;
+	code << expr2 << ">" << expr1;
 	stack.push(code.str());
 }
 void Unparser::VisitLess(const Object &node) {
@@ -104,7 +104,7 @@ void Unparser::VisitLess(const Object &node) {
 	stack.pop();
 	string expr2 = stack.top();
 	stack.pop();
-	code << expr1 << "<" << expr2;
+	code << expr2 << "<" << expr1;
 	stack.push(code.str());
 }
 void Unparser::VisitGreaterEqual(const Object &node) {
@@ -113,7 +113,7 @@ void Unparser::VisitGreaterEqual(const Object &node) {
 	stack.pop();
 	string expr2 = stack.top();
 	stack.pop();
-	code << expr1 << ">=" << expr2;
+	code << expr2 << ">=" << expr1;
 	stack.push(code.str());
 }
 void Unparser::VisitLessEqual(const Object &node) {
@@ -122,7 +122,7 @@ void Unparser::VisitLessEqual(const Object &node) {
 	stack.pop();
 	string expr2 = stack.top();
 	stack.pop();
-	code << expr1 << "<=" << expr2;
+	code << expr2 << "<=" << expr1;
 	stack.push(code.str());
 }
 void Unparser::VisitEqual(const Object &node) {
@@ -131,7 +131,7 @@ void Unparser::VisitEqual(const Object &node) {
 	stack.pop();
 	string expr2 = stack.top();
 	stack.pop();
-	code << expr1 << "==" << expr2;
+	code << expr2 << "==" << expr1;
 	stack.push(code.str());
 }
 void Unparser::VisitNotEqual(const Object &node) {
@@ -140,7 +140,7 @@ void Unparser::VisitNotEqual(const Object &node) {
 	stack.pop();
 	string expr2 = stack.top();
 	stack.pop();
-	code << expr1 << "!=" << expr2;
+	code << expr2 << "!=" << expr1;
 	stack.push(code.str());
 }
 void Unparser::VisitAnd(const Object &node) {
@@ -149,7 +149,7 @@ void Unparser::VisitAnd(const Object &node) {
 	stack.pop();
 	string expr2 = stack.top();
 	stack.pop();
-	code << expr1 << "&&" << expr2;
+	code << expr2 << "&&" << expr1;
 	stack.push(code.str());
 }
 void Unparser::VisitOr(const Object &node) {
@@ -158,7 +158,7 @@ void Unparser::VisitOr(const Object &node) {
 	stack.pop();
 	string expr2 = stack.top();
 	stack.pop();
-	code << expr1 << "||" << expr2;
+	code << expr2 << "||" << expr1;
 	stack.push(code.str());
 }
 void Unparser::VisitTerm(const Object &node) {}
