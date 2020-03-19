@@ -18,5 +18,5 @@ SpaceAfterCStyleCast: false
 SpaceAfterTemplateKeyword: false
 SpacesBeforeTrailingComments: 4
 TabWidth: 4
-UseTab: Always
+UseTab: Never
 ...
