@@ -25,8 +25,8 @@ void TreeHost::InstallAllAcceptors (void){
     InstallAcceptor(AST_TAG_DIV, LAMBDA(AcceptDiv));
     InstallAcceptor(AST_TAG_MODULO, LAMBDA(AcceptModulo));
     InstallAcceptor(AST_TAG_GREATER, LAMBDA(AcceptGreater));
-    InstallAcceptor(AST_TAG_LESS, LAMBDA(AcceptGreaterEqual));
-    InstallAcceptor(AST_TAG_GEQUAL, LAMBDA(AcceptLess));
+    InstallAcceptor(AST_TAG_LESS, LAMBDA(AcceptLess));
+    InstallAcceptor(AST_TAG_GEQUAL, LAMBDA(AcceptGreaterEqual));
     InstallAcceptor(AST_TAG_LEQUAL, LAMBDA(AcceptLessEqual));
     InstallAcceptor(AST_TAG_EQUAL, LAMBDA(AcceptEqual));
     InstallAcceptor(AST_TAG_NEQUAL, LAMBDA(AcceptNotEqual));
@@ -328,7 +328,6 @@ void TreeHost::AcceptLocal(const Object& node){
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_LOCAL_ID);
     assert(node.ElementExists(AST_TAG_ID));
 
-    Accept(*node[AST_TAG_ID]->ToObject());
     visitor->VisitLocal(node);
 }
 
@@ -336,7 +335,6 @@ void TreeHost::AcceptDoubleColon(const Object& node){
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_DOUBLECOLON_ID);
     assert(node.ElementExists(AST_TAG_ID));
 
-    Accept(*node[AST_TAG_ID]->ToObject());
     visitor->VisitDoubleColon(node);
 }
 
