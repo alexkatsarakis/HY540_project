@@ -1,0 +1,171 @@
+#include "Unparser.h"
+#include "Object.h"
+#include "TreeTags.h"
+
+#include <list>
+#include <sstream>
+
+using namespace std;
+
+void Unparser::VisitProgram(const Object &node) {}
+void Unparser::VisitStatements(const Object &node) {}
+void Unparser::VisitStatement(const Object &node) {}
+void Unparser::VisitExpression(const Object &node) {}
+void Unparser::VisitAssign(const Object &node) {}
+void Unparser::VisitPlus(const Object &node) {}
+void Unparser::VisitMinus(const Object &node) {}
+void Unparser::VisitMul(const Object &node) {}
+void Unparser::VisitDiv(const Object &node) {}
+void Unparser::VisitModulo(const Object &node) {}
+void Unparser::VisitGreater(const Object &node) {}
+void Unparser::VisitLess(const Object &node) {}
+void Unparser::VisitGreaterEqual(const Object &node) {}
+void Unparser::VisitLessEqual(const Object &node) {}
+void Unparser::VisitEqual(const Object &node) {}
+void Unparser::VisitNotEqual(const Object &node) {}
+void Unparser::VisitAnd(const Object &node) {}
+void Unparser::VisitOr(const Object &node) {}
+void Unparser::VisitTerm(const Object &node) {}
+void Unparser::VisitUnaryMinus(const Object &node) {}
+void Unparser::VisitNot(const Object &node) {}
+void Unparser::VisitPlusPlusBefore(const Object &node) {}
+void Unparser::VisitPlusPlusAfter(const Object &node) {}
+void Unparser::VisitMinusMinusBefore(const Object &node) {}
+void Unparser::VisitMinusMinusAfter(const Object &node) {}
+void Unparser::VisitPrimary(const Object &node) {}
+void Unparser::VisitLValue(const Object &node) {}
+void Unparser::VisitId(const Object &node) {}
+void Unparser::VisitLocal(const Object &node) {}
+void Unparser::VisitDoubleColon(const Object &node) {}
+void Unparser::VisitMember(const Object &node) {}
+void Unparser::VisitDot(const Object &node) {}
+void Unparser::VisitBracket(const Object &node) {}
+void Unparser::VisitCall(const Object &node) {
+	ostringstream code;
+	string elist = stack.top();
+	stack.pop();
+	code << "(" << elist << ")";
+	stack.push(code.str());
+}
+void Unparser::VisitCallSuffix(const Object &node) {}
+void Unparser::VisitNormalCall(const Object &node) {
+	ostringstream code;
+	string elist = stack.top();
+	stack.pop();
+	code << "(" << elist << ")";
+	stack.push(code.str());
+}
+void Unparser::VisitMethodCall(const Object &node) {
+	ostringstream code;
+	string id = stack.top();
+	stack.pop();
+	string elist = stack.top();
+	stack.pop();
+	code << ".." << id << "(" << elist << ")";
+	stack.push(code.str());
+}
+void Unparser::VisitExpressionList(const Object &node) {
+	ostringstream code;
+	list<string> exprElements;
+	for (unsigned i = 0; i < node.GetNumericSize(); ++i) {
+		string exprElem = stack.top();
+		stack.pop();
+		exprElements.push_front(exprElem);
+	}
+	for (const auto &elem : exprElements)
+		code << elem << ", ";
+	stack.push(code.str());
+}
+void Unparser::VisitObjectDef(const Object &node) {
+	ostringstream code;
+	string child = stack.top();
+	stack.pop();
+	code << "[" << child << "]";
+	stack.push(code.str());
+}
+void Unparser::VisitIndexed(const Object &node) {
+	ostringstream code;
+	list<string> indexedElements;
+	for (unsigned i = 0; i < node.GetNumericSize(); ++i) {
+		string indexedElem = stack.top();
+		stack.pop();
+		indexedElements.push_front(indexedElem);
+	}
+	for (const auto &elem : indexedElements)
+		code << elem << ", ";
+	stack.push(code.str());
+}
+void Unparser::VisitIndexedElem(const Object &node) {
+	ostringstream code;
+	string expr2 = stack.top();
+	stack.pop();
+	string expr1 = stack.top();
+	stack.pop();
+	code << "{" << expr1 << ":" << expr2 << "}";
+	stack.push(code.str());
+}
+void Unparser::VisitBlock(const Object &node) {
+	ostringstream code;
+	string stmt = stack.top();
+	stack.pop();
+	code << "{" << stmt << "}";
+	stack.push(code.str());
+}
+void Unparser::VisitFunctionDef(const Object &node) {
+	ostringstream code;
+	string stmt = stack.top();
+	stack.pop();
+	string formals = stack.top();
+	stack.pop();
+	string id = stack.top();
+	stack.pop();
+	code << "function " << id << "(" << formals << ")" << stmt;
+	stack.push(code.str());
+}
+void Unparser::VisitConst(const Object &node) {}
+void Unparser::VisitNumber(const Object &node) {
+	ostringstream code;
+	code << node[AST_TAG_VALUE]->ToNumber();
+	stack.push(code.str());
+}
+void Unparser::VisitString(const Object &node) {
+	ostringstream code;
+	code << node[AST_TAG_VALUE]->ToString();
+	stack.push(code.str());
+}
+void Unparser::VisitNill(const Object &node) {
+	stack.push("nil");
+}
+void Unparser::VisitTrue(const Object &node) {
+	stack.push("true");
+}
+void Unparser::VisitFalse(const Object &node) {
+	stack.push("false");
+}
+void Unparser::VisitIdList(const Object &node) {
+	ostringstream code;
+	for (int i = 0; i < node.GetTotal() - 1; i++) {
+		auto objId = *(node[i]->ToObject());
+		auto strId = objId[AST_TAG_VALUE]->ToString();
+		code << strId << ", ";
+	}
+	stack.push(code.str());
+}
+void Unparser::VisitIf(const Object &node) {
+	stack.push("if");
+}
+void Unparser::VisitWhile(const Object &node) {
+	stack.push("while");
+}
+void Unparser::VisitFor(const Object &node) {
+	stack.push("for");
+}
+void Unparser::VisitReturn(const Object &node) {
+	stack.push("return");
+}
+void Unparser::VisitBreak(const Object &node) {
+	stack.push("break");
+}
+void Unparser::VisitContinue(const Object &node) {
+	stack.push("continue");
+}
