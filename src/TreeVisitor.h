@@ -1,16 +1,16 @@
 #ifndef _TREE_VISITOR_H_
 #define _TREE_VISITOR_H_
 
-class Object;
+#include "Object.h"
 
 class TreeVisitor {
 public:
 
-    virtual void VisitProgram (const Object& node) = 0;    
+    virtual void VisitProgram (const Object& node) = 0;
     virtual void VisitStatements (const Object& node) = 0;
 	virtual void VisitStatement (const Object& node) = 0;
-	virtual void VisitExpression (const Object& node) = 0; 
-    virtual void VisitAssign (const Object& node) = 0; 
+	virtual void VisitExpression (const Object& node) = 0;
+    virtual void VisitAssign (const Object& node) = 0;
   	virtual void VisitPlus (const Object& node) = 0;
 	virtual void VisitMinus (const Object& node) = 0;
 	virtual void VisitMul (const Object& node) = 0;
@@ -47,7 +47,7 @@ public:
     virtual void VisitObjectDef (const Object& node) = 0;
     virtual void VisitIndexed (const Object& node) = 0;
     virtual void VisitIndexedElem (const Object& node) = 0;
-	virtual void VisitBlock (const Object& node) = 0; 
+	virtual void VisitBlock (const Object& node) = 0;
 	virtual void VisitFunctionDef (const Object& node) = 0;
     virtual void VisitConst (const Object& node) = 0;
     virtual void VisitNumber (const Object& node) = 0;
@@ -56,17 +56,17 @@ public:
     virtual void VisitTrue (const Object& node) = 0;
     virtual void VisitFalse (const Object& node) = 0;
     virtual void VisitIdList (const Object& node) = 0;
-	virtual void VisitIf (const Object& node) = 0; 
+	virtual void VisitIf (const Object& node) = 0;
 	virtual void VisitWhile (const Object& node) = 0;
-    virtual void VisitFor (const Object& node) = 0; 
+    virtual void VisitFor (const Object& node) = 0;
     virtual void VisitReturn (const Object& node) = 0;
     virtual void VisitBreak (const Object& node) = 0;
     virtual void VisitContinue (const Object& node) = 0;
 
-    
+
 	virtual TreeVisitor* Clone (void) const = 0;
-	TreeVisitor(void);
-	TreeVisitor (const TreeVisitor&)=default;
+	//TreeVisitor(void);
+	//TreeVisitor (const TreeVisitor&)=default;
 };
 
 #endif

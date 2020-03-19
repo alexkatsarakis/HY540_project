@@ -50,7 +50,9 @@ Object * ParseID(const char * type, const char * value) {
     node->Set(AST_TAG_TYPE_KEY, type);
     node->Set(AST_TAG_ID, Value(std::string(value)));
 
-    /* Note: Do not free value pointer! */
+    /* TODO: Values pointers should be freed. Change definitions to:
+     * (const char * type, char * value) */
+    free((char *) value);
 
     assert(node->IsValid());
     return node;
