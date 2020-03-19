@@ -321,7 +321,6 @@ void TreeHost::AcceptId(const Object& node){
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ID);
     assert(node.ElementExists(AST_TAG_ID));
 
-    Accept(*node[AST_TAG_ID]->ToObject());
     visitor->VisitId(node);
 }
 
@@ -474,7 +473,6 @@ void TreeHost::AcceptNumber(const Object& node){
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NUMBER);
     assert(node.ElementExists(AST_TAG_VALUE));
 
-    Accept(*node[AST_TAG_VALUE]->ToObject());
     visitor->VisitNumber(node);
 }
 
@@ -482,7 +480,6 @@ void TreeHost::AcceptString(const Object& node){
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_STRING);
     assert(node.ElementExists(AST_TAG_VALUE));
 
-    Accept(*node[AST_TAG_VALUE]->ToObject());
     visitor->VisitString(node);
 }
 
@@ -490,7 +487,6 @@ void TreeHost::AcceptNill(const Object& node){
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NILL);
     assert(node.ElementExists(AST_TAG_VALUE));
 
-    Accept(*node[AST_TAG_VALUE]->ToObject());
     visitor->VisitNill(node);
 }
 
@@ -498,7 +494,6 @@ void TreeHost::AcceptTrue(const Object& node){
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_TRUE);
     assert(node.ElementExists(AST_TAG_VALUE));
 
-    Accept(*node[AST_TAG_VALUE]->ToObject());
     visitor->VisitTrue(node);
 }
 
@@ -506,7 +501,6 @@ void TreeHost::AcceptFalse(const Object& node){
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FALSE);
     assert(node.ElementExists(AST_TAG_VALUE));
 
-    Accept(*node[AST_TAG_VALUE]->ToObject());
     visitor->VisitFalse(node);
 }
 
