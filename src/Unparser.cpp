@@ -11,29 +11,176 @@ void Unparser::VisitProgram(const Object &node) {}
 void Unparser::VisitStatements(const Object &node) {}
 void Unparser::VisitStatement(const Object &node) {}
 void Unparser::VisitExpression(const Object &node) {}
-void Unparser::VisitAssign(const Object &node) {}
-void Unparser::VisitPlus(const Object &node) {}
-void Unparser::VisitMinus(const Object &node) {}
-void Unparser::VisitMul(const Object &node) {}
-void Unparser::VisitDiv(const Object &node) {}
-void Unparser::VisitModulo(const Object &node) {}
-void Unparser::VisitGreater(const Object &node) {}
-void Unparser::VisitLess(const Object &node) {}
-void Unparser::VisitGreaterEqual(const Object &node) {}
-void Unparser::VisitLessEqual(const Object &node) {}
-void Unparser::VisitEqual(const Object &node) {}
-void Unparser::VisitNotEqual(const Object &node) {}
-void Unparser::VisitAnd(const Object &node) {}
-void Unparser::VisitOr(const Object &node) {}
-void Unparser::VisitTerm(const Object &node) {}
-void Unparser::VisitUnaryMinus(const Object &node) {}
-void Unparser::VisitNot(const Object &node) {}
-void Unparser::VisitPlusPlusBefore(const Object &node) {}
-void Unparser::VisitPlusPlusAfter(const Object &node) {}
-void Unparser::VisitMinusMinusBefore(const Object &node) {}
-void Unparser::VisitMinusMinusAfter(const Object &node) {}
-void Unparser::VisitPrimary(const Object &node) {
+void Unparser::VisitAssign(const Object &node) {
+	ostringstream code;
+	string expr = stack.top();
+	stack.pop();
+	string lvalue = stack.top();
+	stack.pop();
+	code << lvalue << "=" << expr;
+	stack.push(code.str());
 }
+void Unparser::VisitPlus(const Object &node) {
+	ostringstream code;
+	string expr1 = stack.top();
+	stack.pop();
+	string expr2 = stack.top();
+	stack.pop();
+	code << expr1 << "+" << expr2;
+	stack.push(code.str());
+}
+void Unparser::VisitMinus(const Object &node) {
+	ostringstream code;
+	string expr1 = stack.top();
+	stack.pop();
+	string expr2 = stack.top();
+	stack.pop();
+	code << expr1 << "-" << expr2;
+	stack.push(code.str());
+}
+void Unparser::VisitMul(const Object &node) {
+	ostringstream code;
+	string expr1 = stack.top();
+	stack.pop();
+	string expr2 = stack.top();
+	stack.pop();
+	code << expr1 << "*" << expr2;
+	stack.push(code.str());
+}
+void Unparser::VisitDiv(const Object &node) {
+	ostringstream code;
+	string expr1 = stack.top();
+	stack.pop();
+	string expr2 = stack.top();
+	stack.pop();
+	code << expr1 << "/" << expr2;
+	stack.push(code.str());
+}
+void Unparser::VisitModulo(const Object &node) {
+	ostringstream code;
+	string expr1 = stack.top();
+	stack.pop();
+	string expr2 = stack.top();
+	stack.pop();
+	code << expr1 << "%" << expr2;
+	stack.push(code.str());
+}
+void Unparser::VisitGreater(const Object &node) {
+	ostringstream code;
+	string expr1 = stack.top();
+	stack.pop();
+	string expr2 = stack.top();
+	stack.pop();
+	code << expr1 << ">" << expr2;
+	stack.push(code.str());
+}
+void Unparser::VisitLess(const Object &node) {
+	ostringstream code;
+	string expr1 = stack.top();
+	stack.pop();
+	string expr2 = stack.top();
+	stack.pop();
+	code << expr1 << "<" << expr2;
+	stack.push(code.str());
+}
+void Unparser::VisitGreaterEqual(const Object &node) {
+	ostringstream code;
+	string expr1 = stack.top();
+	stack.pop();
+	string expr2 = stack.top();
+	stack.pop();
+	code << expr1 << ">=" << expr2;
+	stack.push(code.str());
+}
+void Unparser::VisitLessEqual(const Object &node) {
+	ostringstream code;
+	string expr1 = stack.top();
+	stack.pop();
+	string expr2 = stack.top();
+	stack.pop();
+	code << expr1 << "<=" << expr2;
+	stack.push(code.str());
+}
+void Unparser::VisitEqual(const Object &node) {
+	ostringstream code;
+	string expr1 = stack.top();
+	stack.pop();
+	string expr2 = stack.top();
+	stack.pop();
+	code << expr1 << "==" << expr2;
+	stack.push(code.str());
+}
+void Unparser::VisitNotEqual(const Object &node) {
+	ostringstream code;
+	string expr1 = stack.top();
+	stack.pop();
+	string expr2 = stack.top();
+	stack.pop();
+	code << expr1 << "!=" << expr2;
+	stack.push(code.str());
+}
+void Unparser::VisitAnd(const Object &node) {
+	ostringstream code;
+	string expr1 = stack.top();
+	stack.pop();
+	string expr2 = stack.top();
+	stack.pop();
+	code << expr1 << "&&" << expr2;
+	stack.push(code.str());
+}
+void Unparser::VisitOr(const Object &node) {
+	ostringstream code;
+	string expr1 = stack.top();
+	stack.pop();
+	string expr2 = stack.top();
+	stack.pop();
+	code << expr1 << "||" << expr2;
+	stack.push(code.str());
+}
+void Unparser::VisitTerm(const Object &node) {}
+void Unparser::VisitUnaryMinus(const Object &node) {
+	ostringstream code;
+	string expr = stack.top();
+	stack.pop();
+	code << "-" << expr;
+	stack.push(code.str());
+}
+void Unparser::VisitNot(const Object &node) {
+	ostringstream code;
+	string expr = stack.top();
+	stack.pop();
+	code << "!" << expr;
+	stack.push(code.str());
+}
+void Unparser::VisitPlusPlusBefore(const Object &node) {
+	ostringstream code;
+	string lvalue = stack.top();
+	stack.pop();
+	code << "++" << lvalue;
+	stack.push(code.str());
+}
+void Unparser::VisitPlusPlusAfter(const Object &node) {
+	ostringstream code;
+	string lvalue = stack.top();
+	stack.pop();
+	code << lvalue << "++";
+	stack.push(code.str());
+}
+void Unparser::VisitMinusMinusBefore(const Object &node) {
+	ostringstream code;
+	string lvalue = stack.top();
+	stack.pop();
+	code << "--" << lvalue;
+	stack.push(code.str());
+}
+void Unparser::VisitMinusMinusAfter(const Object &node) {
+	ostringstream code;
+	string lvalue = stack.top();
+	stack.pop();
+	code << lvalue << "--";
+	stack.push(code.str());
+}
+void Unparser::VisitPrimary(const Object &node) {}
 void Unparser::VisitLValue(const Object &node) {}
 void Unparser::VisitId(const Object &node) {
 	ostringstream code;
