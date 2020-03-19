@@ -17,6 +17,8 @@ public:
     void operator() (const Token & t);
 
     void operator() (const std::string & str);
+
+    /* A destructor will create many problems! */
 };
 
 #endif

@@ -51,7 +51,7 @@ all: $(EXECUTABLE)
 	@echo 'Build successful'
 
 run: $(EXECUTABLE)
-	./$(EXECUTABLE) < $(SAMPLE_TEST)
+	./$(EXECUTABLE) $(SAMPLE_TEST)
 
 # Create object files of source code
 $(ODIR)/%.o: $(SRCDIR)/%.cpp

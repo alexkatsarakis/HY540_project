@@ -3,11 +3,11 @@
 #include "TreeTags.h"
 #include "assert.h"
 
-void TreeHost::Accept (const Object& node){ 
-    acceptors[node[AST_TAG_TYPE_KEY]->ToString()](node); 
+void TreeHost::Accept (const Object& node){
+    acceptors[node[AST_TAG_TYPE_KEY]->ToString()](node);
 }
 
-void TreeHost::InstallAcceptor (const std::string& tag, const Acceptor& f){ 
+void TreeHost::InstallAcceptor (const std::string& tag, const Acceptor& f){
     acceptors[tag] = f ;
 }
 
@@ -48,7 +48,7 @@ void TreeHost::InstallAllAcceptors (void){
     InstallAcceptor(AST_TAG_DOT, LAMBDA(AcceptDot));
     InstallAcceptor(AST_TAG_BRACKET, LAMBDA(AcceptBracket));
     InstallAcceptor(AST_TAG_CALL, LAMBDA(AcceptCall));
-    InstallAcceptor(AST_TAG_SUFFIX, LAMBDA(AcceptCallSuffix));
+    InstallAcceptor(AST_TAG_CALL_SUFFIX, LAMBDA(AcceptCallSuffix));
     InstallAcceptor(AST_TAG_NORMAL_CALL, LAMBDA(AcceptNormalCall));
     InstallAcceptor(AST_TAG_METHOD_CALL, LAMBDA(AcceptMethodCall));
     InstallAcceptor(AST_TAG_ELIST, LAMBDA(AcceptExpressionList));
@@ -382,7 +382,7 @@ void TreeHost::AcceptCall(const Object& node){
 }
 
 void TreeHost::AcceptCallSuffix(const Object& node){
-    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_SUFFIX);
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_CALL_SUFFIX);
     assert(node.ElementExists(AST_TAG_CHILD));
 
     Accept(*node[AST_TAG_CHILD]->ToObject());
@@ -412,7 +412,7 @@ void TreeHost::AcceptExpressionList(const Object& node){
 
     for (int i = 0; i < node.GetTotal() - 1; i++)
         Accept(*node[i]->ToObject());
-    visitor->VisitExpressionList(node);    
+    visitor->VisitExpressionList(node);
 }
 
 void TreeHost::AcceptObjectDef(const Object& node){
