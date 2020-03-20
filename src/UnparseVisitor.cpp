@@ -283,10 +283,17 @@ void UnparseVisitor::VisitDot(const Object &node) {
     stack.push(code.str());
 }
 void UnparseVisitor::VisitBracket(const Object &node) {
-    stringstream code;
+    /*ostringstream code;
     string expr = stack.top();
     stack.pop();
     code << "{" << expr << "}";
+    stack.push(code.str());*/
+    ostringstream code;
+    string expr = stack.top();
+    stack.pop();
+    string lvalue = stack.top();
+    stack.pop();
+    code << lvalue << "[" << expr << "]";
     stack.push(code.str());
 }
 void UnparseVisitor::VisitCall(const Object &node) {
