@@ -261,27 +261,28 @@ void Unparser::VisitCall(const Object &node) {    //can't distinguish rvalues, r
     const Value* val;
     if((val = node[AST_TAG_FUNCTION])){
         const Object* test = val->ToObject();
-        const Value* a = ((*test)[AST_TAG_TYPE_KEY]);
-        if(a->ToString() != AST_TAG_CALL){
+        const std::string a = ((*test)[AST_TAG_TYPE_KEY])->ToString();
+        if(a == AST_TAG_FUNCTION_DEF){
             string elist = stack.top();
             stack.pop();
             string funcdef = stack.top();
             stack.pop();
             code << "(" << funcdef << ")" << "(" << elist << ")";
-        }else{
+        }else if(a == AST_TAG_CALL){
             string elist = stack.top();
             stack.pop();
             string calll = stack.top();
             stack.pop();
             code << calll << "(" << elist << ")";
+        } else {
+            string callSuffix = stack.top();
+            stack.pop();
+            string lvalue = stack.top();
+            stack.pop();
+            code << lvalue << callSuffix;
         }
-    } else {
-        string callSuffix = stack.top();
-        stack.pop();
-        string lvalue = stack.top();
-        stack.pop();
-        code << lvalue << callSuffix;
     }
+    
     /* string elist = stack.top();
 	stack.pop();
 	code << "(" << elist << ")"; */
