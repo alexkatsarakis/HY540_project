@@ -8,10 +8,7 @@
 
 class UnparseVisitor : public TreeVisitor {
    public:
-    std::stack<std::string> stack;
-
     TreeVisitor *Clone(void) const override;
-
     void VisitProgram(const Object &node) override;
     void VisitStatements(const Object &node) override;
     void VisitStatement(const Object &node) override;
@@ -68,6 +65,9 @@ class UnparseVisitor : public TreeVisitor {
     void VisitReturn(const Object &node) override;
     void VisitBreak(const Object &node) override;
     void VisitContinue(const Object &node) override;
+
+    std::stack<std::string> stack;
+    void Write(const std::string &fileName);
 };
 
 #endif

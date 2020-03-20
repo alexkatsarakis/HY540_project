@@ -6,7 +6,6 @@
 class TreeVisitor {
    public:
     virtual TreeVisitor *Clone(void) const = 0;
-
     virtual void VisitProgram(const Object &node) = 0;
     virtual void VisitStatements(const Object &node) = 0;
     virtual void VisitStatement(const Object &node) = 0;

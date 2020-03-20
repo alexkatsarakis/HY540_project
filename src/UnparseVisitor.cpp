@@ -3,6 +3,8 @@
 #include "Object.h"
 #include "TreeTags.h"
 
+#include <cassert>
+#include <fstream>
 #include <list>
 #include <sstream>
 
@@ -12,7 +14,6 @@ TreeVisitor *UnparseVisitor::Clone(void) const {
     UnparseVisitor *clone = new UnparseVisitor();
     clone->stack = this->stack;    // copy assignment
 }
-
 void UnparseVisitor::VisitProgram(const Object &node) {}
 void UnparseVisitor::VisitStatements(const Object &node) {
     ostringstream code;
@@ -261,24 +262,21 @@ void UnparseVisitor::VisitBracket(const Object &node) {
 }
 void UnparseVisitor::VisitCall(const Object &node) {
     ostringstream code;
-    const Value *val;
-    if ((val = node[AST_TAG_FUNCTION])) {
-        const Object *test = val->ToObject();
-        const Value *a = ((*test)[AST_TAG_TYPE_KEY]);
-        if (a->ToString() != AST_TAG_CALL) {
-            string elist = stack.top();
-            stack.pop();
-            string funcdef = stack.top();
-            stack.pop();
-            code << "(" << funcdef << ")"
-                 << "(" << elist << ")";
-        } else {
-            string elist = stack.top();
-            stack.pop();
-            string calll = stack.top();
-            stack.pop();
-            code << calll << "(" << elist << ")";
-        }
+    const Object value = *(node[AST_TAG_FUNCTION]->ToObject());
+    const string childType = value[AST_TAG_TYPE_KEY]->ToString();
+    if (childType == AST_TAG_FUNCTION_DEF) {
+        string elist = stack.top();
+        stack.pop();
+        string funcdef = stack.top();
+        stack.pop();
+        code << "(" << funcdef << ")"
+             << "(" << elist << ")";
+    } else if (childType == AST_TAG_CALL) {
+        string elist = stack.top();
+        stack.pop();
+        string calll = stack.top();
+        stack.pop();
+        code << calll << "(" << elist << ")";
     } else {
         string callSuffix = stack.top();
         stack.pop();
@@ -443,12 +441,15 @@ void UnparseVisitor::VisitReturn(const Object &node) {
     stack.push(code.str());
 }
 void UnparseVisitor::VisitBreak(const Object &node) {
-    ostringstream code;
-    code << "break;";
-    stack.push(code.str());
+    stack.push("break;");
 }
 void UnparseVisitor::VisitContinue(const Object &node) {
-    ostringstream code;
-    code << "continue;";
-    stack.push(code.str());
+    stack.push("continue;");
+}
+
+void UnparseVisitor::Write(const std::string &fileName) {
+    ofstream f(fileName.c_str(), ios_base::out);
+    assert(stack.size() == 1);
+    f << stack.top();
+    f.close();
 }
