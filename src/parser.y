@@ -5,6 +5,7 @@
     #include "GrammarRules.h"
     #include "SemanticActions.h"
     #include "TreeHost.h"
+    #include "UnparseVisitor.h"
     #include "VisualizeVisitor.h"
 
     #include <iostream>
@@ -38,8 +39,8 @@
 
     SyntaxPrinter rulesPrinter("alpha_GrammarRules.txt");
 
-    TreeHost * visualizeHost = nullptr;
     TreeHost * unparseHost = nullptr;
+    TreeHost * visualizeHost = nullptr;
 %}
 
 %union {
