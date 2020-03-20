@@ -189,7 +189,7 @@ void UnparseVisitor::VisitAnd(const Object &node) {
     stack.pop();
     string expr1 = stack.top();
     stack.pop();
-    code << expr1 << " && " << expr2;
+    code << expr1 << " and " << expr2;
     stack.push(code.str());
 }
 void UnparseVisitor::VisitOr(const Object &node) {
@@ -198,10 +198,19 @@ void UnparseVisitor::VisitOr(const Object &node) {
     stack.pop();
     string expr1 = stack.top();
     stack.pop();
-    code << expr1 << " || " << expr2;
+    code << expr1 << " or " << expr2;
     stack.push(code.str());
 }
-void UnparseVisitor::VisitTerm(const Object &node) {}
+void UnparseVisitor::VisitTerm(const Object &node) {
+    auto child = *(node[AST_TAG_CHILD]->ToObject());
+    if (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR) {
+        stringstream code;
+        string expr = stack.top();
+        stack.pop();
+        code << "(" << expr << ")";
+        stack.push(code.str());
+    }
+}
 void UnparseVisitor::VisitUnaryMinus(const Object &node) {
     stringstream code;
     string expr = stack.top();
@@ -213,7 +222,7 @@ void UnparseVisitor::VisitNot(const Object &node) {
     stringstream code;
     string expr = stack.top();
     stack.pop();
-    code << "!" << expr;
+    code << "not " << expr;
     stack.push(code.str());
 }
 void UnparseVisitor::VisitPlusPlusBefore(const Object &node) {
@@ -277,23 +286,18 @@ void UnparseVisitor::VisitDot(const Object &node) {
     stringstream code;
     string id = stack.top();
     stack.pop();
-    string dot = stack.top();
+    string lvalueCall = stack.top();
     stack.pop();
-    code << dot << id;
+    code << lvalueCall << "." << id;
     stack.push(code.str());
 }
 void UnparseVisitor::VisitBracket(const Object &node) {
-    /*ostringstream code;
+    stringstream code;
     string expr = stack.top();
     stack.pop();
-    code << "{" << expr << "}";
-    stack.push(code.str());*/
-    ostringstream code;
-    string expr = stack.top();
+    string lvalueCall = stack.top();
     stack.pop();
-    string lvalue = stack.top();
-    stack.pop();
-    code << lvalue << "[" << expr << "]";
+    code << lvalueCall << "[" << expr << "]";
     stack.push(code.str());
 }
 void UnparseVisitor::VisitCall(const Object &node) {
@@ -342,15 +346,16 @@ void UnparseVisitor::VisitMethodCall(const Object &node) {
 void UnparseVisitor::VisitExpressionList(const Object &node) {
     stringstream code;
     list<string> exprElements;
-    for (unsigned i = 0; i < node.GetNumericSize(); ++i) {
+    for (unsigned i = 0; i < node.GetNumericSize() - 1; ++i) {
         string exprElem = stack.top();
         stack.pop();
         exprElements.push_front(exprElem);
     }
+    string last = stack.top();
+    stack.pop();
     for (const auto &elem : exprElements)
         code << elem << ", ";
-    code.get();
-    code.get();
+    code << last;
     stack.push(code.str());
 }
 void UnparseVisitor::VisitObjectDef(const Object &node) {
@@ -363,15 +368,16 @@ void UnparseVisitor::VisitObjectDef(const Object &node) {
 void UnparseVisitor::VisitIndexed(const Object &node) {
     stringstream code;
     list<string> indexedElements;
-    for (unsigned i = 0; i < node.GetNumericSize(); ++i) {
+    for (unsigned i = 0; i < node.GetNumericSize() - 1; ++i) {
         string indexedElem = stack.top();
         stack.pop();
         indexedElements.push_front(indexedElem);
     }
+    string last = stack.top();
+    stack.pop();
     for (const auto &elem : indexedElements)
         code << elem << ", ";
-    code.get();
-    code.get();
+    code << last;
     stack.push(code.str());
 }
 void UnparseVisitor::VisitIndexedElem(const Object &node) {
@@ -430,15 +436,16 @@ void UnparseVisitor::VisitFalse(const Object &node) {
 void UnparseVisitor::VisitIdList(const Object &node) {
     stringstream code;
     list<string> ids;
-    for (int i = 0; i < node.GetNumericSize(); ++i) {
+    for (int i = 0; i < node.GetNumericSize() - 1; ++i) {
         string id = stack.top();
         stack.pop();
         ids.push_front(id);
     }
+    string last = stack.top();
+    stack.pop();
     for (const auto &id : ids)
         code << id << ", ";
-    code.get();
-    code.get();
+    code << last;
     stack.push(code.str());
 }
 void UnparseVisitor::VisitIf(const Object &node) {
