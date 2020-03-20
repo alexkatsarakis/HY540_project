@@ -25,11 +25,27 @@ private:
 
     void SaveOrphan(void);
 
+    void DumpToFile(void);
+
+    void VisitEmptyStatements(const Object& node);
+
+    void VisitNormalStatements(const Object& node);
+
     void VisitEmptyStatement(const Object& node);
 
-    void VisitNormalStatemens(const Object& node);
+    void VisitNormalStatement(const Object& node);
 
-    void DumpToFile(void);
+    void VisitEmptyExpressionList(const Object& node);
+
+    void VisitNormalExpressionList(const Object& node);
+
+    void VisitEmptyIndexed(const Object& node);
+
+    void VisitNormalIndexed(const Object& node);
+
+    void VisitEmptyIdlist(const Object& node);
+
+    void VisitNormalIdlist(const Object& node);
 
 public:
     virtual void VisitProgram (const Object& node);

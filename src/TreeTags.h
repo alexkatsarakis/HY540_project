@@ -64,10 +64,10 @@
 
 #define AST_TAG_UMINUS "uminus"
 #define AST_TAG_NOT "not"
-#define AST_TAG_BPLUSPLUS "bplusplus"
-#define AST_TAG_APLUSPLUS "aplusplus"
-#define AST_TAG_BMINUSMINUS "bminusminus"
-#define AST_TAG_AMINUSMINUS "aminusminus"
+#define AST_TAG_BPLUSPLUS "++_"
+#define AST_TAG_APLUSPLUS "_++"
+#define AST_TAG_BMINUSMINUS "--_"
+#define AST_TAG_AMINUSMINUS "_--"
 
 #define AST_TAG_PRIMARY "primary"
 
@@ -92,8 +92,8 @@
 
 #define AST_TAG_MEMBER "member"
 
-#define AST_TAG_DOT "dot"
-#define AST_TAG_BRACKET "bracket"
+#define AST_TAG_DOT "."
+#define AST_TAG_BRACKET "[ ]"
 
 #define AST_TAG_ARGUMENTS "arguments"
 

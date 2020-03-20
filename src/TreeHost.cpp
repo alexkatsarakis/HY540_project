@@ -1,16 +1,19 @@
 #include "TreeHost.h"
 #include "Object.h"
 #include "TreeTags.h"
-#include "assert.h"
+#include <cassert>
 
 TreeHost::TreeHost(TreeVisitor *_visitor) : visitor{_visitor} {
+    assert(_visitor);
     InstallAllAcceptors();
 };
+
 void TreeHost::Accept(const Object &node) {
     acceptors[node[AST_TAG_TYPE_KEY]->ToString()](node);
 }
 
 void TreeHost::InstallAcceptor(const std::string &tag, const Acceptor &f) {
+    assert(f);
     acceptors[tag] = f;
 }
 
@@ -567,4 +570,9 @@ void TreeHost::AcceptContinue(const Object &node) {
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_CONTINUE);
 
     visitor->VisitContinue(node);
+}
+
+TreeHost::~TreeHost() {
+    if(visitor) delete visitor;
+    acceptors.clear();
 }

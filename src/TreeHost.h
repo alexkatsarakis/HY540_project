@@ -1,11 +1,11 @@
 #ifndef _TREE_HOST_H_
 #define _TREE_HOST_H_
 
+#include "TreeVisitor.h"
+#include "Object.h"
+
 #include <functional>
 #include <map>
-#include "TreeVisitor.h"
-
-class Object;
 
 class TreeHost {
    private:
@@ -13,7 +13,7 @@ class TreeHost {
     using Acceptors = std::map<std::string, Acceptor>;
 
     Acceptors acceptors;
-    TreeVisitor *visitor = nullptr;
+    TreeVisitor * visitor = nullptr;
 
    public:
     TreeHost(TreeVisitor *_visitor);
@@ -77,6 +77,8 @@ class TreeHost {
     void AcceptReturn(const Object &node);
     void AcceptBreak(const Object &node);
     void AcceptContinue(const Object &node);
+
+    ~TreeHost();
 };
 
 #endif

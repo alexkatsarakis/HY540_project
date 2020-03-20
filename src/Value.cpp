@@ -21,8 +21,7 @@ Value::Value(const Value & val) {
     assert(val.IsValid());
     this->type = val.type;
     /* TODO: Is this the correct way to do it ? */
-    if (type == Type::StringType) data.stringVal = val.data.stringVal;
-    else std::memcpy(&data, &val.data, sizeof(Data));
+    std::memcpy(&data, &val.data, sizeof(Data));
     assert(IsValid());
 }
 
@@ -115,7 +114,11 @@ void Value::FromBoolean(bool val) {
 
 void Value::FromString(const std::string & str) {
     type = Type::StringType;
-    data.stringVal = str;
+    /* TODISCUSS: Is this a good practice? Everytime a From method is called we
+     * will have a memory leak.
+     * Also the destructor should always free this memory if the the object has
+     * Type::String */
+    data.stringVal = new std::string(str);
     assert(IsString());
     assert(IsValid());
 }
@@ -181,7 +184,7 @@ bool Value::ToBoolean(void) const {
 
 std::string Value::ToString(void) const {
     assert(IsString());
-    return data.stringVal;
+    return *data.stringVal;
 }
 
 const Object * Value::ToObject(void) const {
