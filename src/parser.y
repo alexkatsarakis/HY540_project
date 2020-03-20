@@ -153,7 +153,7 @@
 %%
 
 program : stmts { $$ = ParseProgram($1);
-                  //unparseHost->Accept(*$$);
+                  unparseHost->Accept(*$$);
                   visualizeHost->Accept(*$$);
                 }
         ;
