@@ -3,6 +3,7 @@
 
 #include <string>
 #include <cassert>
+#include <regex>
 
 #ifdef EXTREME_ASSERT
 #define eassert(x) assert(x)
@@ -11,6 +12,22 @@
 #endif
 
 #define NODE_PREFIX "node"
+
+#include <iostream>
+void findAndReplaceAll(std::string & data, std::string toSearch, std::string replaceStr)
+{
+	// Get the first occurrence
+	size_t pos = data.find(toSearch);
+
+	// Repeat till end is reached
+	while( pos != std::string::npos)
+	{
+		// Replace this occurrence of Sub String
+		data.replace(pos, toSearch.size(), replaceStr);
+		// Get the next occurrence from the current position
+		pos =data.find(toSearch, pos + replaceStr.size());
+	}
+}
 
 void VisualizeVisitor::CreateNewNode(const std::string & label) {
     output << NODE_PREFIX << ++lastNode <<  " [label=\"" << label << "\"]" << std::endl;
@@ -405,7 +422,10 @@ void VisualizeVisitor::VisitNumber (const Object& node) {
 void VisualizeVisitor::VisitString (const Object& node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_STRING);
     SaveOrphan();
-    CreateNewNode("\\\"" + node[AST_TAG_VALUE]->ToString() + "\\\"");
+
+    std::string label(node[AST_TAG_VALUE]->ToString());
+    findAndReplaceAll(label, "\"", "\\\"");
+    CreateNewNode("\\\"" + label + "\\\"");
 }
 
 void VisualizeVisitor::VisitNill (const Object& node) {
