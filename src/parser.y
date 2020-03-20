@@ -154,7 +154,7 @@
 
 program : stmts { $$ = ParseProgram($1);
                   unparseHost->Accept(*$$);
-                  visualizeHost->Accept(*$$);
+                  //visualizeHost->Accept(*$$);
                 }
         ;
 
@@ -327,9 +327,8 @@ int main(int argc, char ** argv) {
     }
 
     unparseHost = new TreeHost(new UnparseVisitor());
-    visualizeHost = new TreeHost(new VisualizeVisitor());
-    // host->visitor = new VisualizeVisitor();
-    // host->InstallAllAcceptors();
+    // visualizeHost = new TreeHost(new VisualizeVisitor());
+
 
     /* The Bison parser */
     yyparse();
