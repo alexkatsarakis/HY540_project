@@ -77,6 +77,7 @@ $(PARSER_O): $(PARSER_CPP)
 $(EXECUTABLE): $(PARSER_O) $(LEXXER_O) $(OBJ)
 	@echo 'Creating interpreter'
 	$(CC) $(CFLAGS) $^ -o $@
+	@echo ''
 
 # Clean object files
 clean:
@@ -94,6 +95,7 @@ clean:
 distclean:
 	@rm -rf *.out
 	@rm -rf *.txt
+	@rm -rf *.dot
 	@echo 'Files cleaned'
 
 clear: clean distclean

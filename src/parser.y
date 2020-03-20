@@ -6,7 +6,6 @@
     #include "SemanticActions.h"
     #include "TreeHost.h"
     #include "VisualizeVisitor.h"
-	#include "UnparseVisitor.h"
 
     #include <iostream>
     #include <vector>
@@ -153,8 +152,8 @@
 %%
 
 program : stmts { $$ = ParseProgram($1);
-                  unparseHost->Accept(*$$);
-                  //visualizeHost->Accept(*$$);
+                  //unparseHost->Accept(*$$);
+                  visualizeHost->Accept(*$$);
                 }
         ;
 
@@ -327,13 +326,15 @@ int main(int argc, char ** argv) {
     }
 
     unparseHost = new TreeHost(new UnparseVisitor());
-    // visualizeHost = new TreeHost(new VisualizeVisitor());
-
+    visualizeHost = new TreeHost(new VisualizeVisitor());
 
     /* The Bison parser */
     yyparse();
 
     std::for_each(tokenList.begin(), tokenList.end(), SyntaxPrinter("alpha_TokenList.txt"));
+
+    delete unparseHost;
+    delete visualizeHost;
 
     return (EXIT_SUCCESS);
 }
