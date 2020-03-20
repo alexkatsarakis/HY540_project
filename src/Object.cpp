@@ -117,6 +117,7 @@ void Object::Set(double key, const Value & value) {
 void Object::Set(const std::string & key, const Value & value) {
     assert(value.IsValid());
     assert(IsValid());
+    assert(!key.empty());
 
     auto val = new Value(value);
     strMap.insert(std::pair<std::string, ValuePtr>(key, val));

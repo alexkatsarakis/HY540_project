@@ -5,6 +5,7 @@
     #include "GrammarRules.h"
     #include "SemanticActions.h"
     #include "TreeHost.h"
+    #include "UnparseVisitor.h"
     #include "VisualizeVisitor.h"
 
     #include <iostream>
@@ -38,7 +39,8 @@
 
     SyntaxPrinter rulesPrinter("alpha_GrammarRules.txt");
 
-    TreeHost * host = nullptr;
+    TreeHost * unparseHost = nullptr;
+    TreeHost * visualizeHost = nullptr;
 %}
 
 %union {
@@ -151,7 +153,8 @@
 %%
 
 program : stmts { $$ = ParseProgram($1);
-                  host->Accept(*$$);
+                  //unparseHost->Accept(*$$);
+                  visualizeHost->Accept(*$$);
                 }
         ;
 
@@ -207,8 +210,8 @@ primary : lvalue                     { $$ = ParsePrimary($1); }
         ;
 
 lvalue : ID              { $$ = ParseLvalue(ParseSimpleID($1)); }
-       | LOCAL ID        { $$ = ParseLvalue(ParseLocalID($2)); }
-       | DOUBLE_COLON ID { $$ = ParseLvalue(ParseDoubleColonID($2)); }
+       | LOCAL ID        { $$ = ParseLvalue(ParseLocalID($2)); } //Parse Simple Id
+       | DOUBLE_COLON ID { $$ = ParseLvalue(ParseDoubleColonID($2)); } //Parse Simple Id
        | member          { $$ = ParseLvalue($1); }
        ;
 
@@ -323,14 +326,16 @@ int main(int argc, char ** argv) {
         return EXIT_FAILURE;
     }
 
-    host = new TreeHost();
-    host->visitor = new VisualizeVisitor();
-    host->InstallAllAcceptors();
+    unparseHost = new TreeHost(new UnparseVisitor());
+    visualizeHost = new TreeHost(new VisualizeVisitor());
 
     /* The Bison parser */
     yyparse();
 
     std::for_each(tokenList.begin(), tokenList.end(), SyntaxPrinter("alpha_TokenList.txt"));
+
+    delete unparseHost;
+    delete visualizeHost;
 
     return (EXIT_SUCCESS);
 }

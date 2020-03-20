@@ -1,20 +1,26 @@
 #include "TreeHost.h"
 #include "Object.h"
 #include "TreeTags.h"
-#include "assert.h"
+#include <cassert>
 
-void TreeHost::Accept (const Object& node){
+TreeHost::TreeHost(TreeVisitor *_visitor) : visitor{_visitor} {
+    assert(_visitor);
+    InstallAllAcceptors();
+};
+
+void TreeHost::Accept(const Object &node) {
     acceptors[node[AST_TAG_TYPE_KEY]->ToString()](node);
 }
 
-void TreeHost::InstallAcceptor (const std::string& tag, const Acceptor& f){
-    acceptors[tag] = f ;
+void TreeHost::InstallAcceptor(const std::string &tag, const Acceptor &f) {
+    assert(f);
+    acceptors[tag] = f;
 }
 
-#define LAMBDA(f) [this](const Object& node) { f(node); }
+#define LAMBDA(f) [this](const Object &node) { f(node); }
 
-void TreeHost::InstallAllAcceptors (void){
-    InstallAcceptor(AST_TAG_PROGRAM,  LAMBDA(AcceptProgram));
+void TreeHost::InstallAllAcceptors(void) {
+    InstallAcceptor(AST_TAG_PROGRAM, LAMBDA(AcceptProgram));
     InstallAcceptor(AST_TAG_STMTS, LAMBDA(AcceptStatements));
     InstallAcceptor(AST_TAG_STMT, LAMBDA(AcceptStatement));
     InstallAcceptor(AST_TAG_EXPR, LAMBDA(AcceptExpression));
@@ -72,7 +78,7 @@ void TreeHost::InstallAllAcceptors (void){
     InstallAcceptor(AST_TAG_CONTINUE, LAMBDA(AcceptContinue));
 }
 
-void TreeHost::AcceptProgram(const Object& node){
+void TreeHost::AcceptProgram(const Object &node) {
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_PROGRAM);
     assert(node.ElementExists(AST_TAG_CHILD));
 
@@ -80,16 +86,16 @@ void TreeHost::AcceptProgram(const Object& node){
     visitor->VisitProgram(node);
 }
 
-void TreeHost::AcceptStatements(const Object& node){
+void TreeHost::AcceptStatements(const Object &node) {
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_STMTS);
 
-    for (int i = 0; i< node.GetNumericSize(); i++)
+    for (int i = 0; i < node.GetNumericSize(); i++)
         Accept(*node[i]->ToObject());
 
     visitor->VisitStatements(node);
 }
 
-void TreeHost::AcceptStatement(const Object& node){
+void TreeHost::AcceptStatement(const Object &node) {
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_STMT);
 
     if (node.ElementExists(AST_TAG_CHILD))
@@ -97,7 +103,7 @@ void TreeHost::AcceptStatement(const Object& node){
     visitor->VisitStatement(node);
 }
 
-void TreeHost::AcceptExpression(const Object& node){
+void TreeHost::AcceptExpression(const Object &node) {
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR);
     assert(node.ElementExists(AST_TAG_CHILD));
 
@@ -106,307 +112,307 @@ void TreeHost::AcceptExpression(const Object& node){
 }
 
 void TreeHost::AcceptAssign(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN);
-	assert(node.ElementExists(AST_TAG_LVALUE));
-	assert(node.ElementExists(AST_TAG_RVALUE));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN);
+    assert(node.ElementExists(AST_TAG_LVALUE));
+    assert(node.ElementExists(AST_TAG_RVALUE));
 
-	Accept(*node[AST_TAG_LVALUE]->ToObject());
-	Accept(*node[AST_TAG_RVALUE]->ToObject());
-	visitor->VisitAssign(node);
+    Accept(*node[AST_TAG_LVALUE]->ToObject());
+    Accept(*node[AST_TAG_RVALUE]->ToObject());
+    visitor->VisitAssign(node);
 }
 
 void TreeHost::AcceptPlus(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_PLUS);
-	assert(node.ElementExists(AST_TAG_FIRST_EXPR));
-	assert(node.ElementExists(AST_TAG_SECOND_EXPR));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_PLUS);
+    assert(node.ElementExists(AST_TAG_FIRST_EXPR));
+    assert(node.ElementExists(AST_TAG_SECOND_EXPR));
 
-	Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
-	Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
-	visitor->VisitPlus(node);
+    Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
+    Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
+    visitor->VisitPlus(node);
 }
 
 void TreeHost::AcceptMinus(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_MINUS);
-	assert(node.ElementExists(AST_TAG_FIRST_EXPR));
-	assert(node.ElementExists(AST_TAG_SECOND_EXPR));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_MINUS);
+    assert(node.ElementExists(AST_TAG_FIRST_EXPR));
+    assert(node.ElementExists(AST_TAG_SECOND_EXPR));
 
-	Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
-	Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
-	visitor->VisitMinus(node);
+    Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
+    Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
+    visitor->VisitMinus(node);
 }
 
 void TreeHost::AcceptMul(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_MUL);
-	assert(node.ElementExists(AST_TAG_FIRST_EXPR));
-	assert(node.ElementExists(AST_TAG_SECOND_EXPR));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_MUL);
+    assert(node.ElementExists(AST_TAG_FIRST_EXPR));
+    assert(node.ElementExists(AST_TAG_SECOND_EXPR));
 
-	Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
-	Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
-	visitor->VisitMul(node);
+    Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
+    Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
+    visitor->VisitMul(node);
 }
 
 void TreeHost::AcceptDiv(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_DIV);
-	assert(node.ElementExists(AST_TAG_FIRST_EXPR));
-	assert(node.ElementExists(AST_TAG_SECOND_EXPR));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_DIV);
+    assert(node.ElementExists(AST_TAG_FIRST_EXPR));
+    assert(node.ElementExists(AST_TAG_SECOND_EXPR));
 
-	Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
-	Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
-	visitor->VisitDiv(node);
+    Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
+    Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
+    visitor->VisitDiv(node);
 }
 
 void TreeHost::AcceptModulo(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_MODULO);
-	assert(node.ElementExists(AST_TAG_FIRST_EXPR));
-	assert(node.ElementExists(AST_TAG_SECOND_EXPR));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_MODULO);
+    assert(node.ElementExists(AST_TAG_FIRST_EXPR));
+    assert(node.ElementExists(AST_TAG_SECOND_EXPR));
 
-	Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
-	Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
-	visitor->VisitModulo(node);
+    Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
+    Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
+    visitor->VisitModulo(node);
 }
 
 void TreeHost::AcceptGreater(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_GREATER);
-	assert(node.ElementExists(AST_TAG_FIRST_EXPR));
-	assert(node.ElementExists(AST_TAG_SECOND_EXPR));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_GREATER);
+    assert(node.ElementExists(AST_TAG_FIRST_EXPR));
+    assert(node.ElementExists(AST_TAG_SECOND_EXPR));
 
-	Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
-	Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
-	visitor->VisitGreater(node);
+    Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
+    Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
+    visitor->VisitGreater(node);
 }
 
 void TreeHost::AcceptLess(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_LESS);
-	assert(node.ElementExists(AST_TAG_FIRST_EXPR));
-	assert(node.ElementExists(AST_TAG_SECOND_EXPR));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_LESS);
+    assert(node.ElementExists(AST_TAG_FIRST_EXPR));
+    assert(node.ElementExists(AST_TAG_SECOND_EXPR));
 
-	Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
-	Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
-	visitor->VisitLess(node);
+    Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
+    Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
+    visitor->VisitLess(node);
 }
 
 void TreeHost::AcceptGreaterEqual(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_GEQUAL);
-	assert(node.ElementExists(AST_TAG_FIRST_EXPR));
-	assert(node.ElementExists(AST_TAG_SECOND_EXPR));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_GEQUAL);
+    assert(node.ElementExists(AST_TAG_FIRST_EXPR));
+    assert(node.ElementExists(AST_TAG_SECOND_EXPR));
 
-	Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
-	Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
-	visitor->VisitGreaterEqual(node);
+    Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
+    Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
+    visitor->VisitGreaterEqual(node);
 }
 
 void TreeHost::AcceptLessEqual(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_LEQUAL);
-	assert(node.ElementExists(AST_TAG_FIRST_EXPR));
-	assert(node.ElementExists(AST_TAG_SECOND_EXPR));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_LEQUAL);
+    assert(node.ElementExists(AST_TAG_FIRST_EXPR));
+    assert(node.ElementExists(AST_TAG_SECOND_EXPR));
 
-	Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
-	Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
-	visitor->VisitLessEqual(node);
+    Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
+    Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
+    visitor->VisitLessEqual(node);
 }
 
 void TreeHost::AcceptEqual(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EQUAL);
-	assert(node.ElementExists(AST_TAG_FIRST_EXPR));
-	assert(node.ElementExists(AST_TAG_SECOND_EXPR));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EQUAL);
+    assert(node.ElementExists(AST_TAG_FIRST_EXPR));
+    assert(node.ElementExists(AST_TAG_SECOND_EXPR));
 
-	Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
-	Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
-	visitor->VisitEqual(node);
+    Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
+    Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
+    visitor->VisitEqual(node);
 }
 
 void TreeHost::AcceptNotEqual(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NEQUAL);
-	assert(node.ElementExists(AST_TAG_FIRST_EXPR));
-	assert(node.ElementExists(AST_TAG_SECOND_EXPR));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NEQUAL);
+    assert(node.ElementExists(AST_TAG_FIRST_EXPR));
+    assert(node.ElementExists(AST_TAG_SECOND_EXPR));
 
-	Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
-	Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
-	visitor->VisitNotEqual(node);
+    Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
+    Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
+    visitor->VisitNotEqual(node);
 }
 
 void TreeHost::AcceptAnd(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_AND);
-	assert(node.ElementExists(AST_TAG_FIRST_EXPR));
-	assert(node.ElementExists(AST_TAG_SECOND_EXPR));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_AND);
+    assert(node.ElementExists(AST_TAG_FIRST_EXPR));
+    assert(node.ElementExists(AST_TAG_SECOND_EXPR));
 
-	Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
-	Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
-	visitor->VisitAnd(node);
+    Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
+    Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
+    visitor->VisitAnd(node);
 }
 
 void TreeHost::AcceptOr(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_OR);
-	assert(node.ElementExists(AST_TAG_FIRST_EXPR));
-	assert(node.ElementExists(AST_TAG_SECOND_EXPR));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_OR);
+    assert(node.ElementExists(AST_TAG_FIRST_EXPR));
+    assert(node.ElementExists(AST_TAG_SECOND_EXPR));
 
-	Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
-	Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
-	visitor->VisitOr(node);
+    Accept(*node[AST_TAG_FIRST_EXPR]->ToObject());
+    Accept(*node[AST_TAG_SECOND_EXPR]->ToObject());
+    visitor->VisitOr(node);
 }
 
 void TreeHost::AcceptTerm(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_TERM);
-	assert(node.ElementExists(AST_TAG_CHILD));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_TERM);
+    assert(node.ElementExists(AST_TAG_CHILD));
 
-	Accept(*node[AST_TAG_CHILD]->ToObject());
-	visitor->VisitTerm(node);
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitTerm(node);
 }
 
 void TreeHost::AcceptUnaryMinus(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_UMINUS);
-	assert(node.ElementExists(AST_TAG_CHILD));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_UMINUS);
+    assert(node.ElementExists(AST_TAG_CHILD));
 
-	Accept(*node[AST_TAG_CHILD]->ToObject());
-	visitor->VisitUnaryMinus(node);
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitUnaryMinus(node);
 }
 
 void TreeHost::AcceptNot(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NOT);
-	assert(node.ElementExists(AST_TAG_CHILD));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NOT);
+    assert(node.ElementExists(AST_TAG_CHILD));
 
-	Accept(*node[AST_TAG_CHILD]->ToObject());
-	visitor->VisitNot(node);
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitNot(node);
 }
 
 void TreeHost::AcceptPlusPlusBefore(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_BPLUSPLUS);
-	assert(node.ElementExists(AST_TAG_CHILD));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_BPLUSPLUS);
+    assert(node.ElementExists(AST_TAG_CHILD));
 
-	Accept(*node[AST_TAG_CHILD]->ToObject());
-	visitor->VisitPlusPlusBefore(node);
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitPlusPlusBefore(node);
 }
 
 void TreeHost::AcceptPlusPlusAfter(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_APLUSPLUS);
-	assert(node.ElementExists(AST_TAG_CHILD));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_APLUSPLUS);
+    assert(node.ElementExists(AST_TAG_CHILD));
 
-	Accept(*node[AST_TAG_CHILD]->ToObject());
-	visitor->VisitPlusPlusAfter(node);
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitPlusPlusAfter(node);
 }
 
 void TreeHost::AcceptMinusMinusBefore(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_BMINUSMINUS);
-	assert(node.ElementExists(AST_TAG_CHILD));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_BMINUSMINUS);
+    assert(node.ElementExists(AST_TAG_CHILD));
 
-	Accept(*node[AST_TAG_CHILD]->ToObject());
-	visitor->VisitMinusMinusBefore(node);
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitMinusMinusBefore(node);
 }
 
 void TreeHost::AcceptMinusMinusAfter(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_AMINUSMINUS);
-	assert(node.ElementExists(AST_TAG_CHILD));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_AMINUSMINUS);
+    assert(node.ElementExists(AST_TAG_CHILD));
 
-	Accept(*node[AST_TAG_CHILD]->ToObject());
-	visitor->VisitMinusMinusAfter(node);
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitMinusMinusAfter(node);
 }
 
 void TreeHost::AcceptPrimary(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_PRIMARY);
-	assert(node.ElementExists(AST_TAG_CHILD));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_PRIMARY);
+    assert(node.ElementExists(AST_TAG_CHILD));
 
-	Accept(*node[AST_TAG_CHILD]->ToObject());
-	visitor->VisitPrimary(node);
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitPrimary(node);
 }
 
 void TreeHost::AcceptLValue(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_LVALUE);
-	assert(node.ElementExists(AST_TAG_CHILD));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_LVALUE);
+    assert(node.ElementExists(AST_TAG_CHILD));
 
-	Accept(*node[AST_TAG_CHILD]->ToObject());
-	visitor->VisitLValue(node);
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitLValue(node);
 }
 
 void TreeHost::AcceptId(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ID);
-	assert(node.ElementExists(AST_TAG_ID));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ID);
+    assert(node.ElementExists(AST_TAG_ID));
 
     visitor->VisitId(node);
 }
 
 void TreeHost::AcceptLocal(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_LOCAL_ID);
-	assert(node.ElementExists(AST_TAG_ID));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_LOCAL_ID);
+    assert(node.ElementExists(AST_TAG_ID));
 
     visitor->VisitLocal(node);
 }
 
 void TreeHost::AcceptDoubleColon(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_DOUBLECOLON_ID);
-	assert(node.ElementExists(AST_TAG_ID));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_DOUBLECOLON_ID);
+    assert(node.ElementExists(AST_TAG_ID));
 
     visitor->VisitDoubleColon(node);
 }
 
 void TreeHost::AcceptMember(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_MEMBER);
-	assert(node.ElementExists(AST_TAG_CHILD));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_MEMBER);
+    assert(node.ElementExists(AST_TAG_CHILD));
 
-	Accept(*node[AST_TAG_CHILD]->ToObject());
-	visitor->VisitMember(node);
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitMember(node);
 }
 
-void TreeHost::AcceptDot(const Object& node){
+void TreeHost::AcceptDot(const Object &node) {
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_DOT);
     assert(node.ElementExists(AST_TAG_LVALUE));
     assert(node.ElementExists(AST_TAG_ID));
 
-	Accept(*node[AST_TAG_LVALUE]->ToObject());
-	Accept(*node[AST_TAG_ID]->ToObject());
-	visitor->VisitDot(node);
+    Accept(*node[AST_TAG_LVALUE]->ToObject());
+    Accept(*node[AST_TAG_ID]->ToObject());
+    visitor->VisitDot(node);
 }
 
 void TreeHost::AcceptBracket(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_BRACKET);
-	assert(node.ElementExists(AST_TAG_LVALUE));
-	assert(node.ElementExists(AST_TAG_EXPR));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_BRACKET);
+    assert(node.ElementExists(AST_TAG_LVALUE));
+    assert(node.ElementExists(AST_TAG_EXPR));
 
-	Accept(*node[AST_TAG_LVALUE]->ToObject());
-	Accept(*node[AST_TAG_EXPR]->ToObject());
-	visitor->VisitBracket(node);
+    Accept(*node[AST_TAG_LVALUE]->ToObject());
+    Accept(*node[AST_TAG_EXPR]->ToObject());
+    visitor->VisitBracket(node);
 }
 
 void TreeHost::AcceptCall(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_CALL);
-	assert(node.ElementExists(AST_TAG_FUNCTION));
-	assert(node.ElementExists(AST_TAG_SUFFIX) || node.ElementExists(AST_TAG_ARGUMENTS));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_CALL);
+    assert(node.ElementExists(AST_TAG_FUNCTION));
+    assert(node.ElementExists(AST_TAG_SUFFIX) || node.ElementExists(AST_TAG_ARGUMENTS));
 
-	Accept(*node[AST_TAG_FUNCTION]->ToObject());
-	if (node.ElementExists(AST_TAG_SUFFIX))
-		Accept(*node[AST_TAG_SUFFIX]->ToObject());
-	else
-		Accept(*node[AST_TAG_ARGUMENTS]->ToObject());
-	visitor->VisitCall(node);
+    Accept(*node[AST_TAG_FUNCTION]->ToObject());
+    if (node.ElementExists(AST_TAG_SUFFIX))
+        Accept(*node[AST_TAG_SUFFIX]->ToObject());
+    else
+        Accept(*node[AST_TAG_ARGUMENTS]->ToObject());
+    visitor->VisitCall(node);
 }
 
-void TreeHost::AcceptCallSuffix(const Object& node){
+void TreeHost::AcceptCallSuffix(const Object &node) {
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_CALL_SUFFIX);
     assert(node.ElementExists(AST_TAG_CHILD));
 
-	Accept(*node[AST_TAG_CHILD]->ToObject());
-	visitor->VisitCallSuffix(node);
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitCallSuffix(node);
 }
 
 void TreeHost::AcceptNormalCall(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NORMAL_CALL);
-	assert(node.ElementExists(AST_TAG_CHILD));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NORMAL_CALL);
+    assert(node.ElementExists(AST_TAG_CHILD));
 
-	Accept(*node[AST_TAG_CHILD]->ToObject());
-	visitor->VisitNormalCall(node);
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitNormalCall(node);
 }
 
 void TreeHost::AcceptMethodCall(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_METHOD_CALL);
-	assert(node.ElementExists(AST_TAG_FUNCTION));
-	assert(node.ElementExists(AST_TAG_ARGUMENTS));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_METHOD_CALL);
+    assert(node.ElementExists(AST_TAG_FUNCTION));
+    assert(node.ElementExists(AST_TAG_ARGUMENTS));
 
-	Accept(*node[AST_TAG_FUNCTION]->ToObject());
-	Accept(*node[AST_TAG_ARGUMENTS]->ToObject());
-	visitor->VisitMethodCall(node);
+    Accept(*node[AST_TAG_FUNCTION]->ToObject());
+    Accept(*node[AST_TAG_ARGUMENTS]->ToObject());
+    visitor->VisitMethodCall(node);
 }
 
 void TreeHost::AcceptExpressionList(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ELIST);
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ELIST);
 
     for (int i = 0; i < node.GetNumericSize(); i++)
         Accept(*node[i]->ToObject());
@@ -414,15 +420,15 @@ void TreeHost::AcceptExpressionList(const Object &node) {
 }
 
 void TreeHost::AcceptObjectDef(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_OBJECT_DEF);
-	assert(node.ElementExists(AST_TAG_CHILD));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_OBJECT_DEF);
+    assert(node.ElementExists(AST_TAG_CHILD));
 
-	Accept(*node[AST_TAG_CHILD]->ToObject());
-	visitor->VisitObjectDef(node);
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitObjectDef(node);
 }
 
 void TreeHost::AcceptIndexed(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_INDEXED);
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_INDEXED);
 
 	for (int i = 0; i < node.GetNumericSize(); i++)
 		Accept(*node[i]->ToObject());
@@ -430,80 +436,80 @@ void TreeHost::AcceptIndexed(const Object &node) {
 }
 
 void TreeHost::AcceptIndexedElem(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_INDEXED_ELEM);
-	assert(node.ElementExists(AST_TAG_OBJECT_KEY));
-	assert(node.ElementExists(AST_TAG_OBJECT_VALUE));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_INDEXED_ELEM);
+    assert(node.ElementExists(AST_TAG_OBJECT_KEY));
+    assert(node.ElementExists(AST_TAG_OBJECT_VALUE));
 
-	Accept(*node[AST_TAG_OBJECT_KEY]->ToObject());
-	Accept(*node[AST_TAG_OBJECT_VALUE]->ToObject());
-	visitor->VisitIndexedElem(node);
+    Accept(*node[AST_TAG_OBJECT_KEY]->ToObject());
+    Accept(*node[AST_TAG_OBJECT_VALUE]->ToObject());
+    visitor->VisitIndexedElem(node);
 }
 
 void TreeHost::AcceptBlock(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_BLOCK);
-	assert(node.ElementExists(AST_TAG_CHILD));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_BLOCK);
+    assert(node.ElementExists(AST_TAG_CHILD));
 
-	Accept(*node[AST_TAG_CHILD]->ToObject());
-	visitor->VisitBlock(node);
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitBlock(node);
 }
 
 void TreeHost::AcceptFunctionDef(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FUNCTION_DEF);
-	assert(node.ElementExists(AST_TAG_FUNCTION_ID));
-	assert(node.ElementExists(AST_TAG_FUNCTION_FORMALS));
-	assert(node.ElementExists(AST_TAG_STMT));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FUNCTION_DEF);
+    assert(node.ElementExists(AST_TAG_FUNCTION_ID));
+    assert(node.ElementExists(AST_TAG_FUNCTION_FORMALS));
+    assert(node.ElementExists(AST_TAG_STMT));
 
-	Accept(*node[AST_TAG_FUNCTION_ID]->ToObject());	//This is optional
-	Accept(*node[AST_TAG_FUNCTION_FORMALS]->ToObject());
-	Accept(*node[AST_TAG_STMT]->ToObject());
-	visitor->VisitFunctionDef(node);
+    Accept(*node[AST_TAG_FUNCTION_ID]->ToObject());    //This is optional
+    Accept(*node[AST_TAG_FUNCTION_FORMALS]->ToObject());
+    Accept(*node[AST_TAG_STMT]->ToObject());
+    visitor->VisitFunctionDef(node);
 }
 
 void TreeHost::AcceptConst(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_CONST);
-	assert(node.ElementExists(AST_TAG_CHILD));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_CONST);
+    assert(node.ElementExists(AST_TAG_CHILD));
 
-	Accept(*node[AST_TAG_CHILD]->ToObject());
-	visitor->VisitConst(node);
+    Accept(*node[AST_TAG_CHILD]->ToObject());
+    visitor->VisitConst(node);
 }
 
 void TreeHost::AcceptNumber(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NUMBER);
-	assert(node.ElementExists(AST_TAG_VALUE));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NUMBER);
+    assert(node.ElementExists(AST_TAG_VALUE));
 
     visitor->VisitNumber(node);
 }
 
 void TreeHost::AcceptString(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_STRING);
-	assert(node.ElementExists(AST_TAG_VALUE));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_STRING);
+    assert(node.ElementExists(AST_TAG_VALUE));
 
     visitor->VisitString(node);
 }
 
 void TreeHost::AcceptNill(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NILL);
-	assert(node.ElementExists(AST_TAG_VALUE));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NILL);
+    assert(node.ElementExists(AST_TAG_VALUE));
 
     visitor->VisitNill(node);
 }
 
 void TreeHost::AcceptTrue(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_TRUE);
-	assert(node.ElementExists(AST_TAG_VALUE));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_TRUE);
+    assert(node.ElementExists(AST_TAG_VALUE));
 
     visitor->VisitTrue(node);
 }
 
 void TreeHost::AcceptFalse(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FALSE);
-	assert(node.ElementExists(AST_TAG_VALUE));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FALSE);
+    assert(node.ElementExists(AST_TAG_VALUE));
 
     visitor->VisitFalse(node);
 }
 
 void TreeHost::AcceptIdList(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ID_LIST);
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ID_LIST);
 
 	for (int i = 0; i < node.GetNumericSize(); i++)
 		Accept(*node[i]->ToObject());
@@ -511,42 +517,42 @@ void TreeHost::AcceptIdList(const Object &node) {
 }
 
 void TreeHost::AcceptIf(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_IF);
-	assert(node.ElementExists(AST_TAG_CONDITION));
-	assert(node.ElementExists(AST_TAG_STMT));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_IF);
+    assert(node.ElementExists(AST_TAG_CONDITION));
+    assert(node.ElementExists(AST_TAG_STMT));
 
-	Accept(*node[AST_TAG_CONDITION]->ToObject());
-	Accept(*node[AST_TAG_STMT]->ToObject());
-	if (node.ElementExists(AST_TAG_ELSE_STMT))
-		Accept(*node[AST_TAG_ELSE_STMT]->ToObject());
-	visitor->VisitIf(node);
+    Accept(*node[AST_TAG_CONDITION]->ToObject());
+    Accept(*node[AST_TAG_STMT]->ToObject());
+    if (node.ElementExists(AST_TAG_ELSE_STMT))
+        Accept(*node[AST_TAG_ELSE_STMT]->ToObject());
+    visitor->VisitIf(node);
 }
 
 void TreeHost::AcceptWhile(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_WHILE);
-	assert(node.ElementExists(AST_TAG_CONDITION));
-	assert(node.ElementExists(AST_TAG_STMT));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_WHILE);
+    assert(node.ElementExists(AST_TAG_CONDITION));
+    assert(node.ElementExists(AST_TAG_STMT));
 
-	Accept(*node[AST_TAG_CONDITION]->ToObject());
-	Accept(*node[AST_TAG_STMT]->ToObject());
-	visitor->VisitWhile(node);
+    Accept(*node[AST_TAG_CONDITION]->ToObject());
+    Accept(*node[AST_TAG_STMT]->ToObject());
+    visitor->VisitWhile(node);
 }
 
 void TreeHost::AcceptFor(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FOR);
-	assert(node.ElementExists(AST_TAG_FOR_PRE_ELIST));
-	assert(node.ElementExists(AST_TAG_CONDITION));
-	assert(node.ElementExists(AST_TAG_FOR_POST_ELIST));
-	assert(node.ElementExists(AST_TAG_STMT));
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FOR);
+    assert(node.ElementExists(AST_TAG_FOR_PRE_ELIST));
+    assert(node.ElementExists(AST_TAG_CONDITION));
+    assert(node.ElementExists(AST_TAG_FOR_POST_ELIST));
+    assert(node.ElementExists(AST_TAG_STMT));
 
-	Accept(*node[AST_TAG_FOR_PRE_ELIST]->ToObject());
-	Accept(*node[AST_TAG_CONDITION]->ToObject());
-	Accept(*node[AST_TAG_FOR_POST_ELIST]->ToObject());
-	Accept(*node[AST_TAG_STMT]->ToObject());
-	visitor->VisitFor(node);
+    Accept(*node[AST_TAG_FOR_PRE_ELIST]->ToObject());
+    Accept(*node[AST_TAG_CONDITION]->ToObject());
+    Accept(*node[AST_TAG_FOR_POST_ELIST]->ToObject());
+    Accept(*node[AST_TAG_STMT]->ToObject());
+    visitor->VisitFor(node);
 }
 
-void TreeHost::AcceptReturn(const Object& node){
+void TreeHost::AcceptReturn(const Object &node) {
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_RETURN);
 
     if (node.ElementExists(AST_TAG_CHILD))
@@ -555,13 +561,18 @@ void TreeHost::AcceptReturn(const Object& node){
 }
 
 void TreeHost::AcceptBreak(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_BREAK);
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_BREAK);
 
-	visitor->VisitBreak(node);
+    visitor->VisitBreak(node);
 }
 
 void TreeHost::AcceptContinue(const Object &node) {
-	assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_CONTINUE);
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_CONTINUE);
 
-	visitor->VisitContinue(node);
+    visitor->VisitContinue(node);
+}
+
+TreeHost::~TreeHost() {
+    if(visitor) delete visitor;
+    acceptors.clear();
 }

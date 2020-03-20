@@ -2,3 +2,11 @@ obj/*
 *.out
 .vscode/*
 *.dot
+
+alpha_GrammarRules.txt
+
+myronTest.alpha
+
+alpha_TokenList.txt
+
+AlphaUnparse.alpha
