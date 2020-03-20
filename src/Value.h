@@ -128,7 +128,7 @@ private:
     union Data {
         double numVal;
         bool boolVal;
-        std::string stringVal; /* TODO: It would be more efficient if this was a pointer to string */
+        std::string * stringVal; /* TODO: It would be more efficient if this was a pointer to string */
         Object * objectVal;
 
         struct {
