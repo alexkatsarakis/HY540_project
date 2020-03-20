@@ -6,6 +6,7 @@
     #include "SemanticActions.h"
     #include "TreeHost.h"
     #include "VisualizeVisitor.h"
+	#include "UnparseVisitor.h"
 
     #include <iostream>
     #include <vector>
@@ -323,9 +324,10 @@ int main(int argc, char ** argv) {
         return EXIT_FAILURE;
     }
 
-    host = new TreeHost();
-    host->visitor = new VisualizeVisitor();
-    host->InstallAllAcceptors();
+    TreeHost *visualizeHost = new TreeHost(new VisualizeVisitor());
+    TreeHost *unparseHost = new TreeHost(new UnparseVisitor());
+    // host->visitor = new VisualizeVisitor();
+    // host->InstallAllAcceptors();
 
     /* The Bison parser */
     yyparse();
