@@ -21,7 +21,7 @@ INCLDIR=-I$(PROJECTDIR)$
 # Set compilation flags
 # -Wshadow : Warn whenever a local variable or type declaration shadows another
 #            variable, parameter, type or when a built-in function is shadowed
-CFLAGS=-std=c++14 -Wshadow -Wall -Wold-style-cast -Wpedantic $(INCLDIR)
+CFLAGS=-O0 -g3 -std=c++14 -Wshadow -Wall -Wold-style-cast -Wpedantic $(INCLDIR)
 
 # Find all source files
 SRCS:=$(shell cd $(SRCDIR); ls *.cpp)

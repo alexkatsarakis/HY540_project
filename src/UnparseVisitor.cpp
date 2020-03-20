@@ -37,6 +37,7 @@ void UnparseVisitor::WriteFile(void) {
     ofstream f(fileName.c_str(), ios_base::out);
     assert(stack.size() == 1);
     f << stack.top();
+    stack.pop();
     f.close();
 }
 TreeVisitor *UnparseVisitor::Clone(void) const {
@@ -48,6 +49,10 @@ void UnparseVisitor::VisitProgram(const Object &node) {
     WriteFile();
 }
 void UnparseVisitor::VisitStatements(const Object &node) {
+    if (node.GetNumericSize() == 0) {
+        stack.push("");
+        return;
+    }
     stringstream code;
     list<string> stmts;
     for (unsigned int i = 0; i < node.GetNumericSize(); ++i) {
@@ -344,6 +349,10 @@ void UnparseVisitor::VisitMethodCall(const Object &node) {
     stack.push(code.str());
 }
 void UnparseVisitor::VisitExpressionList(const Object &node) {
+    if (node.GetNumericSize() == 0) {
+        stack.push("");
+        return;
+    }
     stringstream code;
     list<string> exprElements;
     for (unsigned i = 0; i < node.GetNumericSize() - 1; ++i) {
@@ -366,6 +375,7 @@ void UnparseVisitor::VisitObjectDef(const Object &node) {
     stack.push(code.str());
 }
 void UnparseVisitor::VisitIndexed(const Object &node) {
+    assert(node.GetNumericSize() > 0);
     stringstream code;
     list<string> indexedElements;
     for (unsigned i = 0; i < node.GetNumericSize() - 1; ++i) {
@@ -405,8 +415,8 @@ void UnparseVisitor::VisitFunctionDef(const Object &node) {
     stack.pop();
     string id = stack.top();
     stack.pop();
-    if (id.find("$")) id = "";
-    code << "function " << id << "(" << formals << ")" << stmt;
+    if (id.find("$") != std::string::npos) id = "";
+    code << "function " << id << "(" << formals << ") " << stmt;
     stack.push(code.str());
 }
 void UnparseVisitor::VisitConst(const Object &node) {}
@@ -434,6 +444,10 @@ void UnparseVisitor::VisitFalse(const Object &node) {
     stack.push("false");
 }
 void UnparseVisitor::VisitIdList(const Object &node) {
+    if (node.GetNumericSize() == 0) {
+        stack.push("");
+        return;
+    };
     stringstream code;
     list<string> ids;
     for (int i = 0; i < node.GetNumericSize() - 1; ++i) {
@@ -482,7 +496,7 @@ void UnparseVisitor::VisitFor(const Object &node) {
     stack.pop();
     string elist1 = stack.top();
     stack.pop();
-    code << "for (" << elist1 << ";" << expr << ";" << elist2 << ") " << stmt;
+    code << "for (" << elist1 << "; " << expr << "; " << elist2 << ") " << stmt;
     stack.push(code.str());
 }
 void UnparseVisitor::VisitReturn(const Object &node) {
