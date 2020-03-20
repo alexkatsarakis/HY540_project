@@ -10,11 +10,21 @@
 
 using namespace std;
 
-TreeVisitor *UnparseVisitor::Clone(void) const {
-    UnparseVisitor *clone = new UnparseVisitor();
-    clone->stack = this->stack;    // copy assignment
+UnparseVisitor::UnparseVisitor(const std::string &_fileName) : fileName(_fileName) {}
+void UnparseVisitor::WriteFile(void) {
+    ofstream f(fileName.c_str(), ios_base::out);
+    assert(stack.size() == 1);
+    f << stack.top();
+    f.close();
 }
-void UnparseVisitor::VisitProgram(const Object &node) {}
+TreeVisitor *UnparseVisitor::Clone(void) const {
+    UnparseVisitor *clone = new UnparseVisitor(this->fileName);
+    clone->stack = this->stack;    // copy assignment
+    return clone;
+}
+void UnparseVisitor::VisitProgram(const Object &node) {
+    WriteFile();
+}
 void UnparseVisitor::VisitStatements(const Object &node) {
     ostringstream code;
     for (unsigned int i = 0; node.GetNumericSize(); ++i) {
@@ -445,11 +455,4 @@ void UnparseVisitor::VisitBreak(const Object &node) {
 }
 void UnparseVisitor::VisitContinue(const Object &node) {
     stack.push("continue;");
-}
-
-void UnparseVisitor::Write(const std::string &fileName) {
-    ofstream f(fileName.c_str(), ios_base::out);
-    assert(stack.size() == 1);
-    f << stack.top();
-    f.close();
 }

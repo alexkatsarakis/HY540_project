@@ -7,7 +7,13 @@
 #include <string>
 
 class UnparseVisitor : public TreeVisitor {
+   private:
+    std::stack<std::string> stack;
+    std::string fileName;
+    void WriteFile(void);
+
    public:
+    UnparseVisitor(const std::string &_fileName = "AlphaUnparse.alpha");
     TreeVisitor *Clone(void) const override;
     void VisitProgram(const Object &node) override;
     void VisitStatements(const Object &node) override;
@@ -65,9 +71,6 @@ class UnparseVisitor : public TreeVisitor {
     void VisitReturn(const Object &node) override;
     void VisitBreak(const Object &node) override;
     void VisitContinue(const Object &node) override;
-
-    std::stack<std::string> stack;
-    void Write(const std::string &fileName);
 };
 
 #endif

@@ -39,7 +39,8 @@
 
     SyntaxPrinter rulesPrinter("alpha_GrammarRules.txt");
 
-    TreeHost * host = nullptr;
+    TreeHost * visualizeHost = nullptr;
+    TreeHost * unparseHost = nullptr;
 %}
 
 %union {
@@ -152,7 +153,8 @@
 %%
 
 program : stmts { $$ = ParseProgram($1);
-                  host->Accept(*$$);
+                  unparseHost->Accept(*$$);
+                  visualizeHost->Accept(*$$);
                 }
         ;
 
@@ -324,8 +326,8 @@ int main(int argc, char ** argv) {
         return EXIT_FAILURE;
     }
 
-    TreeHost *visualizeHost = new TreeHost(new VisualizeVisitor());
-    TreeHost *unparseHost = new TreeHost(new UnparseVisitor());
+    unparseHost = new TreeHost(new UnparseVisitor());
+    visualizeHost = new TreeHost(new VisualizeVisitor());
     // host->visitor = new VisualizeVisitor();
     // host->InstallAllAcceptors();
 
