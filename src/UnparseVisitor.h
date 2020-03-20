@@ -13,7 +13,7 @@ class UnparseVisitor : public TreeVisitor {
     void WriteFile(void);
 
    public:
-    UnparseVisitor(const std::string &_fileName = "AlphaUnparse.alpha");
+    UnparseVisitor(const std::string &_fileName = "alpha_unparse.alpha");
     TreeVisitor *Clone(void) const override;
     void VisitProgram(const Object &node) override;
     void VisitStatements(const Object &node) override;
