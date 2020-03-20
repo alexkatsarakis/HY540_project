@@ -1,12 +1,12 @@
-#ifndef _UNPARSER_H_
-#define _UNPARSER_H_
+#ifndef _UNPARSEVISITOR_H_
+#define _UNPARSEVISITOR_H_
 
 #include "TreeVisitor.h"
 
 #include <stack>
 #include <string>
 
-class Unparser : public TreeVisitor {
+class UnparseVisitor : public TreeVisitor {
    public:
     std::stack<std::string> stack;
 

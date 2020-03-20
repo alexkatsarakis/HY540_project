@@ -1,4 +1,5 @@
-#include "Unparser.h"
+#include "UnparseVisitor.h"
+
 #include "Object.h"
 #include "TreeTags.h"
 
@@ -7,11 +8,13 @@
 
 using namespace std;
 
-TreeVisitor *Unparser::Clone(void) const {
+TreeVisitor *UnparseVisitor::Clone(void) const {
+    UnparseVisitor *clone = new UnparseVisitor();
+    clone->stack = this->stack;    // copy assignment
 }
 
-void Unparser::VisitProgram(const Object &node) {}
-void Unparser::VisitStatements(const Object &node) {
+void UnparseVisitor::VisitProgram(const Object &node) {}
+void UnparseVisitor::VisitStatements(const Object &node) {
     ostringstream code;
     for (unsigned int i = 0; node.GetNumericSize(); ++i) {
         string stmt = stack.top();
@@ -20,7 +23,7 @@ void Unparser::VisitStatements(const Object &node) {
     }
     stack.push(code.str());
 }
-void Unparser::VisitStatement(const Object &node) {
+void UnparseVisitor::VisitStatement(const Object &node) {
     ostringstream code;
     if (node.ElementExists(AST_TAG_CHILD) == false) {
         //don't pop stack?
@@ -37,8 +40,8 @@ void Unparser::VisitStatement(const Object &node) {
         stack.push(code.str());
     }
 }
-void Unparser::VisitExpression(const Object &node) {}
-void Unparser::VisitAssign(const Object &node) {
+void UnparseVisitor::VisitExpression(const Object &node) {}
+void UnparseVisitor::VisitAssign(const Object &node) {
     ostringstream code;
     string expr = stack.top();
     stack.pop();
@@ -47,7 +50,7 @@ void Unparser::VisitAssign(const Object &node) {
     code << lvalue << "=" << expr;
     stack.push(code.str());
 }
-void Unparser::VisitPlus(const Object &node) {
+void UnparseVisitor::VisitPlus(const Object &node) {
     ostringstream code;
     string expr2 = stack.top();
     stack.pop();
@@ -56,7 +59,7 @@ void Unparser::VisitPlus(const Object &node) {
     code << expr1 << "+" << expr2;
     stack.push(code.str());
 }
-void Unparser::VisitMinus(const Object &node) {
+void UnparseVisitor::VisitMinus(const Object &node) {
     ostringstream code;
     string expr2 = stack.top();
     stack.pop();
@@ -65,7 +68,7 @@ void Unparser::VisitMinus(const Object &node) {
     code << expr1 << "-" << expr2;
     stack.push(code.str());
 }
-void Unparser::VisitMul(const Object &node) {
+void UnparseVisitor::VisitMul(const Object &node) {
     ostringstream code;
     string expr2 = stack.top();
     stack.pop();
@@ -74,7 +77,7 @@ void Unparser::VisitMul(const Object &node) {
     code << expr1 << "*" << expr2;
     stack.push(code.str());
 }
-void Unparser::VisitDiv(const Object &node) {
+void UnparseVisitor::VisitDiv(const Object &node) {
     ostringstream code;
     string expr2 = stack.top();
     stack.pop();
@@ -83,7 +86,7 @@ void Unparser::VisitDiv(const Object &node) {
     code << expr1 << "/" << expr2;
     stack.push(code.str());
 }
-void Unparser::VisitModulo(const Object &node) {
+void UnparseVisitor::VisitModulo(const Object &node) {
     ostringstream code;
     string expr2 = stack.top();
     stack.pop();
@@ -92,7 +95,7 @@ void Unparser::VisitModulo(const Object &node) {
     code << expr1 << "%" << expr2;
     stack.push(code.str());
 }
-void Unparser::VisitGreater(const Object &node) {
+void UnparseVisitor::VisitGreater(const Object &node) {
     ostringstream code;
     string expr2 = stack.top();
     stack.pop();
@@ -101,7 +104,7 @@ void Unparser::VisitGreater(const Object &node) {
     code << expr1 << ">" << expr2;
     stack.push(code.str());
 }
-void Unparser::VisitLess(const Object &node) {
+void UnparseVisitor::VisitLess(const Object &node) {
     ostringstream code;
     string expr2 = stack.top();
     stack.pop();
@@ -110,7 +113,7 @@ void Unparser::VisitLess(const Object &node) {
     code << expr1 << "<" << expr2;
     stack.push(code.str());
 }
-void Unparser::VisitGreaterEqual(const Object &node) {
+void UnparseVisitor::VisitGreaterEqual(const Object &node) {
     ostringstream code;
     string expr2 = stack.top();
     stack.pop();
@@ -119,7 +122,7 @@ void Unparser::VisitGreaterEqual(const Object &node) {
     code << expr1 << ">=" << expr2;
     stack.push(code.str());
 }
-void Unparser::VisitLessEqual(const Object &node) {
+void UnparseVisitor::VisitLessEqual(const Object &node) {
     ostringstream code;
     string expr2 = stack.top();
     stack.pop();
@@ -128,7 +131,7 @@ void Unparser::VisitLessEqual(const Object &node) {
     code << expr1 << "<=" << expr2;
     stack.push(code.str());
 }
-void Unparser::VisitEqual(const Object &node) {
+void UnparseVisitor::VisitEqual(const Object &node) {
     ostringstream code;
     string expr2 = stack.top();
     stack.pop();
@@ -137,7 +140,7 @@ void Unparser::VisitEqual(const Object &node) {
     code << expr1 << "==" << expr2;
     stack.push(code.str());
 }
-void Unparser::VisitNotEqual(const Object &node) {
+void UnparseVisitor::VisitNotEqual(const Object &node) {
     ostringstream code;
     string expr2 = stack.top();
     stack.pop();
@@ -146,7 +149,7 @@ void Unparser::VisitNotEqual(const Object &node) {
     code << expr1 << "!=" << expr2;
     stack.push(code.str());
 }
-void Unparser::VisitAnd(const Object &node) {
+void UnparseVisitor::VisitAnd(const Object &node) {
     ostringstream code;
     string expr2 = stack.top();
     stack.pop();
@@ -155,7 +158,7 @@ void Unparser::VisitAnd(const Object &node) {
     code << expr1 << "&&" << expr2;
     stack.push(code.str());
 }
-void Unparser::VisitOr(const Object &node) {
+void UnparseVisitor::VisitOr(const Object &node) {
     ostringstream code;
     string expr2 = stack.top();
     stack.pop();
@@ -164,50 +167,50 @@ void Unparser::VisitOr(const Object &node) {
     code << expr1 << "||" << expr2;
     stack.push(code.str());
 }
-void Unparser::VisitTerm(const Object &node) {}
-void Unparser::VisitUnaryMinus(const Object &node) {
+void UnparseVisitor::VisitTerm(const Object &node) {}
+void UnparseVisitor::VisitUnaryMinus(const Object &node) {
     ostringstream code;
     string expr = stack.top();
     stack.pop();
     code << "-" << expr;
     stack.push(code.str());
 }
-void Unparser::VisitNot(const Object &node) {
+void UnparseVisitor::VisitNot(const Object &node) {
     ostringstream code;
     string expr = stack.top();
     stack.pop();
     code << "!" << expr;
     stack.push(code.str());
 }
-void Unparser::VisitPlusPlusBefore(const Object &node) {
+void UnparseVisitor::VisitPlusPlusBefore(const Object &node) {
     ostringstream code;
     string lvalue = stack.top();
     stack.pop();
     code << "++" << lvalue;
     stack.push(code.str());
 }
-void Unparser::VisitPlusPlusAfter(const Object &node) {
+void UnparseVisitor::VisitPlusPlusAfter(const Object &node) {
     ostringstream code;
     string lvalue = stack.top();
     stack.pop();
     code << lvalue << "++";
     stack.push(code.str());
 }
-void Unparser::VisitMinusMinusBefore(const Object &node) {
+void UnparseVisitor::VisitMinusMinusBefore(const Object &node) {
     ostringstream code;
     string lvalue = stack.top();
     stack.pop();
     code << "--" << lvalue;
     stack.push(code.str());
 }
-void Unparser::VisitMinusMinusAfter(const Object &node) {
+void UnparseVisitor::VisitMinusMinusAfter(const Object &node) {
     ostringstream code;
     string lvalue = stack.top();
     stack.pop();
     code << lvalue << "--";
     stack.push(code.str());
 }
-void Unparser::VisitPrimary(const Object &node) {
+void UnparseVisitor::VisitPrimary(const Object &node) {
     auto child = *(node[AST_TAG_CHILD]->ToObject());
     if (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FUNCTION_DEF) {
         ostringstream code;
@@ -217,30 +220,30 @@ void Unparser::VisitPrimary(const Object &node) {
         stack.push(code.str());
     }
 }
-void Unparser::VisitLValue(const Object &node) {}
-void Unparser::VisitId(const Object &node) {
+void UnparseVisitor::VisitLValue(const Object &node) {}
+void UnparseVisitor::VisitId(const Object &node) {
     ostringstream code;
     string id = stack.top();
     stack.pop();
     code << id;
     stack.push(code.str());
 }
-void Unparser::VisitLocal(const Object &node) {
+void UnparseVisitor::VisitLocal(const Object &node) {
     ostringstream code;
     string id = stack.top();
     stack.pop();
     code << "local " << id;
     stack.push(code.str());
 }
-void Unparser::VisitDoubleColon(const Object &node) {
+void UnparseVisitor::VisitDoubleColon(const Object &node) {
     ostringstream code;
     string id = stack.top();
     stack.pop();
     code << "::" << id;
     stack.push(code.str());
 }
-void Unparser::VisitMember(const Object &node) {}
-void Unparser::VisitDot(const Object &node) {
+void UnparseVisitor::VisitMember(const Object &node) {}
+void UnparseVisitor::VisitDot(const Object &node) {
     ostringstream code;
     string id = stack.top();
     stack.pop();
@@ -249,26 +252,27 @@ void Unparser::VisitDot(const Object &node) {
     code << dot << id;
     stack.push(code.str());
 }
-void Unparser::VisitBracket(const Object &node) {
+void UnparseVisitor::VisitBracket(const Object &node) {
     ostringstream code;
     string expr = stack.top();
     stack.pop();
     code << "{" << expr << "}";
     stack.push(code.str());
 }
-void Unparser::VisitCall(const Object &node) {    //can't distinguish rvalues, resolve later
+void UnparseVisitor::VisitCall(const Object &node) {
     ostringstream code;
-    const Value* val;
-    if((val = node[AST_TAG_FUNCTION])){
-        const Object* test = val->ToObject();
-        const Value* a = ((*test)[AST_TAG_TYPE_KEY]);
-        if(a->ToString() != AST_TAG_CALL){
+    const Value *val;
+    if ((val = node[AST_TAG_FUNCTION])) {
+        const Object *test = val->ToObject();
+        const Value *a = ((*test)[AST_TAG_TYPE_KEY]);
+        if (a->ToString() != AST_TAG_CALL) {
             string elist = stack.top();
             stack.pop();
             string funcdef = stack.top();
             stack.pop();
-            code << "(" << funcdef << ")" << "(" << elist << ")";
-        }else{
+            code << "(" << funcdef << ")"
+                 << "(" << elist << ")";
+        } else {
             string elist = stack.top();
             stack.pop();
             string calll = stack.top();
@@ -282,20 +286,17 @@ void Unparser::VisitCall(const Object &node) {    //can't distinguish rvalues, r
         stack.pop();
         code << lvalue << callSuffix;
     }
-    /* string elist = stack.top();
-	stack.pop();
-	code << "(" << elist << ")"; */
     stack.push(code.str());
 }
-void Unparser::VisitCallSuffix(const Object &node) {}
-void Unparser::VisitNormalCall(const Object &node) {
+void UnparseVisitor::VisitCallSuffix(const Object &node) {}
+void UnparseVisitor::VisitNormalCall(const Object &node) {
     ostringstream code;
     string elist = stack.top();
     stack.pop();
     code << "(" << elist << ")";
     stack.push(code.str());
 }
-void Unparser::VisitMethodCall(const Object &node) {
+void UnparseVisitor::VisitMethodCall(const Object &node) {
     ostringstream code;
     string elist = stack.top();
     stack.pop();
@@ -304,7 +305,7 @@ void Unparser::VisitMethodCall(const Object &node) {
     code << ".." << id << "(" << elist << ")";
     stack.push(code.str());
 }
-void Unparser::VisitExpressionList(const Object &node) {
+void UnparseVisitor::VisitExpressionList(const Object &node) {
     ostringstream code;
     list<string> exprElements;
     for (unsigned i = 0; i < node.GetNumericSize(); ++i) {
@@ -316,14 +317,14 @@ void Unparser::VisitExpressionList(const Object &node) {
         code << elem << ", ";
     stack.push(code.str());
 }
-void Unparser::VisitObjectDef(const Object &node) {
+void UnparseVisitor::VisitObjectDef(const Object &node) {
     ostringstream code;
     string child = stack.top();
     stack.pop();
     code << "[" << child << "]";
     stack.push(code.str());
 }
-void Unparser::VisitIndexed(const Object &node) {
+void UnparseVisitor::VisitIndexed(const Object &node) {
     ostringstream code;
     list<string> indexedElements;
     for (unsigned i = 0; i < node.GetNumericSize(); ++i) {
@@ -335,7 +336,7 @@ void Unparser::VisitIndexed(const Object &node) {
         code << elem << ", ";
     stack.push(code.str());
 }
-void Unparser::VisitIndexedElem(const Object &node) {
+void UnparseVisitor::VisitIndexedElem(const Object &node) {
     ostringstream code;
     string expr2 = stack.top();
     stack.pop();
@@ -344,14 +345,14 @@ void Unparser::VisitIndexedElem(const Object &node) {
     code << "{" << expr1 << ":" << expr2 << "}";
     stack.push(code.str());
 }
-void Unparser::VisitBlock(const Object &node) {
+void UnparseVisitor::VisitBlock(const Object &node) {
     ostringstream code;
     string stmt = stack.top();
     stack.pop();
     code << "{" << stmt << "}";
     stack.push(code.str());
 }
-void Unparser::VisitFunctionDef(const Object &node) {
+void UnparseVisitor::VisitFunctionDef(const Object &node) {
     ostringstream code;
     string stmt = stack.top();
     stack.pop();
@@ -362,27 +363,27 @@ void Unparser::VisitFunctionDef(const Object &node) {
     code << "function " << id << "(" << formals << ")" << stmt;
     stack.push(code.str());
 }
-void Unparser::VisitConst(const Object &node) {}
-void Unparser::VisitNumber(const Object &node) {
+void UnparseVisitor::VisitConst(const Object &node) {}
+void UnparseVisitor::VisitNumber(const Object &node) {
     ostringstream code;
     code << node[AST_TAG_VALUE]->ToNumber();
     stack.push(code.str());
 }
-void Unparser::VisitString(const Object &node) {
+void UnparseVisitor::VisitString(const Object &node) {
     ostringstream code;
     code << node[AST_TAG_VALUE]->ToString();
     stack.push(code.str());
 }
-void Unparser::VisitNill(const Object &node) {
+void UnparseVisitor::VisitNill(const Object &node) {
     stack.push("nil");
 }
-void Unparser::VisitTrue(const Object &node) {
+void UnparseVisitor::VisitTrue(const Object &node) {
     stack.push("true");
 }
-void Unparser::VisitFalse(const Object &node) {
+void UnparseVisitor::VisitFalse(const Object &node) {
     stack.push("false");
 }
-void Unparser::VisitIdList(const Object &node) {
+void UnparseVisitor::VisitIdList(const Object &node) {
     ostringstream code;
     for (int i = 0; i < node.GetNumericSize(); ++i) {
         string id = stack.top();
@@ -391,7 +392,7 @@ void Unparser::VisitIdList(const Object &node) {
     }
     stack.push(code.str());
 }
-void Unparser::VisitIf(const Object &node) {
+void UnparseVisitor::VisitIf(const Object &node) {
     ostringstream code;
     string elseAddition;
     if (node.ElementExists(AST_TAG_ELSE_STMT)) {
@@ -406,7 +407,7 @@ void Unparser::VisitIf(const Object &node) {
     code << "if (" << expr << ")" << stmt1 << elseAddition;
     stack.push(code.str());
 }
-void Unparser::VisitWhile(const Object &node) {
+void UnparseVisitor::VisitWhile(const Object &node) {
     ostringstream code;
     string stmt = stack.top();
     stack.pop();
@@ -415,7 +416,7 @@ void Unparser::VisitWhile(const Object &node) {
     code << "while (" << expr << ")" << stmt;
     stack.push(code.str());
 }
-void Unparser::VisitFor(const Object &node) {
+void UnparseVisitor::VisitFor(const Object &node) {
     ostringstream code;
     string stmt = stack.top();
     stack.pop();
@@ -428,7 +429,7 @@ void Unparser::VisitFor(const Object &node) {
     code << "for (" << elist1 << ";" << expr << ";" << elist2 << ")" << stmt;
     stack.push(code.str());
 }
-void Unparser::VisitReturn(const Object &node) {
+void UnparseVisitor::VisitReturn(const Object &node) {
     ostringstream code;
     code << "continue ";
     if (node.ElementExists(AST_TAG_CHILD) == false) {
@@ -441,12 +442,12 @@ void Unparser::VisitReturn(const Object &node) {
     code << expr << ";";
     stack.push(code.str());
 }
-void Unparser::VisitBreak(const Object &node) {
+void UnparseVisitor::VisitBreak(const Object &node) {
     ostringstream code;
     code << "break;";
     stack.push(code.str());
 }
-void Unparser::VisitContinue(const Object &node) {
+void UnparseVisitor::VisitContinue(const Object &node) {
     ostringstream code;
     code << "continue;";
     stack.push(code.str());
