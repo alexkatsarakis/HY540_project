@@ -22,8 +22,6 @@ string formatEscChars(const string &str) {
             out += "\\t";
         else if (c == '\"')
             out += "\\\"";
-        else if (c == '\'')
-            out += "\\\'";
         else if (c == '\\')
             out += "\\\\";
         else
@@ -355,13 +353,13 @@ void UnparseVisitor::VisitExpressionList(const Object &node) {
     }
     stringstream code;
     list<string> exprElements;
+    string last = stack.top();
+    stack.pop();
     for (unsigned i = 0; i < node.GetNumericSize() - 1; ++i) {
         string exprElem = stack.top();
         stack.pop();
         exprElements.push_front(exprElem);
     }
-    string last = stack.top();
-    stack.pop();
     for (const auto &elem : exprElements)
         code << elem << ", ";
     code << last;
@@ -378,13 +376,13 @@ void UnparseVisitor::VisitIndexed(const Object &node) {
     assert(node.GetNumericSize() > 0);
     stringstream code;
     list<string> indexedElements;
+    string last = stack.top();
+    stack.pop();
     for (unsigned i = 0; i < node.GetNumericSize() - 1; ++i) {
         string indexedElem = stack.top();
         stack.pop();
         indexedElements.push_front(indexedElem);
     }
-    string last = stack.top();
-    stack.pop();
     for (const auto &elem : indexedElements)
         code << elem << ", ";
     code << last;
@@ -450,13 +448,13 @@ void UnparseVisitor::VisitIdList(const Object &node) {
     };
     stringstream code;
     list<string> ids;
+    string last = stack.top();
+    stack.pop();
     for (int i = 0; i < node.GetNumericSize() - 1; ++i) {
         string id = stack.top();
         stack.pop();
         ids.push_front(id);
     }
-    string last = stack.top();
-    stack.pop();
     for (const auto &id : ids)
         code << id << ", ";
     code << last;
