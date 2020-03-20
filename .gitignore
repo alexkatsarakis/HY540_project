@@ -2,6 +2,7 @@ obj/*
 *.out
 .vscode/*
 *.dot
+testsNoComments/*
 
 alpha_GrammarRules.txt
 
