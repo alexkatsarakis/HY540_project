@@ -2,23 +2,27 @@
     #include "Object.h"
     #include "Token.h"
     #include "SyntaxPrinter.h"
-    #include "GrammarRules.h"
     #include "SemanticActions.h"
     #include "TreeHost.h"
     #include "UnparseVisitor.h"
     #include "VisualizeVisitor.h"
+    #include "Deallocator.h"
 
     #include <iostream>
     #include <vector>
     #include <algorithm>
     #include <string>
     #include <cstring>
+    #include <cassert>
+    #include <exception>
 
     /* Parser detected syntax or parse errors */
     int yyerror (char * yaccProvidedMessage);
 
     /* Recognizes tokens from the input stream and returns them to the parser */
     int yylex (void);
+
+    void ProcessAST(Object * ast);
 
     /* The  number of the current line */
     extern int yylineno;
@@ -33,21 +37,23 @@
     std::vector<Token> tokenList;
 
     /* Simple flag to indicate if a token list should be created or not */
-    bool maintainTokenList = true;
+    bool maintainTokenList = false;
 
-    unsigned namelessFunctions;
-
-    SyntaxPrinter rulesPrinter("alpha_GrammarRules.txt");
+    unsigned namelessFunctions = 0;
 
     TreeHost * unparseHost = nullptr;
     TreeHost * visualizeHost = nullptr;
 %}
 
+/* This is used so lexxer won't have to include an extra file.Basically we
+ * remove a dependency from the lexxer and make the "parser.h" file valiid */
+%code requires { #include "Object.h" }
+
 %union {
     char * strVal;
     double doubleVal;
     Object * objectVal;
-}
+};
 
 %type <objectVal> program;
 %type <objectVal> stmts;
@@ -81,6 +87,7 @@
 
 %token <strVal> STRING;
 %token <strVal> ID;
+%token <strVal> DOLLAR_ID;
 %token <doubleVal> NUMBER
 
 /* Operators */
@@ -153,8 +160,7 @@
 %%
 
 program : stmts { $$ = ParseProgram($1);
-                  unparseHost->Accept(*$$);
-                  //visualizeHost->Accept(*$$);
+                  ProcessAST($$);
                 }
         ;
 
@@ -216,8 +222,10 @@ lvalue : ID              { $$ = ParseLvalue(ParseSimpleID($1)); }
        ;
 
 member : lvalue DOT ID                          { $$ = ParseMember(ParseMemberDot($1, ParseSimpleID($3))); }
+       | lvalue DOT DOLLAR_ID                   { $$ = ParseMember(ParseMemberDot($1, ParseDollarID($3))); }
        | lvalue LEFT_BRACKET expr RIGHT_BRACKET { $$ = ParseMember(ParseMemberBracket($1, $3)); }
        | call DOT ID                            { $$ = ParseMember(ParseMemberDot($1, ParseSimpleID($3)));; }
+       | call DOT DOLLAR_ID                     { $$ = ParseMember(ParseMemberDot($1, ParseDollarID($3))); }
        | call LEFT_BRACKET expr RIGHT_BRACKET   { $$ = ParseMember(ParseMemberBracket($1, $3));; }
        ;
 
@@ -303,7 +311,7 @@ continuestmt : CONTINUE SEMICOLON { $$ = ParseContinueStmt(); }
 %%
 
 int yyerror (char * yaccProvidedMessage) {
-    std::cerr << "Invalid syntax befor " << yytext << std::endl;
+    std::cerr << "Invalid syntax at line " << yylineno << " before " << yytext << std::endl;
     exit(EXIT_FAILURE);
 }
 
@@ -313,29 +321,48 @@ void Usage(const std::string & str) {
               << "    input_file:  The file containing the source code to be compiled" << std::endl;
 }
 
+void ProcessAST(Object * ast) {
+    assert(ast && ast->IsValid());
+
+    unparseHost->Accept(*ast);
+    visualizeHost->Accept(*ast);
+
+#define AST_MEM_CLEANUP
+#ifdef AST_MEM_CLEANUP
+    TreeHost * h = new TreeHost(new DeallocateVisitor());
+    h->Accept(*ast);
+    delete h;
+#endif
+}
+
 int main(int argc, char ** argv) {
+    try {
+        if (argc > 2) {
+            Usage(argv[0]);
+            return EXIT_FAILURE;
+        }
 
-    if (argc > 2) {
-        Usage(argv[0]);
-        return EXIT_FAILURE;
+        if (argc < 2) yyin = stdin;
+        else if (!(yyin = fopen(argv[1], "r"))) {
+            std::cerr << "Coult not read input file \"" << argv[1] << "\"" << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        unparseHost = new TreeHost(new UnparseVisitor());
+        visualizeHost = new TreeHost(new VisualizeVisitor());
+
+        /* The Bison parser */
+        yyparse();
+
+        std::for_each(tokenList.begin(), tokenList.end(), SyntaxPrinter("alpha_TokenList.txt"));
+
+        delete unparseHost;
+        delete visualizeHost;
+
+    } catch(std::exception & e) {
+        std::cerr << "Unhandled exception: " << e.what() << std::endl;
+        return (EXIT_FAILURE);
     }
-
-    if (argc < 2) yyin = stdin;
-    else if (!(yyin = fopen(argv[1], "r"))) {
-        std::cerr << "Coult not read input file \"" << argv[1] << "\"" << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    unparseHost = new TreeHost(new UnparseVisitor());
-    visualizeHost = new TreeHost(new VisualizeVisitor());
-
-    /* The Bison parser */
-    yyparse();
-
-    std::for_each(tokenList.begin(), tokenList.end(), SyntaxPrinter("alpha_TokenList.txt"));
-
-    delete unparseHost;
-    delete visualizeHost;
 
     return (EXIT_SUCCESS);
 }

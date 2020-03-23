@@ -2,11 +2,16 @@
 #define _VALUE_H_
 
 #include <string>
+#include <functional>
 
 class Object;
 
 /* Used only to indicate that we want to create a Value objec with Nil type */
 enum class NilTypeValue { Nil };
+
+/* TODISCUSS: This could be an std::function but we should use new and delete
+ * all the time */
+typedef void (*LibraryFunc)(Object &);
 
 class Value {
 
@@ -40,6 +45,8 @@ public:
     Value(Object * obj);
 
     Value(Object * ast, Object * closure); // 2 Object ptrs mean program func
+
+    Value(LibraryFunc func, const std::string & str = "");
 
     Value(void * ptr, const std::string & type);
 
@@ -87,7 +94,7 @@ public:
 
     void FromProgramFunction(Object * ast, Object * closure);
 
-    void FromLibraryFunction(const std::string & str);
+    void FromLibraryFunction(LibraryFunc func, const std::string & str);
 
     void FromNativePointer(void * ptr, const std::string & str);
 
@@ -109,7 +116,9 @@ public:
 
     const Object * ToProgramFunctionClosure(void) const;
 
-    std::string ToLibraryFunction(void) const;
+    LibraryFunc ToLibraryFunction(void) const;
+
+    std::string ToLibraryFunctionId(void) const;
 
     void * ToNativePtr(void) const;
 
@@ -128,7 +137,7 @@ private:
     union Data {
         double numVal;
         bool boolVal;
-        std::string * stringVal; /* TODO: It would be more efficient if this was a pointer to string */
+        char * stringVal;
         Object * objectVal;
 
         struct {
@@ -136,11 +145,14 @@ private:
             Object * closure;
         } programFunctionVal;
 
-        std::string libraryFunctionVal;
+        struct {
+            LibraryFunc function;
+            char * id;
+        } libraryFunctionVal;
 
         struct {
             void * ptr;
-            std::string typeId;
+            char * typeId;
         } nativePtrVal;
 
         Data();

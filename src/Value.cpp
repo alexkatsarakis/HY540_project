@@ -2,7 +2,7 @@
 
 #include <string>
 #include <cassert>
-#include <cstring> /* For memset*/
+#include <cstring> /* For memset and strdup */
 
 Value::Data::Data() { this->Clear(); }
 
@@ -19,9 +19,13 @@ Value::Value() { FromUndef(); }
 
 Value::Value(const Value & val) {
     assert(val.IsValid());
+
     this->type = val.type;
-    /* TODO: Is this the correct way to do it ? */
-    std::memcpy(&data, &val.data, sizeof(Data));
+    if (val.type == Type::StringType) data.stringVal = strdup(val.data.stringVal);
+    else if (val.type == Type::LibraryFunctionType) data.libraryFunctionVal.id = strdup(val.data.libraryFunctionVal.id);
+    else if (val.type == Type::NativePtrType) data.nativePtrVal.typeId = strdup(val.data.nativePtrVal.typeId);
+    else std::memcpy(&data, &val.data, sizeof(Data));
+
     assert(IsValid());
 }
 
@@ -37,6 +41,8 @@ Value::Value(Object * obj) { FromObject(obj); }
 
 Value::Value(Object * ast, Object * closure) { FromProgramFunction(ast, closure); }
 
+Value::Value(LibraryFunc func, const std::string & str) { FromLibraryFunction(func, str); }
+
 Value::Value(void * ptr, const std::string & type) { FromNativePointer(ptr, type); }
 
 Value::Value(NilTypeValue) { FromNil(); }
@@ -44,6 +50,8 @@ Value::Value(NilTypeValue) { FromNil(); }
 /****** Operators ******/
 
 const Value & Value::operator = (const Value & val) {
+    assert(val.IsValid());
+
     if (this != &val) {
         this->~Value();
         new (this) Value(val);
@@ -59,11 +67,11 @@ bool Value::IsValid(void) const {
         type == Type::UndefType ||
         type == Type::NumberType ||
         type == Type::BooleanType ||
-        type == Type::StringType ||
-        type == Type::ObjectType ||
-        type == Type::ProgramFunctionType ||
-        type == Type::LibraryFunctionType ||
-        type == Type::NativePtrType ||
+        (type == Type::StringType && data.stringVal) ||
+        (type == Type::ObjectType && data.objectVal) ||
+        (type == Type::ProgramFunctionType && data.programFunctionVal.ast) ||
+        (type == Type::LibraryFunctionType && data.libraryFunctionVal.function && data.libraryFunctionVal.id) ||
+        (type == Type::NativePtrType && data.nativePtrVal.ptr && data.nativePtrVal.typeId) ||
         type == Type::NilType
     );
 }
@@ -93,6 +101,7 @@ bool Value::IsNil(void) const { return type == Type::NilType; }
 void Value::FromUndef(void) {
     type = Type::UndefType;
     data.Clear();
+
     assert(IsUndef());
     assert(data.objectVal == nullptr);
     assert(IsValid());
@@ -101,6 +110,7 @@ void Value::FromUndef(void) {
 void Value::FromNumber(double num) {
     type = Type::NumberType;
     data.numVal = num;
+
     assert(IsNumber());
     assert(IsValid());
 }
@@ -108,42 +118,48 @@ void Value::FromNumber(double num) {
 void Value::FromBoolean(bool val) {
     type = Type::BooleanType;
     data.boolVal = val;
+
     assert(IsBoolean());
     assert(IsValid());
 }
 
 void Value::FromString(const std::string & str) {
     type = Type::StringType;
-    /* TODISCUSS: Is this a good practice? Everytime a From method is called we
-     * will have a memory leak.
-     * Also the destructor should always free this memory if the the object has
-     * Type::String */
-    data.stringVal = new std::string(str);
+    data.stringVal = strdup(str.c_str());
+
     assert(IsString());
     assert(IsValid());
 }
 
 void Value::FromObject(Object * obj) {
     assert(obj);
+
     type = Type::ObjectType;
     data.objectVal = obj;
+
     assert(IsObject());
     assert(IsValid());
 }
 
 void Value::FromProgramFunction(Object * ast, Object * closure) {
     assert(ast);
+
     type = Type::ProgramFunctionType;
     data.programFunctionVal.ast = ast;
     data.programFunctionVal.closure = closure;
+
     assert(IsProgramFunction());
     assert(IsValid());
 }
 
-void Value::FromLibraryFunction(const std::string & str) {
+void Value::FromLibraryFunction(LibraryFunc func, const std::string & str) {
     assert(!str.empty());
+    assert(func);
+
     type = Type::LibraryFunctionType;
-    data.libraryFunctionVal = str;
+    data.libraryFunctionVal.function = func;
+    data.libraryFunctionVal.id = strdup(str.c_str());
+
     assert(IsLibraryFunction());
     assert(IsValid());
 }
@@ -151,9 +167,11 @@ void Value::FromLibraryFunction(const std::string & str) {
 void Value::FromNativePointer(void * ptr, const std::string & str) {
     assert(ptr);
     assert(!str.empty());
+
     type = Type::NativePtrType;
     data.nativePtrVal.ptr = ptr;
-    data.nativePtrVal.typeId = str;
+    data.nativePtrVal.typeId = strdup(str.c_str());
+
     assert(IsNativePtr());
     assert(IsValid());
 }
@@ -161,6 +179,7 @@ void Value::FromNativePointer(void * ptr, const std::string & str) {
 void Value::FromNil(void) {
     type = Type::NilType;
     data.Clear();
+
     assert(IsNil());
     assert(data.objectVal == nullptr);
     assert(IsValid());
@@ -184,7 +203,7 @@ bool Value::ToBoolean(void) const {
 
 std::string Value::ToString(void) const {
     assert(IsString());
-    return *data.stringVal;
+    return std::string(data.stringVal);
 }
 
 const Object * Value::ToObject(void) const {
@@ -202,9 +221,14 @@ const Object * Value::ToProgramFunctionClosure(void) const {
     return data.programFunctionVal.closure;
 }
 
-std::string Value::ToLibraryFunction(void) const {
+LibraryFunc Value::ToLibraryFunction(void) const {
     assert(IsLibraryFunction());
-    return data.libraryFunctionVal;
+    return data.libraryFunctionVal.function;
+}
+
+std::string Value::ToLibraryFunctionId(void) const {
+    assert(IsLibraryFunction());
+    return std::string(data.libraryFunctionVal.id);
 }
 
 void * Value::ToNativePtr(void) const {
@@ -214,7 +238,7 @@ void * Value::ToNativePtr(void) const {
 
 std::string Value::ToNativeTypeId(void) const {
     assert(IsNativePtr());
-    return data.nativePtrVal.typeId;
+    return std::string(data.nativePtrVal.typeId);
 }
 
 /****** Replicator ******/
@@ -226,4 +250,12 @@ Value * Value::Clone(void) const {
 
 /****** Destructor ******/
 
-Value::~Value() { }
+Value::~Value() {
+    assert(IsValid());
+
+    if (type == Type::StringType) free(data.stringVal);
+    else if (type == Type::LibraryFunctionType) free(data.libraryFunctionVal.id);
+    else if (type == Type::NativePtrType) free(data.nativePtrVal.typeId);
+
+    FromUndef();
+}
