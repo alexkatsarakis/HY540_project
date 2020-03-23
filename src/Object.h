@@ -44,11 +44,15 @@ public:
 
     unsigned GetStringSize(void) const;
 
+    unsigned GetReferences(void) const;
+
     /****** Modifiers ******/
 
     void IncreaseRefCounter(void);
 
     void DecreaseRefCounter(void);
+
+    void Clear(void);
 
     /****** Getters ******/
 

@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <memory>
 #include <cassert>
 
 Object::Object() {
@@ -52,7 +51,7 @@ bool Object::ElementExists(double key) const {
 
 bool Object::ElementExists(const std::string & key) const {
     assert(IsValid());
-    assert(!key.empty());  /* TODISCUSS: Should we allow the following: obj[""] */
+    assert(!key.empty());
     return (strMap.find(key) != strMap.end());
 }
 
@@ -71,6 +70,11 @@ unsigned Object::GetStringSize(void) const {
     return strMap.size();
 }
 
+unsigned Object::GetReferences(void) const {
+    assert(IsValid());
+    return refCounter;
+}
+
 /****** Modifiers ******/
 
 void Object::IncreaseRefCounter(void) { refCounter += 1; }
@@ -78,6 +82,14 @@ void Object::IncreaseRefCounter(void) { refCounter += 1; }
 void Object::DecreaseRefCounter(void) {
     assert(refCounter > 0);
     refCounter -= 1;
+}
+
+void Object::Clear(void) {
+    assert(IsValid());
+    for(auto & pair : numMap) delete pair.second;
+    for(auto & pair : strMap) delete pair.second;
+    numMap.clear();
+    strMap.clear();
 }
 
 /****** Getters ******/
@@ -93,7 +105,7 @@ const Value * Object::operator[] (double key) const{
 
 const Value * Object::operator[] (const std::string & key) const {
     assert(IsValid());
-    assert(!key.empty());  /* TODISCUSS: Should we allow the following: obj[""] */
+    assert(!key.empty());
 
     auto iterator = strMap.find(key);
 
@@ -115,9 +127,9 @@ void Object::Set(double key, const Value & value) {
 }
 
 void Object::Set(const std::string & key, const Value & value) {
+    assert(!key.empty());
     assert(value.IsValid());
     assert(IsValid());
-    assert(!key.empty());
 
     auto val = new Value(value);
     strMap.insert(std::pair<std::string, ValuePtr>(key, val));
@@ -138,6 +150,7 @@ void Object::Remove(double key) {
 }
 
 void Object::Remove(const std::string & key) {
+    assert(!key.empty());
     assert(IsValid());
     assert(ElementExists(key));
 
