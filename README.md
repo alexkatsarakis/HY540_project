@@ -61,10 +61,10 @@ make
 
 ## Lines of Code
 
-* 18 files
-* 608 blank
-* 104 comment
-* 1556 code
+* 22 files
+* 881 blank
+* 117 comment
+* 3382 code
 
 ## Roadmap
 See the open issues for a list of proposed features (and known issues).
