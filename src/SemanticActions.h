@@ -61,11 +61,13 @@ Object * ParsePrimary(Object * primary);
 
 Object * ParseLvalue(Object * lvalue);
 
-Object * ParseSimpleID(const char * value);
+Object * ParseSimpleID(char * value);
 
-Object * ParseLocalID(const char * value);
+Object * ParseLocalID(char * value);
 
-Object * ParseDoubleColonID(const char * value);
+Object * ParseDoubleColonID(char * value);
+
+Object * ParseDollarID(char * value);
 
 Object * ParseMember(Object * member);
 

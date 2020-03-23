@@ -3,7 +3,7 @@
 #include "TreeTags.h"
 #include <cassert>
 
-TreeHost::TreeHost(TreeVisitor *_visitor) : visitor{_visitor} {
+TreeHost::TreeHost(TreeVisitor *_visitor) : visitor(_visitor) {
     assert(_visitor);
     InstallAllAcceptors();
 };
@@ -50,6 +50,7 @@ void TreeHost::InstallAllAcceptors(void) {
     InstallAcceptor(AST_TAG_ID, LAMBDA(AcceptId));
     InstallAcceptor(AST_TAG_LOCAL_ID, LAMBDA(AcceptLocal));
     InstallAcceptor(AST_TAG_DOUBLECOLON_ID, LAMBDA(AcceptDoubleColon));
+    InstallAcceptor(AST_TAG_DOLLAR_ID, LAMBDA(AcceptDollar));
     InstallAcceptor(AST_TAG_MEMBER, LAMBDA(AcceptMember));
     InstallAcceptor(AST_TAG_DOT, LAMBDA(AcceptDot));
     InstallAcceptor(AST_TAG_BRACKET, LAMBDA(AcceptBracket));
@@ -342,6 +343,13 @@ void TreeHost::AcceptDoubleColon(const Object &node) {
     assert(node.ElementExists(AST_TAG_ID));
 
     visitor->VisitDoubleColon(node);
+}
+
+void TreeHost::AcceptDollar(const Object &node) {
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_DOLLAR_ID);
+    assert(node.ElementExists(AST_TAG_ID));
+
+    visitor->VisitDollar(node);
 }
 
 void TreeHost::AcceptMember(const Object &node) {

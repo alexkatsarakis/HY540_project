@@ -56,5 +56,8 @@
 #define A_BLOCK_COMMENT "BLOCK_COMMENT"
 #define A_NESTED_BLOCK_COMMENT "NESTED_BLOCK_COMMENT"
 #define A_LINE_COMMENT "LINE_COMMENT"
+/* Identifiers */
+#define A_NORMAL_ID "ID"
+#define A_DOLLAR_ID "DOLLAR_ID"
 /* Not applicable */
 #define A_NA "N/A"

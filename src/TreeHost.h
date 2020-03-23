@@ -51,6 +51,7 @@ class TreeHost {
     void AcceptId(const Object &node);
     void AcceptLocal(const Object &node);
     void AcceptDoubleColon(const Object &node);
+    void AcceptDollar(const Object &node);
     void AcceptMember(const Object &node);
     void AcceptDot(const Object &node);
     void AcceptBracket(const Object &node);

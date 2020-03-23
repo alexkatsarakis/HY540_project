@@ -36,6 +36,7 @@ class TreeVisitor {
     virtual void VisitId(const Object &node) = 0;
     virtual void VisitLocal(const Object &node) = 0;
     virtual void VisitDoubleColon(const Object &node) = 0;
+    virtual void VisitDollar(const Object &node) = 0;
     virtual void VisitMember(const Object &node) = 0;
     virtual void VisitDot(const Object &node) = 0;
     virtual void VisitBracket(const Object &node) = 0;
@@ -62,6 +63,8 @@ class TreeVisitor {
     virtual void VisitReturn(const Object &node) = 0;
     virtual void VisitBreak(const Object &node) = 0;
     virtual void VisitContinue(const Object &node) = 0;
+
+    virtual ~TreeVisitor()=default;
 };
 
 #endif

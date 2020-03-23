@@ -284,6 +284,12 @@ void UnparseVisitor::VisitDoubleColon(const Object &node) {
     code << "::" << id;
     stack.push(code.str());
 }
+void UnparseVisitor::VisitDollar(const Object &node) {
+    stringstream code;
+    string id = node[AST_TAG_ID]->ToString();
+    code << "$" << id;
+    stack.push(code.str());
+}
 void UnparseVisitor::VisitMember(const Object &node) {}
 void UnparseVisitor::VisitDot(const Object &node) {
     stringstream code;
@@ -516,4 +522,8 @@ void UnparseVisitor::VisitBreak(const Object &node) {
 }
 void UnparseVisitor::VisitContinue(const Object &node) {
     stack.push("continue;");
+}
+UnparseVisitor::~UnparseVisitor() {
+    while(!stack.empty()) stack.pop();
+    fileName.clear();
 }

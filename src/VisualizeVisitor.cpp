@@ -5,15 +5,23 @@
 #include <cassert>
 #include <regex>
 
+#define DEFAULT_DOT_FILE "alpha_AST.dot"
+
+#define EXTREME_ASSERT
 #ifdef EXTREME_ASSERT
 #define eassert(x) assert(x)
 #else
 #define eassert(x) ;
 #endif
 
+#ifdef MACROS
 #define NODE_PREFIX "node"
+#define TO_NODE_PREFIX (" -> " NODE_PREFIX)
+#else
+std::string NODE_PREFIX("node");
+std::string TO_NODE_PREFIX(" -> " + NODE_PREFIX);
+#endif
 
-#include <iostream>
 void findAndReplaceAll(std::string & data, std::string toSearch, std::string replaceStr)
 {
 	// Get the first occurrence
@@ -35,18 +43,17 @@ void VisualizeVisitor::CreateNewNode(const std::string & label) {
 
 void VisualizeVisitor::LinkToPreviousNode(void) {
     if (lastNode != 1)
-        output << NODE_PREFIX << lastNode << " -> " NODE_PREFIX << (lastNode - 1) << std::endl;
+        output << NODE_PREFIX << lastNode << TO_NODE_PREFIX << (lastNode - 1) << std::endl;
 }
 
 void VisualizeVisitor::LinkToOrphan() {
-    if (orphans.size() != 0) {
-        LinkToNode(orphans.top());
-        orphans.pop();
-    }
+    assert(!orphans.empty());
+    LinkToNode(orphans.top());
+    orphans.pop();
 }
 
 void VisualizeVisitor::LinkToNode(unsigned node) {
-    output << NODE_PREFIX << lastNode << " -> " NODE_PREFIX << node << std::endl;
+    output << NODE_PREFIX << lastNode << TO_NODE_PREFIX << node << std::endl;
 }
 
 void VisualizeVisitor::SaveOrphan(void) {
@@ -57,7 +64,10 @@ void VisualizeVisitor::DumpToFile(void) {
     std::ofstream file;
     file.open(outputFile, std::ios::out | std::ios::trunc);
     if (!file.is_open()) throw::std::runtime_error("Could not open file \"" + outputFile + "\".");
+
     file << output.rdbuf();
+
+    file.close();
 }
 
 void VisualizeVisitor::VisitProgram (const Object& node) {
@@ -77,7 +87,6 @@ void VisualizeVisitor::VisitEmptyStatements (const Object& node) {
     CreateNewNode(AST_TAG_STMTS);
 }
 
-#include <iostream>
 void VisualizeVisitor::VisitNormalStatements(const Object& node) {
     CreateNewNode(AST_TAG_STMTS);
     LinkToPreviousNode();
@@ -196,7 +205,7 @@ void VisualizeVisitor::VisitEqual (const Object& node) {
 
 void VisualizeVisitor::VisitNotEqual (const Object& node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NEQUAL);
-    CreateNewNode(AST_TAG_EQUAL);
+    CreateNewNode(AST_TAG_NEQUAL);
     LinkToPreviousNode();
     LinkToOrphan();
 }
@@ -285,6 +294,12 @@ void VisualizeVisitor::VisitDoubleColon (const Object& node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_DOUBLECOLON_ID);
     SaveOrphan();
     CreateNewNode("::" + node[AST_TAG_ID]->ToString());
+}
+
+void VisualizeVisitor::VisitDollar(const Object &node) {
+    eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_DOLLAR_ID);
+    SaveOrphan();
+    CreateNewNode("$" + node[AST_TAG_ID]->ToString());
 }
 
 void VisualizeVisitor::VisitMember (const Object& node) {
@@ -534,4 +549,11 @@ VisualizeVisitor::VisualizeVisitor(const std::string & filename) {
            << std::endl;
 }
 
-VisualizeVisitor::VisualizeVisitor(void) : VisualizeVisitor("alpha_AST.dot") { }
+VisualizeVisitor::VisualizeVisitor(void) : VisualizeVisitor(DEFAULT_DOT_FILE) { }
+
+VisualizeVisitor::~VisualizeVisitor() {
+    lastNode = 0;
+    output.clear();
+    outputFile.clear();
+    while(!orphans.empty()) orphans.pop();
+}

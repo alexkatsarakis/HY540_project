@@ -30,6 +30,9 @@ Object *ParseSingleChild(const char *type, Object *child) {
 }
 
 Object *ParseTwoChildren(const char *type, const char *type1, Object *child1, const char *type2, Object *child2) {
+    assert(type);
+    assert(type1);
+    assert(type2);
     assert(child1 && child1->IsValid());
     assert(child2 && child2->IsValid());
 
@@ -42,7 +45,7 @@ Object *ParseTwoChildren(const char *type, const char *type1, Object *child1, co
     return node;
 }
 
-Object *ParseID(const char *type, const char *value) {
+Object * ParseID(const char * type, char * value) {
     assert(type);
     assert(value);
 
@@ -50,9 +53,8 @@ Object *ParseID(const char *type, const char *value) {
     node->Set(AST_TAG_TYPE_KEY, type);
     node->Set(AST_TAG_ID, Value(std::string(value)));
 
-    /* TODO: Values pointers should be freed. Change definitions to:
-     * (const char * type, char * value) */
-    free((char *) value);
+    /* When lexxer identifies an ID it always uses strdup */
+    free(value);
 
     assert(node->IsValid());
     return node;
@@ -61,6 +63,7 @@ Object *ParseID(const char *type, const char *value) {
 Object *ParseRecursion(Object *rest, Object *current) {
     assert(rest && rest->IsValid());
     assert(current && current->IsValid());
+    assert(rest->GetTotal() >= 1);
 
     rest->Set(rest->GetTotal() - 1, Value(current));
 
@@ -69,6 +72,7 @@ Object *ParseRecursion(Object *rest, Object *current) {
 }
 
 Object *ParseCompleteRecursion(const char *type, Object *current, Object *rest) {
+    assert(type);
     assert(current && current->IsValid());
     assert(rest && rest->IsValid());
 
@@ -81,6 +85,10 @@ Object *ParseCompleteRecursion(const char *type, Object *current, Object *rest) 
         Value v = *(*rest)[double(i)];
         table->Set(double(i + 1), v);
     }
+
+    /* TODO: Shoul we delete rest? */
+    rest->Clear();
+    delete rest;
 
     assert(table->IsValid());
     return table;
@@ -214,16 +222,20 @@ Object *ParseLvalue(Object *lvalue) {
     return ParseSingleChild(AST_TAG_LVALUE, lvalue);
 }
 
-Object *ParseSimpleID(const char *value) {
+Object *ParseSimpleID(char *value) {
     return ParseID(AST_TAG_ID, value);
 }
 
-Object *ParseLocalID(const char *value) {
+Object *ParseLocalID(char *value) {
     return ParseID(AST_TAG_LOCAL_ID, value);
 }
 
-Object *ParseDoubleColonID(const char *value) {
+Object *ParseDoubleColonID(char *value) {
     return ParseID(AST_TAG_DOUBLECOLON_ID, value);
+}
+
+Object * ParseDollarID(char * value) {
+    return ParseID(AST_TAG_DOLLAR_ID, value);
 }
 
 Object *ParseMember(Object *member) {
@@ -332,6 +344,9 @@ Object *ParseString(char *value) {
     auto node = new Object();
     node->Set(AST_TAG_TYPE_KEY, AST_TAG_STRING);
     node->Set(AST_TAG_VALUE, Value(std::string(value)));
+
+    /* When lexxer identifies an ID it always uses strdup */
+    free(value);
 
     assert(node->IsValid());
     return node;

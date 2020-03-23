@@ -1,13 +1,10 @@
 %{
-#include "Object.h"  /* TODO: Why is this necessary? */
 #include "parser.h"
 #include "TokenTypes.h"
 #include "Token.h"
 
-#include <iostream>
 #include <vector>
 #include <cstring>
-
 #include <iostream>
 
 /* Counter for the number of opened block comments (at any time) */
@@ -47,6 +44,7 @@ real            [0-9]+\.[0-9]+
 string          \"((\\.)|([^\\\"]))*\"
 id              [a-zA-Z][a-zA-Z_0-9]*
 line_comment    \/\/[^\n]*
+dollar_id       $[a-zA-Z][a-zA-Z_0-9]*
 
 /* Exclusive state for when a block comment starts */
 %x COMMENT
@@ -113,9 +111,15 @@ line_comment    \/\/[^\n]*
 }
 
 {id} {
-  HandleToken(C_IDENTIFIER, A_NA);
+  HandleToken(C_IDENTIFIER, A_NORMAL_ID);
   yylval.strVal = strdup(yytext);
   return ID;
+}
+
+{dollar_id} {
+  HandleToken(C_IDENTIFIER, A_DOLLAR_ID);
+  yylval.strVal = strdup(&yytext[1]);  /* Do not include the $ sign */
+  return DOLLAR_ID;
 }
 
 {string} {

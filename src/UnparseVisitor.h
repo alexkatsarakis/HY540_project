@@ -45,6 +45,7 @@ class UnparseVisitor : public TreeVisitor {
     void VisitId(const Object &node) override;
     void VisitLocal(const Object &node) override;
     void VisitDoubleColon(const Object &node) override;
+    void VisitDollar(const Object &node) override;
     void VisitMember(const Object &node) override;
     void VisitDot(const Object &node) override;
     void VisitBracket(const Object &node) override;
@@ -71,6 +72,8 @@ class UnparseVisitor : public TreeVisitor {
     void VisitReturn(const Object &node) override;
     void VisitBreak(const Object &node) override;
     void VisitContinue(const Object &node) override;
+
+    ~UnparseVisitor();
 };
 
 #endif

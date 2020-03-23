@@ -27,89 +27,93 @@ private:
 
     void DumpToFile(void);
 
-    void VisitEmptyStatements(const Object& node);
+    void VisitEmptyStatements(const Object & node);
 
-    void VisitNormalStatements(const Object& node);
+    void VisitNormalStatements(const Object & node);
 
-    void VisitEmptyStatement(const Object& node);
+    void VisitEmptyStatement(const Object & node);
 
-    void VisitNormalStatement(const Object& node);
+    void VisitNormalStatement(const Object & node);
 
-    void VisitEmptyExpressionList(const Object& node);
+    void VisitEmptyExpressionList(const Object & node);
 
-    void VisitNormalExpressionList(const Object& node);
+    void VisitNormalExpressionList(const Object & node);
 
-    void VisitEmptyIndexed(const Object& node);
+    void VisitEmptyIndexed(const Object & node);
 
-    void VisitNormalIndexed(const Object& node);
+    void VisitNormalIndexed(const Object & node);
 
-    void VisitEmptyIdlist(const Object& node);
+    void VisitEmptyIdlist(const Object & node);
 
-    void VisitNormalIdlist(const Object& node);
+    void VisitNormalIdlist(const Object & node);
 
 public:
-    virtual void VisitProgram (const Object& node);
-    virtual void VisitStatements (const Object& node);
-	virtual void VisitStatement (const Object& node);
-	virtual void VisitExpression (const Object& node);
-    virtual void VisitAssign (const Object& node);
-  	virtual void VisitPlus (const Object& node);
-	virtual void VisitMinus (const Object& node);
-	virtual void VisitMul (const Object& node);
-	virtual void VisitDiv (const Object& node);
-	virtual void VisitModulo (const Object& node);
-    virtual void VisitGreater (const Object& node);
-	virtual void VisitLess (const Object& node);
-	virtual void VisitGreaterEqual (const Object& node);
-	virtual void VisitLessEqual (const Object& node);
-	virtual void VisitEqual (const Object& node);
-	virtual void VisitNotEqual (const Object& node);
-	virtual void VisitAnd (const Object& node);
-	virtual void VisitOr (const Object& node);
-    virtual void VisitTerm (const Object& node);
-	virtual void VisitUnaryMinus (const Object& node);
-	virtual void VisitNot (const Object& node);
-	virtual void VisitPlusPlusBefore (const Object& node);
-	virtual void VisitPlusPlusAfter (const Object& node);
-	virtual void VisitMinusMinusBefore (const Object& node);
-	virtual void VisitMinusMinusAfter (const Object& node);
-	virtual void VisitPrimary (const Object& node);
-    virtual void VisitLValue (const Object& node);
-    virtual void VisitId (const Object& node);
-    virtual void VisitLocal (const Object& node);
-    virtual void VisitDoubleColon (const Object& node);
-    virtual void VisitMember (const Object& node);
-    virtual void VisitDot (const Object& node);
-    virtual void VisitBracket (const Object& node);
-    virtual void VisitCall (const Object& node);
-    virtual void VisitCallSuffix (const Object& node);
-    virtual void VisitNormalCall (const Object& node);
-    virtual void VisitMethodCall (const Object& node);
-    virtual void VisitExpressionList (const Object& node);
-    virtual void VisitObjectDef (const Object& node);
-    virtual void VisitIndexed (const Object& node);
-    virtual void VisitIndexedElem (const Object& node);
-	virtual void VisitBlock (const Object& node);
-	virtual void VisitFunctionDef (const Object& node);
-    virtual void VisitConst (const Object& node);
-    virtual void VisitNumber (const Object& node);
-    virtual void VisitString (const Object& node);
-    virtual void VisitNill (const Object& node);
-    virtual void VisitTrue (const Object& node);
-    virtual void VisitFalse (const Object& node);
-    virtual void VisitIdList (const Object& node);
-	virtual void VisitIf (const Object& node);
-	virtual void VisitWhile (const Object& node);
-    virtual void VisitFor (const Object& node);
-    virtual void VisitReturn (const Object& node);
-    virtual void VisitBreak (const Object& node);
-    virtual void VisitContinue (const Object& node);
+    virtual void VisitProgram (const Object & node) override;
+    virtual void VisitStatements (const Object & node) override;
+	virtual void VisitStatement (const Object & node) override;
+	virtual void VisitExpression (const Object & node) override;
+    virtual void VisitAssign (const Object & node) override;
+  	virtual void VisitPlus (const Object & node) override;
+	virtual void VisitMinus (const Object & node) override;
+	virtual void VisitMul (const Object & node) override;
+	virtual void VisitDiv (const Object & node) override;
+	virtual void VisitModulo (const Object & node) override;
+    virtual void VisitGreater (const Object & node) override;
+	virtual void VisitLess (const Object & node) override;
+	virtual void VisitGreaterEqual (const Object & node) override;
+	virtual void VisitLessEqual (const Object & node) override;
+	virtual void VisitEqual (const Object & node) override;
+	virtual void VisitNotEqual (const Object & node) override;
+	virtual void VisitAnd (const Object & node) override;
+	virtual void VisitOr (const Object & node) override;
+    virtual void VisitTerm (const Object & node) override;
+	virtual void VisitUnaryMinus (const Object & node) override;
+	virtual void VisitNot (const Object & node) override;
+	virtual void VisitPlusPlusBefore (const Object & node) override;
+	virtual void VisitPlusPlusAfter (const Object & node) override;
+	virtual void VisitMinusMinusBefore (const Object & node) override;
+	virtual void VisitMinusMinusAfter (const Object & node) override;
+	virtual void VisitPrimary (const Object & node) override;
+    virtual void VisitLValue (const Object & node) override;
+    virtual void VisitId (const Object & node) override;
+    virtual void VisitLocal (const Object & node) override;
+    virtual void VisitDoubleColon (const Object & node) override;
+    virtual void VisitDollar(const Object &node) override;
+    virtual void VisitMember (const Object & node) override;
+    virtual void VisitDot (const Object & node) override;
+    virtual void VisitBracket (const Object & node) override;
+    virtual void VisitCall (const Object & node) override;
+    virtual void VisitCallSuffix (const Object & node) override;
+    virtual void VisitNormalCall (const Object & node) override;
+    virtual void VisitMethodCall (const Object & node) override;
+    virtual void VisitExpressionList (const Object & node) override;
+    virtual void VisitObjectDef (const Object & node) override;
+    virtual void VisitIndexed (const Object & node) override;
+    virtual void VisitIndexedElem (const Object & node) override;
+	virtual void VisitBlock (const Object & node) override;
+	virtual void VisitFunctionDef (const Object & node) override;
+    virtual void VisitConst (const Object & node) override;
+    virtual void VisitNumber (const Object & node) override;
+    virtual void VisitString (const Object & node) override;
+    virtual void VisitNill (const Object & node) override;
+    virtual void VisitTrue (const Object & node) override;
+    virtual void VisitFalse (const Object & node) override;
+    virtual void VisitIdList (const Object & node) override;
+	virtual void VisitIf (const Object & node) override;
+	virtual void VisitWhile (const Object & node) override;
+    virtual void VisitFor (const Object & node) override;
+    virtual void VisitReturn (const Object & node) override;
+    virtual void VisitBreak (const Object & node) override;
+    virtual void VisitContinue (const Object & node) override;
 
 
-	virtual TreeVisitor * Clone (void) const;
-	VisualizeVisitor(void);
+	virtual TreeVisitor * Clone (void) const override;
+
+    VisualizeVisitor(void);
     VisualizeVisitor(const std::string & filename);
-    VisualizeVisitor (const VisualizeVisitor &)=default;
+    VisualizeVisitor(const VisualizeVisitor & )=default;
+
+    virtual ~VisualizeVisitor();
 };
 
 #endif
