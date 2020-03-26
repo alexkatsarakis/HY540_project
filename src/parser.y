@@ -327,7 +327,7 @@ void ProcessAST(Object * ast) {
     unparseHost->Accept(*ast);
     visualizeHost->Accept(*ast);
 
-#define AST_MEM_CLEANUP
+#undef AST_MEM_CLEANUP
 #ifdef AST_MEM_CLEANUP
     TreeHost * h = new TreeHost(new DeallocateVisitor());
     h->Accept(*ast);
