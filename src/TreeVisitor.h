@@ -4,7 +4,7 @@
 #include "Object.h"
 
 class TreeVisitor {
-   public:
+public:
     virtual TreeVisitor *Clone(void) const = 0;
     virtual void VisitProgram(const Object &node) = 0;
     virtual void VisitStatements(const Object &node) = 0;
@@ -64,7 +64,7 @@ class TreeVisitor {
     virtual void VisitBreak(const Object &node) = 0;
     virtual void VisitContinue(const Object &node) = 0;
 
-    virtual ~TreeVisitor()=default;
+    virtual ~TreeVisitor() = default;
 };
 
 #endif

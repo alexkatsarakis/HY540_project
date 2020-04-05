@@ -1,8 +1,8 @@
 #ifndef _TOKEN_H_
 #define _TOKEN_H_
 
-#include <string>
 #include <functional>
+#include <string>
 
 class Token {
 private:
@@ -17,7 +17,7 @@ public:
 
     /****** Constructor ******/
 
-    Token(unsigned _line, unsigned _number, const std::string & _content, const std::string & _type, const std::string & _attribute);
+    Token(unsigned _line, unsigned _number, const std::string &_content, const std::string &_type, const std::string &_attribute);
 
     /****** Verifier ******/
 
@@ -29,11 +29,11 @@ public:
 
     unsigned GetTokenNumber(void) const;
 
-    const std::string & GetContent(void) const;
+    const std::string &GetContent(void) const;
 
-    const std::string & GetType(void) const;
+    const std::string &GetType(void) const;
 
-    const std::string & GetAttribute(void) const;
+    const std::string &GetAttribute(void) const;
 
     /****** Setters ******/
 
@@ -41,11 +41,11 @@ public:
 
     void SetTokenNumber(unsigned num);
 
-    void SetContent(const std::string & str);
+    void SetContent(const std::string &str);
 
-    void SetType(const std::string & str);
+    void SetType(const std::string &str);
 
-    void SetAttribute(const std::string & str);
+    void SetAttribute(const std::string &str);
 
     /****** Visitor ******/
 

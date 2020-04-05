@@ -10,13 +10,13 @@ private:
     std::ofstream outputFile;
 
 public:
-    SyntaxPrinter(const std::string & fileName);
+    SyntaxPrinter(const std::string &fileName);
 
     SyntaxPrinter(void);
 
-    void operator() (const Token & t);
+    void operator()(const Token &t);
 
-    void operator() (const std::string & str);
+    void operator()(const std::string &str);
 
     /* A destructor will create many problems! */
 };

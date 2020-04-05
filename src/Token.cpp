@@ -1,13 +1,13 @@
 #include "Token.h"
 
-#include <string>
-#include <functional>
 #include <cassert>
+#include <functional>
 #include <sstream>
+#include <string>
 
 /****** Constructor ******/
 
-Token::Token(unsigned _line, unsigned _number, const std::string & _content, const std::string & _type, const std::string & _attribute) {
+Token::Token(unsigned _line, unsigned _number, const std::string &_content, const std::string &_type, const std::string &_attribute) {
     line = _line;
     number = _number;
     content = _content;
@@ -32,15 +32,15 @@ unsigned Token::GetTokenNumber(void) const {
     return number;
 }
 
-const std::string & Token::GetContent(void) const {
+const std::string &Token::GetContent(void) const {
     return content;
 }
 
-const std::string & Token::GetType(void) const {
+const std::string &Token::GetType(void) const {
     return type;
 }
 
-const std::string & Token::GetAttribute(void) const {
+const std::string &Token::GetAttribute(void) const {
     return attribute;
 }
 
@@ -58,18 +58,18 @@ void Token::SetTokenNumber(unsigned num) {
     assert(IsValid());
 }
 
-void Token::SetContent(const std::string & str) {
+void Token::SetContent(const std::string &str) {
     content = str;
     assert(IsValid());
 }
 
-void Token::SetType(const std::string & str) {
+void Token::SetType(const std::string &str) {
     assert(!str.empty());
     type = str;
     assert(IsValid());
 }
 
-void Token::SetAttribute(const std::string & str) {
+void Token::SetAttribute(const std::string &str) {
     assert(!str.empty());
     attribute = str;
     assert(IsValid());

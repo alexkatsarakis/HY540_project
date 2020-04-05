@@ -45,7 +45,7 @@ Object *ParseTwoChildren(const char *type, const char *type1, Object *child1, co
     return node;
 }
 
-Object * ParseID(const char * type, char * value) {
+Object *ParseID(const char *type, char *value) {
     assert(type);
     assert(value);
 
@@ -234,7 +234,7 @@ Object *ParseDoubleColonID(char *value) {
     return ParseID(AST_TAG_DOUBLECOLON_ID, value);
 }
 
-Object * ParseDollarID(char * value) {
+Object *ParseDollarID(char *value) {
     return ParseID(AST_TAG_DOLLAR_ID, value);
 }
 

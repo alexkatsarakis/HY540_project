@@ -11,14 +11,14 @@
 
 #define EXTREME_ASSERT
 #ifdef EXTREME_ASSERT
-#    define eassert(x) assert(x)
+#define eassert(x) assert(x)
 #else
-#    define eassert(x) ;
+#define eassert(x) ;
 #endif
 
 #ifdef MACROS
-#    define NODE_PREFIX "node"
-#    define TO_NODE_PREFIX (" -> " NODE_PREFIX)
+#define NODE_PREFIX "node"
+#define TO_NODE_PREFIX (" -> " NODE_PREFIX)
 #else
 std::string NODE_PREFIX("node");
 std::string TO_NODE_PREFIX(" -> " + NODE_PREFIX);

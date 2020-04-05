@@ -1,3 +1,6 @@
+#ifndef _TOKENTYPES_H_
+#define _TOKENTYPES_H_
+
 /* The major categories of tokens */
 #define C_KEYWORD "KEYWORD"
 #define C_OPERATOR "OPERATOR"
@@ -61,3 +64,5 @@
 #define A_DOLLAR_ID "DOLLAR_ID"
 /* Not applicable */
 #define A_NA "N/A"
+
+#endif

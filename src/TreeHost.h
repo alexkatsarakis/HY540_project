@@ -1,21 +1,21 @@
 #ifndef _TREE_HOST_H_
 #define _TREE_HOST_H_
 
-#include "TreeVisitor.h"
 #include "Object.h"
+#include "TreeVisitor.h"
 
 #include <functional>
 #include <map>
 
 class TreeHost {
-   private:
+private:
     using Acceptor = std::function<void(const Object &)>;
     using Acceptors = std::map<std::string, Acceptor>;
 
     Acceptors acceptors;
-    TreeVisitor * visitor = nullptr;
+    TreeVisitor *visitor = nullptr;
 
-   public:
+public:
     TreeHost(TreeVisitor *_visitor);
     void Accept(const Object &node);
     void InstallAcceptor(const std::string &tag, const Acceptor &f);

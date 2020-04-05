@@ -1,9 +1,9 @@
 #include "Object.h"
 
+#include <cassert>
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
-#include <cassert>
 
 Object::Object() {
     refCounter = 0;
@@ -11,7 +11,7 @@ Object::Object() {
     strMap.clear();
 }
 
-Object::Object (const Object & obj) {
+Object::Object(const Object &obj) {
     assert(obj.IsValid());
 
     numMap.clear();
@@ -29,12 +29,12 @@ Object::Object (const Object & obj) {
 /****** Verifier ******/
 
 bool Object::IsValid(void) const {
-    for(auto & pair : numMap) {
+    for (auto &pair : numMap) {
         bool valid = pair.second && pair.second->IsValid();
         if (!valid) return false;
     }
 
-    for(auto & pair : strMap) {
+    for (auto &pair : strMap) {
         bool valid = !pair.first.empty() && pair.second && pair.second->IsValid();
         if (!valid) return false;
     }
@@ -49,7 +49,7 @@ bool Object::ElementExists(double key) const {
     return (numMap.find(key) != numMap.end());
 }
 
-bool Object::ElementExists(const std::string & key) const {
+bool Object::ElementExists(const std::string &key) const {
     assert(IsValid());
     assert(!key.empty());
     return (strMap.find(key) != strMap.end());
@@ -86,36 +86,40 @@ void Object::DecreaseRefCounter(void) {
 
 void Object::Clear(void) {
     assert(IsValid());
-    for(auto & pair : numMap) delete pair.second;
-    for(auto & pair : strMap) delete pair.second;
+    for (auto &pair : numMap) delete pair.second;
+    for (auto &pair : strMap) delete pair.second;
     numMap.clear();
     strMap.clear();
 }
 
 /****** Getters ******/
 
-const Value * Object::operator[] (double key) const{
+const Value *Object::operator[](double key) const {
     assert(IsValid());
 
     auto iterator = numMap.find(key);
 
-    if (iterator == numMap.end()) return nullptr;
-    else return iterator->second;
+    if (iterator == numMap.end())
+        return nullptr;
+    else
+        return iterator->second;
 }
 
-const Value * Object::operator[] (const std::string & key) const {
+const Value *Object::operator[](const std::string &key) const {
     assert(IsValid());
     assert(!key.empty());
 
     auto iterator = strMap.find(key);
 
-    if (iterator == strMap.end()) return nullptr;
-    else return iterator->second;
+    if (iterator == strMap.end())
+        return nullptr;
+    else
+        return iterator->second;
 }
 
 /****** Setters ******/
 
-void Object::Set(double key, const Value & value) {
+void Object::Set(double key, const Value &value) {
     assert(value.IsValid());
     assert(IsValid());
 
@@ -126,7 +130,7 @@ void Object::Set(double key, const Value & value) {
     assert(IsValid());
 }
 
-void Object::Set(const std::string & key, const Value & value) {
+void Object::Set(const std::string &key, const Value &value) {
     assert(!key.empty());
     assert(value.IsValid());
     assert(IsValid());
@@ -149,7 +153,7 @@ void Object::Remove(double key) {
     assert(IsValid());
 }
 
-void Object::Remove(const std::string & key) {
+void Object::Remove(const std::string &key) {
     assert(!key.empty());
     assert(IsValid());
     assert(ElementExists(key));
@@ -163,20 +167,20 @@ void Object::Remove(const std::string & key) {
 
 /****** Visitors ******/
 
-void Object::Visit(const Visitor & func) const {
+void Object::Visit(const Visitor &func) const {
     assert(func);
     assert(IsValid());
 
-    for(auto & pair : numMap) func(pair.first, *pair.second);
-    for(auto & pair : strMap) func(pair.first, *pair.second);
+    for (auto &pair : numMap) func(pair.first, *pair.second);
+    for (auto &pair : strMap) func(pair.first, *pair.second);
 }
 
-void Object::Apply(const Applier & func) {
+void Object::Apply(const Applier &func) {
     assert(func);
     assert(IsValid());
 
-    for(auto & pair : numMap) func(pair.first, *pair.second);
-    for(auto & pair : strMap) func(pair.first, *pair.second);
+    for (auto &pair : numMap) func(pair.first, *pair.second);
+    for (auto &pair : strMap) func(pair.first, *pair.second);
 }
 
 /****** Destructor ******/

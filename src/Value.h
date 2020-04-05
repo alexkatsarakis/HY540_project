@@ -14,7 +14,7 @@ enum class NilTypeValue { Nil };
 typedef void (*LibraryFunc)(Object &);
 
 class Value {
-   public:
+public:
     enum class Type {
         UndefType,
         NumberType,
@@ -131,7 +131,7 @@ class Value {
 
     virtual ~Value();
 
-   private:
+private:
     union Data {
         double numVal;
         bool boolVal;

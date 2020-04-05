@@ -113,6 +113,7 @@ distclean:
 	@rm -rf *.out
 	@rm -rf *.txt
 	@rm -rf *.dot
+	@rm -rf alpha_unparse.alpha
 	@echo 'Files cleaned'
 
 clear: clean distclean
