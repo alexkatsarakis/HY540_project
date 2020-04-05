@@ -13,3 +13,11 @@ alpha_TokenList.txt
 AlphaUnparse.alpha
 
 alpha_unparse.alpha
+
+src/lexxer.cpp
+
+src/parser.cpp
+
+src/parser.h
+
+src/parser.output
