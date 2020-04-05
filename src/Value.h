@@ -1,8 +1,8 @@
 #ifndef _VALUE_H_
 #define _VALUE_H_
 
-#include <string>
 #include <functional>
+#include <string>
 
 class Object;
 
@@ -14,8 +14,7 @@ enum class NilTypeValue { Nil };
 typedef void (*LibraryFunc)(Object &);
 
 class Value {
-
-public:
+   public:
     enum class Type {
         UndefType,
         NumberType,
@@ -32,29 +31,29 @@ public:
 
     Value();
 
-    Value(const Value & val);
+    Value(const Value &val);
 
     Value(double num);
 
     Value(bool val);
 
-    Value(const char * str);
+    Value(const char *str);
 
-    Value(const std::string & str);
+    Value(const std::string &str);
 
-    Value(Object * obj);
+    Value(Object *obj);
 
-    Value(Object * ast, Object * closure); // 2 Object ptrs mean program func
+    Value(Object *ast, Object *closure);    // 2 Object ptrs mean program func
 
-    Value(LibraryFunc func, const std::string & str = "");
+    Value(LibraryFunc func, const std::string &str = "");
 
-    Value(void * ptr, const std::string & type);
+    Value(void *ptr, const std::string &_type);
 
     Value(NilTypeValue);
 
     /****** Operators ******/
 
-    const Value & operator = (const Value & val);
+    const Value &operator=(const Value &val);
 
     /****** Verifier ******/
 
@@ -88,15 +87,15 @@ public:
 
     void FromBoolean(bool val);
 
-    void FromString(const std::string & str);
+    void FromString(const std::string &str);
 
-    void FromObject(Object * obj);
+    void FromObject(Object *obj);
 
-    void FromProgramFunction(Object * ast, Object * closure);
+    void FromProgramFunction(Object *ast, Object *closure);
 
-    void FromLibraryFunction(LibraryFunc func, const std::string & str);
+    void FromLibraryFunction(LibraryFunc func, const std::string &str);
 
-    void FromNativePointer(void * ptr, const std::string & str);
+    void FromNativePointer(void *ptr, const std::string &str);
 
     void FromNil(void);
 
@@ -110,49 +109,48 @@ public:
 
     std::string ToString(void) const;
 
-    const Object * ToObject(void) const;
+    const Object *ToObject(void) const;
 
-    const Object * ToProgramFunctionAST(void) const;
+    const Object *ToProgramFunctionAST(void) const;
 
-    const Object * ToProgramFunctionClosure(void) const;
+    const Object *ToProgramFunctionClosure(void) const;
 
     LibraryFunc ToLibraryFunction(void) const;
 
     std::string ToLibraryFunctionId(void) const;
 
-    void * ToNativePtr(void) const;
+    void *ToNativePtr(void) const;
 
     std::string ToNativeTypeId(void) const;
 
     /****** Replicator ******/
 
-    Value * Clone(void) const;
+    Value *Clone(void) const;
 
     /****** Destructor ******/
 
     virtual ~Value();
 
-private:
-
+   private:
     union Data {
         double numVal;
         bool boolVal;
-        char * stringVal;
-        Object * objectVal;
+        char *stringVal;
+        Object *objectVal;
 
         struct {
-            Object * ast;
-            Object * closure;
+            Object *ast;
+            Object *closure;
         } programFunctionVal;
 
         struct {
             LibraryFunc function;
-            char * id;
+            char *id;
         } libraryFunctionVal;
 
         struct {
-            void * ptr;
-            char * typeId;
+            void *ptr;
+            char *typeId;
         } nativePtrVal;
 
         Data();

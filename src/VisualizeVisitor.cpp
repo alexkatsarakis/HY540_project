@@ -1,44 +1,44 @@
 #include "VisualizeVisitor.h"
 #include "TreeTags.h"
 
-#include <string>
 #include <cassert>
+#include <cmath>
+#include <cstdint>
 #include <regex>
+#include <string>
 
 #define DEFAULT_DOT_FILE "alpha_AST.dot"
 
 #define EXTREME_ASSERT
 #ifdef EXTREME_ASSERT
-#define eassert(x) assert(x)
+#    define eassert(x) assert(x)
 #else
-#define eassert(x) ;
+#    define eassert(x) ;
 #endif
 
 #ifdef MACROS
-#define NODE_PREFIX "node"
-#define TO_NODE_PREFIX (" -> " NODE_PREFIX)
+#    define NODE_PREFIX "node"
+#    define TO_NODE_PREFIX (" -> " NODE_PREFIX)
 #else
 std::string NODE_PREFIX("node");
 std::string TO_NODE_PREFIX(" -> " + NODE_PREFIX);
 #endif
 
-void findAndReplaceAll(std::string & data, std::string toSearch, std::string replaceStr)
-{
-	// Get the first occurrence
-	size_t pos = data.find(toSearch);
+void findAndReplaceAll(std::string &data, std::string toSearch, std::string replaceStr) {
+    // Get the first occurrence
+    size_t pos = data.find(toSearch);
 
-	// Repeat till end is reached
-	while( pos != std::string::npos)
-	{
-		// Replace this occurrence of Sub String
-		data.replace(pos, toSearch.size(), replaceStr);
-		// Get the next occurrence from the current position
-		pos =data.find(toSearch, pos + replaceStr.size());
-	}
+    // Repeat till end is reached
+    while (pos != std::string::npos) {
+        // Replace this occurrence of Sub String
+        data.replace(pos, toSearch.size(), replaceStr);
+        // Get the next occurrence from the current position
+        pos = data.find(toSearch, pos + replaceStr.size());
+    }
 }
 
-void VisualizeVisitor::CreateNewNode(const std::string & label) {
-    output << NODE_PREFIX << ++lastNode <<  " [label=\"" << label << "\"]" << std::endl;
+void VisualizeVisitor::CreateNewNode(const std::string &label) {
+    output << NODE_PREFIX << ++lastNode << " [label=\"" << label << "\"]" << std::endl;
 }
 
 void VisualizeVisitor::LinkToPreviousNode(void) {
@@ -63,14 +63,14 @@ void VisualizeVisitor::SaveOrphan(void) {
 void VisualizeVisitor::DumpToFile(void) {
     std::ofstream file;
     file.open(outputFile, std::ios::out | std::ios::trunc);
-    if (!file.is_open()) throw::std::runtime_error("Could not open file \"" + outputFile + "\".");
+    if (!file.is_open()) throw ::std::runtime_error("Could not open file \"" + outputFile + "\".");
 
     file << output.rdbuf();
 
     file.close();
 }
 
-void VisualizeVisitor::VisitProgram (const Object& node) {
+void VisualizeVisitor::VisitProgram(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_PROGRAM);
 
     CreateNewNode(AST_TAG_PROGRAM);
@@ -81,216 +81,220 @@ void VisualizeVisitor::VisitProgram (const Object& node) {
     DumpToFile();
 }
 
-void VisualizeVisitor::VisitEmptyStatements (const Object& node) {
+void VisualizeVisitor::VisitEmptyStatements(const Object &node) {
     /* Save the previous sub-tree because a new terminal is created */
     SaveOrphan();
     CreateNewNode(AST_TAG_STMTS);
 }
 
-void VisualizeVisitor::VisitNormalStatements(const Object& node) {
+void VisualizeVisitor::VisitNormalStatements(const Object &node) {
     CreateNewNode(AST_TAG_STMTS);
     LinkToPreviousNode();
 
-    for(register unsigned i = 1; i < node.GetNumericSize(); ++i) {
+    for (register unsigned i = 1; i < node.GetNumericSize(); ++i) {
         assert(!orphans.empty());
         LinkToNode(orphans.top());
         orphans.pop();
     }
 }
 
-void VisualizeVisitor::VisitStatements (const Object& node) {
+void VisualizeVisitor::VisitStatements(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_STMTS);
-    if (node.GetTotal() == 1) VisitEmptyStatements(node);
-    else VisitNormalStatements(node);
+    if (node.GetTotal() == 1)
+        VisitEmptyStatements(node);
+    else
+        VisitNormalStatements(node);
 }
 
-void VisualizeVisitor::VisitEmptyStatement(const Object& node) {
+void VisualizeVisitor::VisitEmptyStatement(const Object &node) {
     SaveOrphan();
     CreateNewNode(AST_TAG_STMT);
 }
 
-void VisualizeVisitor::VisitNormalStatement(const Object& node) {
+void VisualizeVisitor::VisitNormalStatement(const Object &node) {
     CreateNewNode(AST_TAG_STMT);
     LinkToPreviousNode();
 }
 
-void VisualizeVisitor::VisitStatement (const Object& node) {
+void VisualizeVisitor::VisitStatement(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_STMT);
-    if(node.GetTotal() == 1) VisitEmptyStatement(node);
-    else VisitNormalStatement(node);
+    if (node.GetTotal() == 1)
+        VisitEmptyStatement(node);
+    else
+        VisitNormalStatement(node);
 }
 
-void VisualizeVisitor::VisitExpression (const Object& node) {
+void VisualizeVisitor::VisitExpression(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR);
     CreateNewNode(AST_TAG_EXPR);
     LinkToPreviousNode();
 }
 
-void VisualizeVisitor::VisitAssign (const Object& node) {
+void VisualizeVisitor::VisitAssign(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN);
     CreateNewNode(AST_TAG_ASSIGN);
     LinkToPreviousNode();
     LinkToOrphan();
 }
 
-void VisualizeVisitor::VisitPlus (const Object& node) {
+void VisualizeVisitor::VisitPlus(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_PLUS);
     CreateNewNode(AST_TAG_PLUS);
     LinkToPreviousNode();
     LinkToOrphan();
 }
 
-void VisualizeVisitor::VisitMinus (const Object& node) {
+void VisualizeVisitor::VisitMinus(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_MINUS);
     CreateNewNode(AST_TAG_MINUS);
     LinkToPreviousNode();
     LinkToOrphan();
 }
 
-void VisualizeVisitor::VisitMul (const Object& node) {
+void VisualizeVisitor::VisitMul(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_MUL);
     CreateNewNode(AST_TAG_MUL);
     LinkToPreviousNode();
     LinkToOrphan();
 }
 
-void VisualizeVisitor::VisitDiv (const Object& node) {
+void VisualizeVisitor::VisitDiv(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_DIV);
     CreateNewNode(AST_TAG_DIV);
     LinkToPreviousNode();
     LinkToOrphan();
 }
 
-void VisualizeVisitor::VisitModulo (const Object& node) {
+void VisualizeVisitor::VisitModulo(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_MODULO);
     CreateNewNode(AST_TAG_MODULO);
     LinkToPreviousNode();
     LinkToOrphan();
 }
 
-void VisualizeVisitor::VisitGreater (const Object& node) {
+void VisualizeVisitor::VisitGreater(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_GREATER);
     CreateNewNode(AST_TAG_GREATER);
     LinkToPreviousNode();
     LinkToOrphan();
 }
 
-void VisualizeVisitor::VisitLess (const Object& node) {
+void VisualizeVisitor::VisitLess(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_LESS);
     CreateNewNode(AST_TAG_LESS);
     LinkToPreviousNode();
     LinkToOrphan();
 }
 
-void VisualizeVisitor::VisitGreaterEqual (const Object& node) {
+void VisualizeVisitor::VisitGreaterEqual(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_GEQUAL);
     CreateNewNode(AST_TAG_GEQUAL);
     LinkToPreviousNode();
     LinkToOrphan();
 }
 
-void VisualizeVisitor::VisitLessEqual (const Object& node) {
+void VisualizeVisitor::VisitLessEqual(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_LEQUAL);
     CreateNewNode(AST_TAG_LEQUAL);
     LinkToPreviousNode();
     LinkToOrphan();
 }
 
-void VisualizeVisitor::VisitEqual (const Object& node) {
+void VisualizeVisitor::VisitEqual(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EQUAL);
     CreateNewNode(AST_TAG_EQUAL);
     LinkToPreviousNode();
     LinkToOrphan();
 }
 
-void VisualizeVisitor::VisitNotEqual (const Object& node) {
+void VisualizeVisitor::VisitNotEqual(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NEQUAL);
     CreateNewNode(AST_TAG_NEQUAL);
     LinkToPreviousNode();
     LinkToOrphan();
 }
 
-void VisualizeVisitor::VisitAnd (const Object& node) {
+void VisualizeVisitor::VisitAnd(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_AND);
     CreateNewNode(AST_TAG_AND);
     LinkToPreviousNode();
     LinkToOrphan();
 }
 
-void VisualizeVisitor::VisitOr (const Object& node) {
+void VisualizeVisitor::VisitOr(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_OR);
     CreateNewNode(AST_TAG_OR);
     LinkToPreviousNode();
     LinkToOrphan();
 }
 
-void VisualizeVisitor::VisitTerm (const Object& node) {
+void VisualizeVisitor::VisitTerm(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_TERM);
     CreateNewNode(AST_TAG_TERM);
     LinkToPreviousNode();
 }
 
-void VisualizeVisitor::VisitUnaryMinus (const Object& node) {
+void VisualizeVisitor::VisitUnaryMinus(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_UMINUS);
     CreateNewNode(AST_TAG_UMINUS);
     LinkToPreviousNode();
 }
 
-void VisualizeVisitor::VisitNot (const Object& node) {
+void VisualizeVisitor::VisitNot(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NOT);
     CreateNewNode(AST_TAG_NOT);
     LinkToPreviousNode();
 }
 
-void VisualizeVisitor::VisitPlusPlusBefore (const Object& node) {
+void VisualizeVisitor::VisitPlusPlusBefore(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_BPLUSPLUS);
     CreateNewNode(AST_TAG_BPLUSPLUS);
     LinkToPreviousNode();
 }
 
-void VisualizeVisitor::VisitPlusPlusAfter (const Object& node) {
+void VisualizeVisitor::VisitPlusPlusAfter(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_APLUSPLUS);
     CreateNewNode(AST_TAG_APLUSPLUS);
     LinkToPreviousNode();
 }
 
-void VisualizeVisitor::VisitMinusMinusBefore (const Object& node) {
+void VisualizeVisitor::VisitMinusMinusBefore(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_BMINUSMINUS);
     CreateNewNode(AST_TAG_BMINUSMINUS);
     LinkToPreviousNode();
 }
 
-void VisualizeVisitor::VisitMinusMinusAfter (const Object& node) {
+void VisualizeVisitor::VisitMinusMinusAfter(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_AMINUSMINUS);
     CreateNewNode(AST_TAG_AMINUSMINUS);
     LinkToPreviousNode();
 }
 
-void VisualizeVisitor::VisitPrimary (const Object& node) {
+void VisualizeVisitor::VisitPrimary(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_PRIMARY);
     CreateNewNode(AST_TAG_PRIMARY);
     LinkToPreviousNode();
 }
 
-void VisualizeVisitor::VisitLValue (const Object& node) {
+void VisualizeVisitor::VisitLValue(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_LVALUE);
     CreateNewNode(AST_TAG_LVALUE);
     LinkToPreviousNode();
 }
 
-void VisualizeVisitor::VisitId (const Object& node) {
+void VisualizeVisitor::VisitId(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ID);
     SaveOrphan();
     CreateNewNode(node[AST_TAG_ID]->ToString());
 }
 
-void VisualizeVisitor::VisitLocal (const Object& node) {
+void VisualizeVisitor::VisitLocal(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_LOCAL_ID);
     SaveOrphan();
     CreateNewNode("local " + node[AST_TAG_ID]->ToString());
 }
 
-void VisualizeVisitor::VisitDoubleColon (const Object& node) {
+void VisualizeVisitor::VisitDoubleColon(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_DOUBLECOLON_ID);
     SaveOrphan();
     CreateNewNode("::" + node[AST_TAG_ID]->ToString());
@@ -302,139 +306,146 @@ void VisualizeVisitor::VisitDollar(const Object &node) {
     CreateNewNode("$" + node[AST_TAG_ID]->ToString());
 }
 
-void VisualizeVisitor::VisitMember (const Object& node) {
+void VisualizeVisitor::VisitMember(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_MEMBER);
     CreateNewNode(AST_TAG_MEMBER);
     LinkToPreviousNode();
 }
 
-void VisualizeVisitor::VisitDot (const Object& node) {
+void VisualizeVisitor::VisitDot(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_DOT);
     CreateNewNode(AST_TAG_DOT);
     LinkToPreviousNode();
     LinkToOrphan();
 }
 
-void VisualizeVisitor::VisitBracket (const Object& node) {
+void VisualizeVisitor::VisitBracket(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_BRACKET);
     CreateNewNode(AST_TAG_BRACKET);
     LinkToPreviousNode();
     LinkToOrphan();
 }
 
-void VisualizeVisitor::VisitCall (const Object& node) {
+void VisualizeVisitor::VisitCall(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_CALL);
     CreateNewNode(AST_TAG_CALL);
     LinkToPreviousNode();
     LinkToOrphan();
 }
 
-void VisualizeVisitor::VisitCallSuffix (const Object& node) {
+void VisualizeVisitor::VisitCallSuffix(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_CALL_SUFFIX);
     CreateNewNode(AST_TAG_CALL_SUFFIX);
     LinkToPreviousNode();
 }
 
-void VisualizeVisitor::VisitNormalCall (const Object& node) {
+void VisualizeVisitor::VisitNormalCall(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NORMAL_CALL);
     CreateNewNode(AST_TAG_NORMAL_CALL);
-    LinkToPreviousNode();  // Elist
+    LinkToPreviousNode();    // Elist
 }
 
-void VisualizeVisitor::VisitMethodCall (const Object& node) {
+void VisualizeVisitor::VisitMethodCall(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_METHOD_CALL);
     CreateNewNode(AST_TAG_METHOD_CALL);
-    LinkToPreviousNode();  // Elist
-    LinkToOrphan();        // Id
+    LinkToPreviousNode();    // Elist
+    LinkToOrphan();          // Id
 }
 
-void VisualizeVisitor::VisitEmptyExpressionList(const Object& node) {
+void VisualizeVisitor::VisitEmptyExpressionList(const Object &node) {
     SaveOrphan();
     CreateNewNode(AST_TAG_ELIST);
 }
 
-void VisualizeVisitor::VisitNormalExpressionList(const Object& node) {
+void VisualizeVisitor::VisitNormalExpressionList(const Object &node) {
     CreateNewNode(AST_TAG_ELIST);
     LinkToPreviousNode();
 
-    for(register unsigned i = 1; i < node.GetNumericSize(); ++i) {
+    for (register unsigned i = 1; i < node.GetNumericSize(); ++i) {
         assert(!orphans.empty());
         LinkToNode(orphans.top());
         orphans.pop();
     }
 }
 
-void VisualizeVisitor::VisitExpressionList (const Object& node) {
+void VisualizeVisitor::VisitExpressionList(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ELIST);
-    if (node.GetTotal() == 1) VisitEmptyExpressionList(node);
-    else VisitNormalExpressionList(node);
+    if (node.GetTotal() == 1)
+        VisitEmptyExpressionList(node);
+    else
+        VisitNormalExpressionList(node);
 }
 
-void VisualizeVisitor::VisitObjectDef (const Object& node) {
+void VisualizeVisitor::VisitObjectDef(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_OBJECT_DEF);
     CreateNewNode(AST_TAG_OBJECT_DEF);
     LinkToPreviousNode();
 }
 
-void VisualizeVisitor::VisitEmptyIndexed(const Object& node) {
+void VisualizeVisitor::VisitEmptyIndexed(const Object &node) {
     SaveOrphan();
     CreateNewNode(AST_TAG_INDEXED);
 }
 
-void VisualizeVisitor::VisitNormalIndexed(const Object& node) {
+void VisualizeVisitor::VisitNormalIndexed(const Object &node) {
     CreateNewNode(AST_TAG_INDEXED);
     LinkToPreviousNode();
 
-    for(register unsigned i = 1; i < node.GetNumericSize(); ++i) {
+    for (register unsigned i = 1; i < node.GetNumericSize(); ++i) {
         assert(!orphans.empty());
         LinkToNode(orphans.top());
         orphans.pop();
     }
 }
 
-void VisualizeVisitor::VisitIndexed (const Object& node) {
+void VisualizeVisitor::VisitIndexed(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_INDEXED);
-    if (node.GetTotal() == 1) VisitEmptyIndexed(node);
-    else VisitNormalIndexed(node);
+    if (node.GetTotal() == 1)
+        VisitEmptyIndexed(node);
+    else
+        VisitNormalIndexed(node);
 }
 
-void VisualizeVisitor::VisitIndexedElem (const Object& node) {
+void VisualizeVisitor::VisitIndexedElem(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_INDEXED_ELEM);
     CreateNewNode(AST_TAG_INDEXED_ELEM);
-    LinkToPreviousNode();  // Expr
-    LinkToOrphan();        // Expr
+    LinkToPreviousNode();    // Expr
+    LinkToOrphan();          // Expr
 }
 
-void VisualizeVisitor::VisitBlock (const Object& node) {
+void VisualizeVisitor::VisitBlock(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_BLOCK);
     CreateNewNode(AST_TAG_BLOCK);
     LinkToPreviousNode();
 }
 
-void VisualizeVisitor::VisitFunctionDef (const Object& node) {
+void VisualizeVisitor::VisitFunctionDef(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FUNCTION_DEF);
     CreateNewNode(AST_TAG_FUNCTION_DEF);
 
-    LinkToPreviousNode();   // Stmt
-    LinkToOrphan();         // Idlist
-    LinkToOrphan();         // Id
+    LinkToPreviousNode();    // Stmt
+    LinkToOrphan();          // Idlist
+    LinkToOrphan();          // Id
 }
 
-void VisualizeVisitor::VisitConst (const Object& node) {
+void VisualizeVisitor::VisitConst(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_CONST);
     CreateNewNode(AST_TAG_CONST);
     LinkToPreviousNode();
 }
 
-void VisualizeVisitor::VisitNumber (const Object& node) {
+void VisualizeVisitor::VisitNumber(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NUMBER);
     SaveOrphan();
-    double d = node[AST_TAG_VALUE]->ToNumber();
-    std::string str = ((int) d == d) ? std::to_string((int) d) : std::to_string(d);
+    double value = node[AST_TAG_VALUE]->ToNumber();
+    //double equality by comparing with epsilon
+    double flooredValue = std::floor(std::abs(value));
+    double epsilon = std::numeric_limits<double>::epsilon();
+    std::string str = (std::abs(value - flooredValue) < epsilon) ? std::to_string(static_cast<int>(value)) : std::to_string(value);
     CreateNewNode(str);
 }
 
-void VisualizeVisitor::VisitString (const Object& node) {
+void VisualizeVisitor::VisitString(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_STRING);
     SaveOrphan();
 
@@ -443,70 +454,72 @@ void VisualizeVisitor::VisitString (const Object& node) {
     CreateNewNode("\\\"" + label + "\\\"");
 }
 
-void VisualizeVisitor::VisitNill (const Object& node) {
+void VisualizeVisitor::VisitNill(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NILL);
     SaveOrphan();
     CreateNewNode(AST_TAG_NILL);
 }
 
-void VisualizeVisitor::VisitTrue (const Object& node) {
+void VisualizeVisitor::VisitTrue(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_TRUE);
     SaveOrphan();
     CreateNewNode(AST_TAG_TRUE);
 }
 
-void VisualizeVisitor::VisitFalse (const Object& node) {
+void VisualizeVisitor::VisitFalse(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FALSE);
     SaveOrphan();
     CreateNewNode(AST_TAG_FALSE);
 }
 
-void VisualizeVisitor::VisitEmptyIdlist(const Object& node) {
+void VisualizeVisitor::VisitEmptyIdlist(const Object &node) {
     SaveOrphan();
     CreateNewNode(AST_TAG_ID_LIST);
 }
 
-void VisualizeVisitor::VisitNormalIdlist(const Object& node) {
+void VisualizeVisitor::VisitNormalIdlist(const Object &node) {
     CreateNewNode(AST_TAG_ID_LIST);
     LinkToPreviousNode();
 
-    for(register unsigned i = 1; i < node.GetNumericSize(); ++i) {
+    for (register unsigned i = 1; i < node.GetNumericSize(); ++i) {
         assert(!orphans.empty());
         LinkToNode(orphans.top());
         orphans.pop();
     }
 }
 
-void VisualizeVisitor::VisitIdList (const Object& node) {
+void VisualizeVisitor::VisitIdList(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ID_LIST);
-    if (node.GetTotal() == 1) VisitEmptyIdlist(node);
-    else VisitNormalIdlist(node);
+    if (node.GetTotal() == 1)
+        VisitEmptyIdlist(node);
+    else
+        VisitNormalIdlist(node);
 }
 
-void VisualizeVisitor::VisitIf (const Object& node) {
+void VisualizeVisitor::VisitIf(const Object &node) {
     CreateNewNode(AST_TAG_IF);
-    LinkToPreviousNode();  // Stmt (either normal or else stmt)
-    LinkToOrphan();        // Either expr or stmt
+    LinkToPreviousNode();    // Stmt (either normal or else stmt)
+    LinkToOrphan();          // Either expr or stmt
     if (node.ElementExists(AST_TAG_ELSE_STMT)) LinkToOrphan();
 }
 
-void VisualizeVisitor::VisitWhile (const Object& node) {
+void VisualizeVisitor::VisitWhile(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_WHILE);
     CreateNewNode(AST_TAG_WHILE);
-    LinkToPreviousNode();  // Stmt
-    LinkToOrphan();        // Cond
+    LinkToPreviousNode();    // Stmt
+    LinkToOrphan();          // Cond
 }
 
-void VisualizeVisitor::VisitFor (const Object& node) {
+void VisualizeVisitor::VisitFor(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FOR);
     CreateNewNode(AST_TAG_FOR);
-    LinkToPreviousNode();  // Stmt
-    LinkToOrphan();        // Elist2
-    LinkToOrphan();        // Cond
-    LinkToOrphan();        // Elist1
+    LinkToPreviousNode();    // Stmt
+    LinkToOrphan();          // Elist2
+    LinkToOrphan();          // Cond
+    LinkToOrphan();          // Elist1
 }
 
-void VisualizeVisitor::VisitReturn (const Object& node) {
+void VisualizeVisitor::VisitReturn(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_RETURN);
     if (node.ElementExists(AST_TAG_CHILD)) {
         CreateNewNode(AST_TAG_RETURN);
@@ -517,19 +530,19 @@ void VisualizeVisitor::VisitReturn (const Object& node) {
     }
 }
 
-void VisualizeVisitor::VisitBreak (const Object& node) {
+void VisualizeVisitor::VisitBreak(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_BREAK);
     SaveOrphan();
     CreateNewNode(AST_TAG_BREAK);
 }
 
-void VisualizeVisitor::VisitContinue (const Object& node) {
+void VisualizeVisitor::VisitContinue(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_CONTINUE);
     SaveOrphan();
     CreateNewNode(AST_TAG_CONTINUE);
 }
 
-TreeVisitor * VisualizeVisitor::Clone (void) const {
+TreeVisitor *VisualizeVisitor::Clone(void) const {
     auto visitor = new VisualizeVisitor();
     visitor->lastNode = lastNode;
     visitor->output << output.rdbuf();
@@ -539,7 +552,7 @@ TreeVisitor * VisualizeVisitor::Clone (void) const {
     return visitor;
 }
 
-VisualizeVisitor::VisualizeVisitor(const std::string & filename) {
+VisualizeVisitor::VisualizeVisitor(const std::string &filename) {
     lastNode = 0;
     outputFile = filename;
     output << "digraph AST { "
@@ -549,11 +562,11 @@ VisualizeVisitor::VisualizeVisitor(const std::string & filename) {
            << std::endl;
 }
 
-VisualizeVisitor::VisualizeVisitor(void) : VisualizeVisitor(DEFAULT_DOT_FILE) { }
+VisualizeVisitor::VisualizeVisitor(void) : VisualizeVisitor(DEFAULT_DOT_FILE) {}
 
 VisualizeVisitor::~VisualizeVisitor() {
     lastNode = 0;
     output.clear();
     outputFile.clear();
-    while(!orphans.empty()) orphans.pop();
+    while (!orphans.empty()) orphans.pop();
 }

@@ -1,12 +1,12 @@
 #include "TreeHost.h"
+#include <cassert>
 #include "Object.h"
 #include "TreeTags.h"
-#include <cassert>
 
 TreeHost::TreeHost(TreeVisitor *_visitor) : visitor(_visitor) {
     assert(_visitor);
     InstallAllAcceptors();
-};
+}
 
 void TreeHost::Accept(const Object &node) {
     acceptors[node[AST_TAG_TYPE_KEY]->ToString()](node);
@@ -90,7 +90,7 @@ void TreeHost::AcceptProgram(const Object &node) {
 void TreeHost::AcceptStatements(const Object &node) {
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_STMTS);
 
-    for (int i = 0; i < node.GetNumericSize(); i++)
+    for (unsigned i = 0; i < node.GetNumericSize(); ++i)
         Accept(*node[i]->ToObject());
 
     visitor->VisitStatements(node);
@@ -422,7 +422,7 @@ void TreeHost::AcceptMethodCall(const Object &node) {
 void TreeHost::AcceptExpressionList(const Object &node) {
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ELIST);
 
-    for (int i = 0; i < node.GetNumericSize(); i++)
+    for (unsigned i = 0; i < node.GetNumericSize(); ++i)
         Accept(*node[i]->ToObject());
     visitor->VisitExpressionList(node);
 }
@@ -438,9 +438,9 @@ void TreeHost::AcceptObjectDef(const Object &node) {
 void TreeHost::AcceptIndexed(const Object &node) {
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_INDEXED);
 
-	for (int i = 0; i < node.GetNumericSize(); i++)
-		Accept(*node[i]->ToObject());
-	visitor->VisitIndexed(node);
+    for (unsigned i = 0; i < node.GetNumericSize(); ++i)
+        Accept(*node[i]->ToObject());
+    visitor->VisitIndexed(node);
 }
 
 void TreeHost::AcceptIndexedElem(const Object &node) {
@@ -519,9 +519,9 @@ void TreeHost::AcceptFalse(const Object &node) {
 void TreeHost::AcceptIdList(const Object &node) {
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ID_LIST);
 
-	for (int i = 0; i < node.GetNumericSize(); i++)
-		Accept(*node[i]->ToObject());
-	visitor->VisitIdList(node);
+    for (unsigned i = 0; i < node.GetNumericSize(); ++i)
+        Accept(*node[i]->ToObject());
+    visitor->VisitIdList(node);
 }
 
 void TreeHost::AcceptIf(const Object &node) {
@@ -581,6 +581,6 @@ void TreeHost::AcceptContinue(const Object &node) {
 }
 
 TreeHost::~TreeHost() {
-    if(visitor) delete visitor;
+    if (visitor) delete visitor;
     acceptors.clear();
 }

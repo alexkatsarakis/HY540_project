@@ -19,9 +19,26 @@ SAMPLE_TEST=$(TESTDIR)/add.alpha
 INCLDIR=-I$(PROJECTDIR)$
 
 # Set compilation flags
-# -Wshadow : Warn whenever a local variable or type declaration shadows another
-#            variable, parameter, type or when a built-in function is shadowed
-CFLAGS=-O0 -g3 -std=c++14 -Wshadow -Wall -Wold-style-cast -Wpedantic $(INCLDIR)
+# -Wshadow: Warn whenever a local variable or type declaration shadows another
+#           variable, parameter, type or when a built-in function is shadowed
+# -Wold-style-cast: Warn oc C-style cast
+# -Wpedantic:
+# -Wfloat-equal: Warn if floating point values are used in equality comparisons
+# -Wpointer-arith: Warn about anything that depends on the "size of" a function type or of "void"
+# -Wcast-qual: For example, warn if a "const char *" is cast to an ordinary "char *"
+# -Wstrict-overflow: Warns about cases where the compiler optimizes
+#                    based on the assumption that signed overflow does not occur
+# -Wwrite-strings: On C programs, give string constants the type "const char[length]"
+# -Wswitch: Useful to catch missing siwtch cases
+# -Wunreachable-code: Warn if the compiler detects that code will never be executed
+# -Winit-self: Warn about uninitialized variables which are initialized with themselves
+# -Wconversion: Warn for implicit conversions that may alter a value
+CFLAGS=-O0 -g3 -std=c++14 -Wshadow -Wall -Wextra -Wold-style-cast -Wpedantic\
+-Wfloat-equal -Wpointer-arith -Wcast-qual -Wstrict-overflow=5 -Wwrite-strings\
+-Wswitch-default -Wswitch-enum -Wunreachable-code -Winit-self\
+-Wno-unused-parameter\
+$(INCLDIR)
+# -Wconversion
 
 # Find all source files
 SRCS:=$(shell cd $(SRCDIR); ls *.cpp)
@@ -57,7 +74,7 @@ run: $(EXECUTABLE)
 $(ODIR)/%.o: $(SRCDIR)/%.cpp
 	@echo Compiling $*
 	@mkdir -p $(ODIR)
-	$(CC) -std=c++14 -c -o $@ $< -g
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 # Create lexical analyzer
 $(LEXXER_CPP): $(LEXXER_L)
@@ -72,7 +89,7 @@ $(LEXXER_O): $(LEXXER_CPP)
 
 $(PARSER_O): $(PARSER_CPP)
 	@mkdir -p $(ODIR)
-	$(CC) $^ -o $@ -c -Wno-write-strings
+	$(CC) -Wno-write-strings $^ -o $@ -c
 
 $(EXECUTABLE): $(PARSER_O) $(LEXXER_O) $(OBJ)
 	@echo 'Creating interpreter'

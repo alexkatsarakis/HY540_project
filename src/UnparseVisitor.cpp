@@ -456,7 +456,7 @@ void UnparseVisitor::VisitIdList(const Object &node) {
     list<string> ids;
     string last = stack.top();
     stack.pop();
-    for (int i = 0; i < node.GetNumericSize() - 1; ++i) {
+    for (unsigned i = 0; i < node.GetNumericSize() - 1; ++i) {
         string id = stack.top();
         stack.pop();
         ids.push_front(id);
@@ -524,6 +524,6 @@ void UnparseVisitor::VisitContinue(const Object &node) {
     stack.push("continue;");
 }
 UnparseVisitor::~UnparseVisitor() {
-    while(!stack.empty()) stack.pop();
+    while (!stack.empty()) stack.pop();
     fileName.clear();
 }

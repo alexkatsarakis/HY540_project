@@ -1,8 +1,8 @@
 #include "Value.h"
 
-#include <string>
 #include <cassert>
 #include <cstring> /* For memset and strdup */
+#include <string>
 
 Value::Data::Data() { this->Clear(); }
 
@@ -17,14 +17,18 @@ Value::Data::~Data() { this->Clear(); }
 
 Value::Value() { FromUndef(); }
 
-Value::Value(const Value & val) {
+Value::Value(const Value &val) {
     assert(val.IsValid());
 
     this->type = val.type;
-    if (val.type == Type::StringType) data.stringVal = strdup(val.data.stringVal);
-    else if (val.type == Type::LibraryFunctionType) data.libraryFunctionVal.id = strdup(val.data.libraryFunctionVal.id);
-    else if (val.type == Type::NativePtrType) data.nativePtrVal.typeId = strdup(val.data.nativePtrVal.typeId);
-    else std::memcpy(&data, &val.data, sizeof(Data));
+    if (val.type == Type::StringType)
+        data.stringVal = strdup(val.data.stringVal);
+    else if (val.type == Type::LibraryFunctionType)
+        data.libraryFunctionVal.id = strdup(val.data.libraryFunctionVal.id);
+    else if (val.type == Type::NativePtrType)
+        data.nativePtrVal.typeId = strdup(val.data.nativePtrVal.typeId);
+    else
+        std::memcpy(&data, &val.data, sizeof(Data));
 
     assert(IsValid());
 }
@@ -33,23 +37,23 @@ Value::Value(double num) { FromNumber(num); }
 
 Value::Value(bool val) { FromBoolean(val); }
 
-Value::Value(const char * str) { FromString(str); }
+Value::Value(const char *str) { FromString(str); }
 
-Value::Value(const std::string & str) { FromString(str); }
+Value::Value(const std::string &str) { FromString(str); }
 
-Value::Value(Object * obj) { FromObject(obj); }
+Value::Value(Object *obj) { FromObject(obj); }
 
-Value::Value(Object * ast, Object * closure) { FromProgramFunction(ast, closure); }
+Value::Value(Object *ast, Object *closure) { FromProgramFunction(ast, closure); }
 
-Value::Value(LibraryFunc func, const std::string & str) { FromLibraryFunction(func, str); }
+Value::Value(LibraryFunc func, const std::string &str) { FromLibraryFunction(func, str); }
 
-Value::Value(void * ptr, const std::string & type) { FromNativePointer(ptr, type); }
+Value::Value(void *ptr, const std::string &_type) { FromNativePointer(ptr, _type); }
 
 Value::Value(NilTypeValue) { FromNil(); }
 
 /****** Operators ******/
 
-const Value & Value::operator = (const Value & val) {
+const Value &Value::operator=(const Value &val) {
     assert(val.IsValid());
 
     if (this != &val) {
@@ -72,8 +76,7 @@ bool Value::IsValid(void) const {
         (type == Type::ProgramFunctionType && data.programFunctionVal.ast) ||
         (type == Type::LibraryFunctionType && data.libraryFunctionVal.function && data.libraryFunctionVal.id) ||
         (type == Type::NativePtrType && data.nativePtrVal.ptr && data.nativePtrVal.typeId) ||
-        type == Type::NilType
-    );
+        type == Type::NilType);
 }
 
 /****** Observers ******/
@@ -123,7 +126,7 @@ void Value::FromBoolean(bool val) {
     assert(IsValid());
 }
 
-void Value::FromString(const std::string & str) {
+void Value::FromString(const std::string &str) {
     type = Type::StringType;
     data.stringVal = strdup(str.c_str());
 
@@ -131,7 +134,7 @@ void Value::FromString(const std::string & str) {
     assert(IsValid());
 }
 
-void Value::FromObject(Object * obj) {
+void Value::FromObject(Object *obj) {
     assert(obj);
 
     type = Type::ObjectType;
@@ -141,7 +144,7 @@ void Value::FromObject(Object * obj) {
     assert(IsValid());
 }
 
-void Value::FromProgramFunction(Object * ast, Object * closure) {
+void Value::FromProgramFunction(Object *ast, Object *closure) {
     assert(ast);
 
     type = Type::ProgramFunctionType;
@@ -152,7 +155,7 @@ void Value::FromProgramFunction(Object * ast, Object * closure) {
     assert(IsValid());
 }
 
-void Value::FromLibraryFunction(LibraryFunc func, const std::string & str) {
+void Value::FromLibraryFunction(LibraryFunc func, const std::string &str) {
     assert(!str.empty());
     assert(func);
 
@@ -164,7 +167,7 @@ void Value::FromLibraryFunction(LibraryFunc func, const std::string & str) {
     assert(IsValid());
 }
 
-void Value::FromNativePointer(void * ptr, const std::string & str) {
+void Value::FromNativePointer(void *ptr, const std::string &str) {
     assert(ptr);
     assert(!str.empty());
 
@@ -206,17 +209,17 @@ std::string Value::ToString(void) const {
     return std::string(data.stringVal);
 }
 
-const Object * Value::ToObject(void) const {
+const Object *Value::ToObject(void) const {
     assert(IsObject());
     return data.objectVal;
 }
 
-const Object * Value::ToProgramFunctionAST(void) const {
+const Object *Value::ToProgramFunctionAST(void) const {
     assert(IsProgramFunction());
     return data.programFunctionVal.ast;
 }
 
-const Object * Value::ToProgramFunctionClosure(void) const {
+const Object *Value::ToProgramFunctionClosure(void) const {
     assert(IsProgramFunction());
     return data.programFunctionVal.closure;
 }
@@ -231,7 +234,7 @@ std::string Value::ToLibraryFunctionId(void) const {
     return std::string(data.libraryFunctionVal.id);
 }
 
-void * Value::ToNativePtr(void) const {
+void *Value::ToNativePtr(void) const {
     assert(IsNativePtr());
     return data.nativePtrVal.ptr;
 }
@@ -243,8 +246,8 @@ std::string Value::ToNativeTypeId(void) const {
 
 /****** Replicator ******/
 
-Value * Value::Clone(void) const {
-    Value * val = new Value(*this);
+Value *Value::Clone(void) const {
+    Value *val = new Value(*this);
     return val;
 }
 
@@ -253,9 +256,12 @@ Value * Value::Clone(void) const {
 Value::~Value() {
     assert(IsValid());
 
-    if (type == Type::StringType) free(data.stringVal);
-    else if (type == Type::LibraryFunctionType) free(data.libraryFunctionVal.id);
-    else if (type == Type::NativePtrType) free(data.nativePtrVal.typeId);
+    if (type == Type::StringType)
+        free(data.stringVal);
+    else if (type == Type::LibraryFunctionType)
+        free(data.libraryFunctionVal.id);
+    else if (type == Type::NativePtrType)
+        free(data.nativePtrVal.typeId);
 
     FromUndef();
 }
