@@ -14,16 +14,13 @@ Object::Object() {
 Object::Object(const Object &obj) {
     assert(obj.IsValid());
 
+    refCounter = obj.refCounter;
     numMap.clear();
     strMap.clear();
     numMap = obj.numMap;
     strMap = obj.strMap;
 
-    /* TODO: Is the assignment the correct way to do it? Perhaps the following
-     * is a better solution?
-     *
-     * numMap.insert(obj.numMap.begin(); obj.numMap.end());
-     */
+    assert(IsValid());
 }
 
 /****** Verifier ******/
@@ -86,10 +83,14 @@ void Object::DecreaseRefCounter(void) {
 
 void Object::Clear(void) {
     assert(IsValid());
-    for (auto &pair : numMap) delete pair.second;
-    for (auto &pair : strMap) delete pair.second;
+
+    for (auto & pair : numMap) delete pair.second;
     numMap.clear();
+
+    for (auto & pair : strMap) delete pair.second;
     strMap.clear();
+
+    assert(IsValid());
 }
 
 /****** Getters ******/
@@ -187,4 +188,7 @@ void Object::Apply(const Applier &func) {
 
 Object::~Object() {
     assert(IsValid());
+    numMap.clear();
+    strMap.clear();
+    refCounter = 0;
 }

@@ -327,7 +327,7 @@ void ProcessAST(Object * ast) {
     unparseHost->Accept(*ast);
     visualizeHost->Accept(*ast);
 
-#undef AST_MEM_CLEANUP
+#define AST_MEM_CLEANUP
 #ifdef AST_MEM_CLEANUP
     TreeHost * h = new TreeHost(new DeallocateVisitor());
     h->Accept(*ast);
@@ -358,6 +358,8 @@ int main(int argc, char ** argv) {
 
         delete unparseHost;
         delete visualizeHost;
+
+        fclose(yyin);
 
     } catch(std::exception & e) {
         std::cerr << "Unhandled exception: " << e.what() << std::endl;

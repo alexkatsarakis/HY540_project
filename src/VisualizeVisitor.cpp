@@ -1,10 +1,8 @@
 #include "VisualizeVisitor.h"
 #include "TreeTags.h"
+#include "Utilities.h"
 
 #include <cassert>
-#include <cmath>
-#include <cstdint>
-#include <regex>
 #include <string>
 
 #define DEFAULT_DOT_FILE "alpha_AST.dot"
@@ -438,10 +436,7 @@ void VisualizeVisitor::VisitNumber(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NUMBER);
     SaveOrphan();
     double value = node[AST_TAG_VALUE]->ToNumber();
-    //double equality by comparing with epsilon
-    double flooredValue = std::floor(std::abs(value));
-    double epsilon = std::numeric_limits<double>::epsilon();
-    std::string str = (std::abs(value - flooredValue) < epsilon) ? std::to_string(static_cast<int>(value)) : std::to_string(value);
+    std::string str = ( Utilities::IsInt(value) ) ? std::to_string(static_cast<int>(value)) : std::to_string(value);
     CreateNewNode(str);
 }
 

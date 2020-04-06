@@ -31,6 +31,8 @@ public:
 
     Value();
 
+    Value(Value && val);
+
     Value(const Value &val);
 
     Value(double num);
@@ -45,7 +47,7 @@ public:
 
     Value(Object *ast, Object *closure);    // 2 Object ptrs mean program func
 
-    Value(LibraryFunc func, const std::string &str = "");
+    Value(LibraryFunc func, const std::string &str);
 
     Value(void *ptr, const std::string &_type);
 
@@ -54,6 +56,8 @@ public:
     /****** Operators ******/
 
     const Value &operator=(const Value &val);
+
+    operator bool() const;
 
     /****** Verifier ******/
 
@@ -123,6 +127,12 @@ public:
 
     std::string ToNativeTypeId(void) const;
 
+    Object * ToObjectNoConst(void) const;
+
+    Object * ToProgramFunctionASTNoConst(void) const;
+
+    Object * ToProgramFunctionClosureNoConst(void) const;
+
     /****** Replicator ******/
 
     Value *Clone(void) const;
@@ -162,6 +172,10 @@ private:
 
     Type type;
     Data data;
+
+    /****** Modifier ******/
+
+    void FreeMemory(void);
 };
 
 #endif

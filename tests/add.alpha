@@ -81,8 +81,11 @@ y.$inner.$outer.$inner = false;
 f()().$outer = 25;
 
 pi = 3.141592653589793238;
-*/
-
-
 
 x = "string with all legal esc chars (with comma between them)\\, \", \t, \n, \"";
+*/
+
+a = 1;
+b = 1.1;
+c = 1.12;
+d = 3.141592653589793238;
