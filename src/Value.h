@@ -115,6 +115,12 @@ public:
 
     const Object *ToProgramFunctionClosure(void) const;
 
+    Object *ToObject_NoConst(void) const;
+
+    Object *ToProgramFunctionAST_NoConst(void) const;
+
+    Object *ToProgramFunctionClosure_NoConst(void) const;
+
     LibraryFunc ToLibraryFunction(void) const;
 
     std::string ToLibraryFunctionId(void) const;
