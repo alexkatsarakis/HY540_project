@@ -193,21 +193,22 @@ const std::string UnparseVisitor::UnparseFunctionDef(const std::string &id, cons
 const std::string UnparseVisitor::UnparseConst(const std::string &child) {
     return child;
 }
-const std::string UnparseVisitor::UnparseNumber(const std::string &value) {
-    return value;
+const std::string UnparseVisitor::UnparseNumber(const double &value) {
+	//TODO: format number
+    return to_string(value);
 }
 const std::string UnparseVisitor::UnparseString(const std::string &value) {
     string valStr = formatEscChars(value);
     return string("\"" + valStr + "\"");
 }
-const std::string UnparseVisitor::UnparseNill(const std::string &value) {
-    return value;
+const std::string UnparseVisitor::UnparseNill() {
+    return "nil";
 }
-const std::string UnparseVisitor::UnparseTrue(const std::string &value) {
-    return value;
+const std::string UnparseVisitor::UnparseTrue() {
+    return "true";
 }
-const std::string UnparseVisitor::UnparseFalse(const std::string &value) {
-    return value;
+const std::string UnparseVisitor::UnparseFalse() {
+    return "false";
 }
 const std::string UnparseVisitor::UnparseIdList(const std::vector<std::string> &ids) {
     string idListStr;
@@ -415,22 +416,22 @@ void UnparseVisitor::VisitLValue(const Object &node) {
 void UnparseVisitor::VisitId(const Object &node) {
     const_cast<Object &>(node).Set(
         UNPARSE_VALUE,
-        UnparseId(GetUnparsed(node[AST_TAG_ID])));
+        UnparseId(node[AST_TAG_ID]->ToString()));
 }
 void UnparseVisitor::VisitLocal(const Object &node) {
     const_cast<Object &>(node).Set(
         UNPARSE_VALUE,
-        UnparseLocal(GetUnparsed(node[AST_TAG_ID])));
+        UnparseLocal(node[AST_TAG_ID]->ToString()));
 }
 void UnparseVisitor::VisitDoubleColon(const Object &node) {
     const_cast<Object &>(node).Set(
         UNPARSE_VALUE,
-        UnparseDoubleColon(GetUnparsed(node[AST_TAG_ID])));
+        UnparseDoubleColon(node[AST_TAG_ID]->ToString()));
 }
 void UnparseVisitor::VisitDollar(const Object &node) {
     const_cast<Object &>(node).Set(
         UNPARSE_VALUE,
-        UnparseDollar(GetUnparsed(node[AST_TAG_ID])));
+        UnparseDollar(node[AST_TAG_ID]->ToString()));
 }
 void UnparseVisitor::VisitMember(const Object &node) {
     const_cast<Object &>(node).Set(
@@ -531,27 +532,27 @@ void UnparseVisitor::VisitConst(const Object &node) {
 void UnparseVisitor::VisitNumber(const Object &node) {
     const_cast<Object &>(node).Set(
         UNPARSE_VALUE,
-        UnparseNumber(GetUnparsed(node[AST_TAG_VALUE])));
+        UnparseNumber(node[AST_TAG_VALUE]->ToNumber()));
 }
 void UnparseVisitor::VisitString(const Object &node) {
     const_cast<Object &>(node).Set(
         UNPARSE_VALUE,
-        UnparseString(GetUnparsed(node[AST_TAG_VALUE])));
+        UnparseString(node[AST_TAG_VALUE]->ToString()));
 }
 void UnparseVisitor::VisitNill(const Object &node) {
     const_cast<Object &>(node).Set(
         UNPARSE_VALUE,
-        UnparseNill(GetUnparsed(node[AST_TAG_VALUE])));
+        UnparseNill());
 }
 void UnparseVisitor::VisitTrue(const Object &node) {
     const_cast<Object &>(node).Set(
         UNPARSE_VALUE,
-        UnparseTrue(GetUnparsed(node[AST_TAG_VALUE])));
+        UnparseTrue());
 }
 void UnparseVisitor::VisitFalse(const Object &node) {
     const_cast<Object &>(node).Set(
         UNPARSE_VALUE,
-        UnparseFalse(GetUnparsed(node[AST_TAG_VALUE])));
+        UnparseFalse());
 }
 void UnparseVisitor::VisitIdList(const Object &node) {
     vector<string> ids;
@@ -572,8 +573,7 @@ void UnparseVisitor::VisitIf(const Object &node) {
         const_cast<Object &>(node).Set(
             UNPARSE_VALUE,
             UnparseIf(GetUnparsed(node[AST_TAG_CONDITION]),
-                      GetUnparsed(node[AST_TAG_STMT]),
-                      ""));
+                      GetUnparsed(node[AST_TAG_STMT])));
 }
 void UnparseVisitor::VisitWhile(const Object &node) {
     const_cast<Object &>(node).Set(
@@ -597,7 +597,7 @@ void UnparseVisitor::VisitReturn(const Object &node) {
     else
         const_cast<Object &>(node).Set(
             UNPARSE_VALUE,
-            UnparseReturn(""));
+            UnparseReturn());
 }
 void UnparseVisitor::VisitBreak(const Object &node) {
     const_cast<Object &>(node).Set(

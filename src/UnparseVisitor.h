@@ -61,11 +61,11 @@ private:
     const std::string UnparseBlock(const std::string &stmts);
     const std::string UnparseFunctionDef(const std::string &id, const std::string &idlist, const std::string &block);
     const std::string UnparseConst(const std::string &child);
-    const std::string UnparseNumber(const std::string &value);
+    const std::string UnparseNumber(const double &value);
     const std::string UnparseString(const std::string &value);
-    const std::string UnparseNill(const std::string &value);
-    const std::string UnparseTrue(const std::string &value);
-    const std::string UnparseFalse(const std::string &value);
+    const std::string UnparseNill();
+    const std::string UnparseTrue();
+    const std::string UnparseFalse();
     const std::string UnparseIdList(const std::vector<std::string> &ids);
     const std::string UnparseIf(const std::string &cond, const std::string &stmt, const std::string &elseStmt = "");
     const std::string UnparseWhile(const std::string &expr, const std::string &stmt);
