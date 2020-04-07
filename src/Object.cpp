@@ -84,11 +84,11 @@ void Object::DecreaseRefCounter(void) {
     refCounter -= 1;
 }
 
-const Value Object::GetAndRemove(double key) {
+const Value *Object::GetAndRemove(double key) {
     assert(IsValid());
-    assert(ElementExists(key));
 
     auto pair = numMap.find(key);
+    if (pair == numMap.end()) return nullptr;
     unsigned oldSize = numMap.size();
     numMap.erase(pair);
 
@@ -97,12 +97,12 @@ const Value Object::GetAndRemove(double key) {
     return pair->second;
 }
 
-const Value Object::GetAndRemove(const std::string &key) {
+const Value *Object::GetAndRemove(const std::string &key) {
     assert(!key.empty());
     assert(IsValid());
-    assert(ElementExists(key));
 
     auto pair = strMap.find(key);
+    if (pair == strMap.end()) return nullptr;
     unsigned oldSize = strMap.size();
     strMap.erase(pair);
 

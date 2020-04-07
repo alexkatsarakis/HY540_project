@@ -51,9 +51,9 @@ public:
 
     void DecreaseRefCounter(void);
 
-    const Value GetAndRemove(double key);
+    const Value *GetAndRemove(double key);
 
-    const Value GetAndRemove(const std::string &key);
+    const Value *GetAndRemove(const std::string &key);
 
     void Clear(void);
 

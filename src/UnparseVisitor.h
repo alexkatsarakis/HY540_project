@@ -15,6 +15,7 @@ private:
     const std::string UnparseProgram(const std::string &stmts);
     const std::string UnparseStatements(const std::vector<std::string> &statements);
     const std::string UnparseStatement(const std::string &stmt = "");
+    const std::string UnparseStatementNOSEMICOLON(const std::string &stmt);
     const std::string UnparseExpression(const std::string &expr);
     const std::string UnparseAssign(const std::string &lvalue, const std::string &rvalue);
     const std::string UnparsePlus(const std::string &expr1, const std::string &expr2);

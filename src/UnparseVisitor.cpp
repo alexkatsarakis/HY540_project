@@ -3,6 +3,7 @@
 #include "Object.h"
 #include "TreeTags.h"
 
+#include <cassert>
 #include <fstream>
 
 #define UNPARSE_VALUE "$$UnparseValue"
@@ -31,7 +32,7 @@ void UnparseVisitor::WriteFile(const std::string &program) {
     f.close();
 }
 const std::string UnparseVisitor::GetUnparsed(const Value *val) const {
-    return val->ToObject_NoConst()->GetAndRemove(UNPARSE_VALUE).ToString();
+    return val->ToObject_NoConst()->GetAndRemove(UNPARSE_VALUE)->ToString();
 }
 
 const std::string UnparseVisitor::UnparseProgram(const std::string &stmts) {
@@ -46,6 +47,9 @@ const std::string UnparseVisitor::UnparseStatements(const std::vector<std::strin
 }
 const std::string UnparseVisitor::UnparseStatement(const std::string &stmt) {
     return string(stmt + ";\n");
+}
+const std::string UnparseVisitor::UnparseStatementNOSEMICOLON(const std::string &stmt) {
+    return string(stmt);
 }
 const std::string UnparseVisitor::UnparseExpression(const std::string &expr) {
     return expr;
@@ -168,7 +172,8 @@ const std::string UnparseVisitor::UnparseExpressionList(const std::vector<std::s
     string expressionListStr;
     for (auto expression : expressions)
         expressionListStr.append(expression).append(", ");
-    expressionListStr.erase(expressionListStr.size() - 2);
+    assert(expressionListStr.size() > 2 || expressionListStr.size() == 0);
+    if (expressionListStr.size() > 2) expressionListStr.erase(expressionListStr.size() - 2);
     return expressionListStr;
 }
 const std::string UnparseVisitor::UnparseObjectDef(const std::string &child) {
@@ -178,7 +183,8 @@ const std::string UnparseVisitor::UnparseIndexed(const std::vector<std::string> 
     string indexedListStr;
     for (auto indexedElement : indexedElements)
         indexedListStr.append(indexedElement).append(", ");
-    indexedListStr.erase(indexedListStr.size() - 2);
+    assert(indexedListStr.size() > 2 || indexedListStr.size() == 0);
+    if (indexedListStr.size() > 2) indexedListStr.erase(indexedListStr.size() - 2);
     return indexedListStr;
 }
 const std::string UnparseVisitor::UnparseIndexedElem(const std::string &key, const std::string &value) {
@@ -188,13 +194,13 @@ const std::string UnparseVisitor::UnparseBlock(const std::string &stmts) {
     return string("{\n" + stmts + "}");
 }
 const std::string UnparseVisitor::UnparseFunctionDef(const std::string &id, const std::string &idlist, const std::string &block) {
-    return string("function " + id + "(" + idlist + ") " + block);
+    return string("function " + id + "(" + idlist + ") " + block + "\n");
 }
 const std::string UnparseVisitor::UnparseConst(const std::string &child) {
     return child;
 }
 const std::string UnparseVisitor::UnparseNumber(const double &value) {
-	//TODO: format number
+    //TODO: format number
     return to_string(value);
 }
 const std::string UnparseVisitor::UnparseString(const std::string &value) {
@@ -214,27 +220,28 @@ const std::string UnparseVisitor::UnparseIdList(const std::vector<std::string> &
     string idListStr;
     for (auto id : ids)
         idListStr.append(id).append(", ");
-    idListStr.erase(idListStr.size() - 2);
+    assert(idListStr.size() > 2 || idListStr.size() == 0);
+    if (idListStr.size() > 2) idListStr.erase(idListStr.size() - 2);
     return idListStr;
 }
 const std::string UnparseVisitor::UnparseIf(const std::string &cond, const std::string &stmt, const std::string &elseStmt) {
-    string elseStr = elseStmt.empty() ? "" : "else " + elseStmt;
-    return string("if (" + cond + ") " + stmt + elseStr);
+    string elseStr = elseStmt.empty() ? "" : " else " + elseStmt;
+    return string("if (" + cond + ") " + stmt + elseStr + "\n");
 }
 const std::string UnparseVisitor::UnparseWhile(const std::string &expr, const std::string &stmt) {
-    return string("while (" + expr + ") " + stmt);
+    return string("while (" + expr + ") " + stmt + "\n");
 }
 const std::string UnparseVisitor::UnparseFor(const std::string &elist1, const std::string &expr, const std::string &elist2, const std::string &stmt) {
-    return string("for (" + elist1 + "; " + expr + "; " + elist2 + ") " + stmt);
+    return string("for (" + elist1 + "; " + expr + "; " + elist2 + ") " + stmt + "\n");
 }
 const std::string UnparseVisitor::UnparseReturn(const std::string &expr) {
-    return string("return" + expr + ";");
+    return string("return " + expr + ";\n");
 }
 const std::string UnparseVisitor::UnparseBreak(void) {
-    return string("break;");
+    return string("break;\n");
 }
 const std::string UnparseVisitor::UnparseContinue(void) {
-    return string("continue;");
+    return string("continue;\n");
 }
 
 UnparseVisitor::UnparseVisitor(const std::string &_fileName) : fileName(_fileName) {}
@@ -262,10 +269,17 @@ void UnparseVisitor::VisitStatement(const Object &node) {
         const_cast<Object &>(node).Set(
             UNPARSE_VALUE,
             UnparseStatement(""));
-    else
-        const_cast<Object &>(node).Set(
-            UNPARSE_VALUE,
-            UnparseStatement(GetUnparsed(node[AST_TAG_CHILD])));
+    else {
+        Object child = *(node[AST_TAG_CHILD]->ToObject());
+        if (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR)
+            const_cast<Object &>(node).Set(
+                UNPARSE_VALUE,
+                UnparseStatement(GetUnparsed(node[AST_TAG_CHILD])));
+        else
+            const_cast<Object &>(node).Set(
+                UNPARSE_VALUE,
+                UnparseStatementNOSEMICOLON(GetUnparsed(node[AST_TAG_CHILD])));
+    }
 }
 void UnparseVisitor::VisitExpression(const Object &node) {
     const_cast<Object &>(node).Set(
@@ -518,11 +532,19 @@ void UnparseVisitor::VisitBlock(const Object &node) {
         UnparseBlock(GetUnparsed(node[AST_TAG_CHILD])));
 }
 void UnparseVisitor::VisitFunctionDef(const Object &node) {
-    const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
-        UnparseFunctionDef(GetUnparsed(node[AST_TAG_FUNCTION_ID]),
-                           GetUnparsed(node[AST_TAG_FUNCTION_FORMALS]),
-                           GetUnparsed(node[AST_TAG_STMT])));
+    const string funcId = GetUnparsed(node[AST_TAG_FUNCTION_ID]);
+    if (funcId.find("$") != std::string::npos)
+        const_cast<Object &>(node).Set(
+            UNPARSE_VALUE,
+            UnparseFunctionDef("",
+                               GetUnparsed(node[AST_TAG_FUNCTION_FORMALS]),
+                               GetUnparsed(node[AST_TAG_STMT])));
+    else
+        const_cast<Object &>(node).Set(
+            UNPARSE_VALUE,
+            UnparseFunctionDef(funcId,
+                               GetUnparsed(node[AST_TAG_FUNCTION_FORMALS]),
+                               GetUnparsed(node[AST_TAG_STMT])));
 }
 void UnparseVisitor::VisitConst(const Object &node) {
     const_cast<Object &>(node).Set(
