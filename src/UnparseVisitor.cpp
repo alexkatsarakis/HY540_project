@@ -26,6 +26,16 @@ string formatEscChars(const string &str) {
     return out;
 }
 
+//Prepared for merge with Utilities.h
+#include <cmath>
+#include <limits>
+bool IsInt(double num) {
+    double flooredValue = std::floor(std::abs(num));
+    double epsilon = std::numeric_limits<double>::epsilon();
+    return (std::abs(num - flooredValue) < epsilon);
+}
+//Prepared for merge with Utilities.h
+
 void UnparseVisitor::WriteFile(const std::string &program) {
     ofstream f(fileName.c_str(), ios_base::out);
     f << program;
@@ -200,8 +210,7 @@ const std::string UnparseVisitor::UnparseConst(const std::string &child) {
     return child;
 }
 const std::string UnparseVisitor::UnparseNumber(const double &value) {
-    //TODO: format number
-    return to_string(value);
+    return IsInt(value) ? to_string(static_cast<int>(value)) : to_string(value);
 }
 const std::string UnparseVisitor::UnparseString(const std::string &value) {
     string valStr = formatEscChars(value);
