@@ -13,9 +13,21 @@ private:
 
     Object * globalScope;
 
+    enum MathOp { Plus, Minus, Mul, Div, Mod };
+
     void RuntimeError(const std::string & msg);
 
+    const Value * LookupCurrentScope(const std::string & symbol) const;
+
+    const Value * LookupGlobalScope(const std::string & symbol) const;
+
+    const Value * LookupAllScopes(const std::string & symbol) const;
+
+    bool IsLibFunc(const std::string & symbol) const;
+
     void InstallEvaluators(void);
+
+    const Value EvalMath(Object & node, MathOp op);
 
     const Value EvalProgram(Object &node);
     const Value EvalStatements(Object &node);

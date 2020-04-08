@@ -1,5 +1,6 @@
 #include "Interpreter.h"
 #include "TreeTags.h"
+#include "LibraryFunctions.h"
 
 #include <iostream>
 #include <cassert>
@@ -19,6 +20,37 @@ void Interpreter::RuntimeError(const std::string & msg) {
     exit(EXIT_FAILURE);
 }
 
+const Value * Interpreter::LookupCurrentScope(const std::string & symbol) const {
+    assert(!symbol.empty());
+
+    /* TODO: Use $previous for a valid lookup */
+    if (!currentScope->ElementExists(symbol)) return nullptr;
+    else return currentScope->operator[](symbol);
+}
+
+const Value * Interpreter::LookupGlobalScope(const std::string & symbol) const {
+    assert(!symbol.empty());
+
+    /* TODO: Find a solution for the slicing problem */
+    if (!globalScope->ElementExists(symbol)) return nullptr;
+    else return globalScope->operator[](symbol);
+}
+
+const Value * Interpreter::LookupAllScopes(const std::string & symbol) const {
+    assert(!symbol.empty());
+
+    /* TODO: Use $puter AND $previous for a valid lookup */
+    if (!currentScope->ElementExists(symbol)) return nullptr;
+    else return currentScope->operator[](symbol);
+}
+
+bool Interpreter::IsLibFunc(const std::string & symbol) const {
+    assert(!symbol.empty());
+
+    if (!globalScope->ElementExists(symbol)) return false;
+    else return globalScope->operator[](symbol)->IsLibraryFunction();
+}
+
 void Interpreter::InstallEvaluators(void) {
     dispatcher.Install(AST_TAG_PROGRAM, [this](Object & node) -> Value { return EvalProgram(node); });
     dispatcher.Install(AST_TAG_STMTS, [this](Object & node) -> Value { return EvalStatements(node); });
@@ -26,10 +58,22 @@ void Interpreter::InstallEvaluators(void) {
     dispatcher.Install(AST_TAG_EXPR, [this](Object & node) -> Value { return EvalExpression(node); });
     dispatcher.Install(AST_TAG_ASSIGN, [this](Object & node) -> Value { return EvalAssign(node); });
     dispatcher.Install(AST_TAG_PLUS, [this](Object & node) -> Value { return EvalPlus(node); });
+    dispatcher.Install(AST_TAG_MINUS, [this](Object & node) -> Value { return EvalMinus(node); });
+    dispatcher.Install(AST_TAG_MUL, [this](Object & node) -> Value { return EvalMul(node); });
+    dispatcher.Install(AST_TAG_DIV, [this](Object & node) -> Value { return EvalDiv(node); });
+    dispatcher.Install(AST_TAG_MODULO, [this](Object & node) -> Value { return EvalModulo(node); });
     dispatcher.Install(AST_TAG_TERM, [this](Object & node) -> Value { return EvalTerm(node); });
     dispatcher.Install(AST_TAG_PRIMARY, [this](Object & node) -> Value { return EvalPrimary(node); });
+    dispatcher.Install(AST_TAG_LVALUE, [this](Object & node) -> Value { return EvalLValue(node); });
     dispatcher.Install(AST_TAG_CONST, [this](Object & node) -> Value { return EvalConst(node); });
     dispatcher.Install(AST_TAG_NUMBER, [this](Object & node) -> Value { return EvalNumber(node); });
+    dispatcher.Install(AST_TAG_STRING, [this](Object & node) -> Value { return EvalString(node); });
+    dispatcher.Install(AST_TAG_NILL, [this](Object & node) -> Value { return EvalNill(node); });
+    dispatcher.Install(AST_TAG_TRUE, [this](Object & node) -> Value { return EvalTrue(node); });
+    dispatcher.Install(AST_TAG_FALSE, [this](Object & node) -> Value { return EvalFalse(node); });
+    dispatcher.Install(AST_TAG_ID, [this](Object & node) -> Value { return EvalId(node); });
+    dispatcher.Install(AST_TAG_DOUBLECOLON_ID, [this](Object & node) -> Value { return EvalDoubleColon(node); });
+    dispatcher.Install(AST_TAG_LOCAL_ID, [this](Object & node) -> Value { return EvalLocal(node); });
 }
 
 const Value Interpreter::EvalProgram(Object &node) {
@@ -61,39 +105,61 @@ const Value Interpreter::EvalExpression(Object &node) {
 
 const Value Interpreter::EvalAssign(Object &node) {
     ASSERT_TYPE(AST_TAG_ASSIGN);
-    return NIL_VAL;
+
+    auto lvalue = EVAL(AST_TAG_LVALUE);
+    auto rvalue = EVAL(AST_TAG_RVALUE);
+
+    currentScope->Set(lvalue.ToString(), rvalue);
+    //std::cout << lvalue.ToString() << " = " << rvalue.ToNumber() << std::endl;
+
+    return rvalue;
 }
 
-const Value Interpreter::EvalPlus(Object &node) {
-    ASSERT_TYPE(AST_TAG_PLUS);
+const Value Interpreter::EvalMath(Object & node, MathOp op) {
+    assert(node.IsValid());
 
     auto op1 = EVAL(AST_TAG_FIRST_EXPR);
     auto op2 = EVAL(AST_TAG_SECOND_EXPR);
 
-    if (!op1.IsNumber()) RuntimeError("First operand of addition is not a number");
-    if (!op2.IsNumber()) RuntimeError("Second operand of addition is not a number");
+    if (!op1.IsNumber()) RuntimeError("First operand is not a number in an arithmetic operation");
+    if (!op2.IsNumber()) RuntimeError("Second operand is not a number in an arithmetic operation");
 
-    return op1.ToNumber() + op2.ToNumber();
+    switch(op) {
+        case MathOp::Plus: return op1.ToNumber() + op2.ToNumber();
+        case MathOp::Minus: return op1.ToNumber() - op2.ToNumber();
+        case MathOp::Mul: return op1.ToNumber() * op2.ToNumber();
+        case MathOp::Div: return op1.ToNumber() / op2.ToNumber();
+        case MathOp::Mod: {
+            double val = static_cast<unsigned>(op1.ToNumber()) % static_cast<unsigned>(op2.ToNumber());
+            return val;
+        };
+        default: assert(false);
+    }
+}
+
+const Value Interpreter::EvalPlus(Object &node) {
+    ASSERT_TYPE(AST_TAG_PLUS);
+    return EvalMath(node, MathOp::Plus);
 }
 
 const Value Interpreter::EvalMinus(Object &node) {
     ASSERT_TYPE(AST_TAG_MINUS);
-    return NIL_VAL;
+    return EvalMath(node, MathOp::Minus);
 }
 
 const Value Interpreter::EvalMul(Object &node) {
     ASSERT_TYPE(AST_TAG_MUL);
-    return NIL_VAL;
+    return EvalMath(node, MathOp::Mul);
 }
 
 const Value Interpreter::EvalDiv(Object &node) {
     ASSERT_TYPE(AST_TAG_DIV);
-    return NIL_VAL;
+    return EvalMath(node, MathOp::Div);
 }
 
 const Value Interpreter::EvalModulo(Object &node) {
     ASSERT_TYPE(AST_TAG_MODULO);
-    return NIL_VAL;
+    return EvalMath(node, MathOp::Mod);
 }
 
 const Value Interpreter::EvalGreater(Object &node) {
@@ -178,22 +244,39 @@ const Value Interpreter::EvalPrimary(Object &node) {
 
 const Value Interpreter::EvalLValue(Object &node) {
     ASSERT_TYPE(AST_TAG_LVALUE);
-    return NIL_VAL;
+    return EVAL_CHILD();;
 }
 
 const Value Interpreter::EvalId(Object &node) {
     ASSERT_TYPE(AST_TAG_ID);
-    return NIL_VAL;
+
+    auto symbol = node[AST_TAG_ID]->ToString();
+    if (!LookupAllScopes(symbol)) currentScope->Set(symbol, Value());
+
+    return symbol;
 }
 
 const Value Interpreter::EvalLocal(Object &node) {
     ASSERT_TYPE(AST_TAG_LOCAL_ID);
+
+    auto symbol = node[AST_TAG_ID]->ToString();
+
+    if (LookupCurrentScope(symbol)) return symbol;
+
+    if (IsLibFunc(symbol)) RuntimeError("Local variable \"" + symbol + "\" shadows library function");
+
+    currentScope->Set(symbol, Value());
+
     return NIL_VAL;
 }
 
 const Value Interpreter::EvalDoubleColon(Object &node) {
     ASSERT_TYPE(AST_TAG_DOUBLECOLON_ID);
-    return NIL_VAL;
+
+    auto symbol = node[AST_TAG_ID]->ToString();
+    if (!LookupGlobalScope(symbol)) RuntimeError("Global symbol \"" + symbol + "\" does not exist");
+
+    return symbol;
 }
 
 const Value Interpreter::EvalDollar(Object &node) {
@@ -278,7 +361,7 @@ const Value Interpreter::EvalNumber(Object &node) {
 
 const Value Interpreter::EvalString(Object &node) {
     ASSERT_TYPE(AST_TAG_STRING);
-    return NIL_VAL;
+    return *node[AST_TAG_VALUE];
 }
 
 const Value Interpreter::EvalNill(Object &node) {
@@ -288,12 +371,12 @@ const Value Interpreter::EvalNill(Object &node) {
 
 const Value Interpreter::EvalTrue(Object &node) {
     ASSERT_TYPE(AST_TAG_TRUE);
-    return NIL_VAL;
+    return Value(true);
 }
 
 const Value Interpreter::EvalFalse(Object &node) {
     ASSERT_TYPE(AST_TAG_FALSE);
-    return NIL_VAL;
+    return Value(false);
 }
 
 const Value Interpreter::EvalIdList(Object &node) {
@@ -336,6 +419,7 @@ Interpreter::Interpreter(void) {
     currentScope = globalScope;
 
     /* TODO: Install Library Functions in global scope */
+    globalScope->Set("print", Value(LibFunc::Print, "print"));
 
     InstallEvaluators();
 }
