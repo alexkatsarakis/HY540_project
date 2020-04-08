@@ -5,6 +5,8 @@
 #include "Object.h"
 #include "Value.h"
 
+#include <list>
+
 class Interpreter {
 private:
     EvalDispatcher dispatcher;
@@ -13,9 +15,13 @@ private:
 
     Object * globalScope;
 
-    enum MathOp { Plus, Minus, Mul, Div, Mod };
+    std::list<Object *> scopeStack;
+
+    enum MathOp { Plus, Minus, Mul, Div, Mod, Greater, Less, GreaterEqual, LessEqual };
 
     void RuntimeError(const std::string & msg);
+
+    const Value * LookupScope(Object * scope, const std::string & symbol) const;
 
     const Value * LookupCurrentScope(const std::string & symbol) const;
 
@@ -28,6 +34,8 @@ private:
     void InstallEvaluators(void);
 
     const Value EvalMath(Object & node, MathOp op);
+
+    bool ValuesAreEqual(const Value & v1, const Value & v2);
 
     const Value EvalProgram(Object &node);
     const Value EvalStatements(Object &node);

@@ -1,9 +1,13 @@
 #include "Interpreter.h"
 #include "TreeTags.h"
 #include "LibraryFunctions.h"
+#include "Utilities.h"
 
 #include <iostream>
 #include <cassert>
+
+#define PREVIOUS_RESERVED_FIELD "$previous"
+#define OUTER_RESERVED_FIELD "$outer"
 
 #define NIL_VAL Value(NilTypeValue::Nil);
 
@@ -13,19 +17,33 @@
 
 #define ASSERT_TYPE(type) assert(node[AST_TAG_TYPE_KEY]->ToString() == type);
 
-extern int yylineno;
+#define INSTALL(tag, method) dispatcher.Install(tag, [this](Object & node) { return method(node); });
 
 void Interpreter::RuntimeError(const std::string & msg) {
-    std::cerr << "Runtime Error at line " << yylineno << ": " << msg << std::endl;
+    std::cerr << "\033[31;1m" << "Runtime Error: " << msg << "\033[0m" << std::endl;
     exit(EXIT_FAILURE);
+}
+
+const Value * Interpreter::LookupScope(Object * scope, const std::string & symbol) const {
+    assert(scope && scope->IsValid());
+    assert(!symbol.empty());
+
+    /* If this scope contains the symbol simply return it */
+    if (scope->ElementExists(symbol)) return (*scope)[symbol];
+
+    /* Check if the scope is sliced */
+    if (scope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
+        const Object * previous = (*scope)[PREVIOUS_RESERVED_FIELD]->ToObject();
+        if(previous->ElementExists(symbol)) return (*previous)[symbol];
+    }
+
+    return nullptr;
 }
 
 const Value * Interpreter::LookupCurrentScope(const std::string & symbol) const {
     assert(!symbol.empty());
 
-    /* TODO: Use $previous for a valid lookup */
-    if (!currentScope->ElementExists(symbol)) return nullptr;
-    else return currentScope->operator[](symbol);
+    return LookupScope(currentScope, symbol);
 }
 
 const Value * Interpreter::LookupGlobalScope(const std::string & symbol) const {
@@ -39,9 +57,18 @@ const Value * Interpreter::LookupGlobalScope(const std::string & symbol) const {
 const Value * Interpreter::LookupAllScopes(const std::string & symbol) const {
     assert(!symbol.empty());
 
-    /* TODO: Use $puter AND $previous for a valid lookup */
-    if (!currentScope->ElementExists(symbol)) return nullptr;
-    else return currentScope->operator[](symbol);
+    const Value * value = nullptr;
+    Object * scope = currentScope;
+
+    while(true) {
+        value = LookupScope(scope, symbol);
+
+        if (value) return value;
+
+        if (!scope->ElementExists(OUTER_RESERVED_FIELD)) return nullptr;
+
+        scope = (*scope)[OUTER_RESERVED_FIELD]->ToObject_NoConst();
+    }
 }
 
 bool Interpreter::IsLibFunc(const std::string & symbol) const {
@@ -52,28 +79,39 @@ bool Interpreter::IsLibFunc(const std::string & symbol) const {
 }
 
 void Interpreter::InstallEvaluators(void) {
-    dispatcher.Install(AST_TAG_PROGRAM, [this](Object & node) -> Value { return EvalProgram(node); });
-    dispatcher.Install(AST_TAG_STMTS, [this](Object & node) -> Value { return EvalStatements(node); });
-    dispatcher.Install(AST_TAG_STMT, [this](Object & node) -> Value { return EvalStatement(node); });
-    dispatcher.Install(AST_TAG_EXPR, [this](Object & node) -> Value { return EvalExpression(node); });
-    dispatcher.Install(AST_TAG_ASSIGN, [this](Object & node) -> Value { return EvalAssign(node); });
-    dispatcher.Install(AST_TAG_PLUS, [this](Object & node) -> Value { return EvalPlus(node); });
-    dispatcher.Install(AST_TAG_MINUS, [this](Object & node) -> Value { return EvalMinus(node); });
-    dispatcher.Install(AST_TAG_MUL, [this](Object & node) -> Value { return EvalMul(node); });
-    dispatcher.Install(AST_TAG_DIV, [this](Object & node) -> Value { return EvalDiv(node); });
-    dispatcher.Install(AST_TAG_MODULO, [this](Object & node) -> Value { return EvalModulo(node); });
-    dispatcher.Install(AST_TAG_TERM, [this](Object & node) -> Value { return EvalTerm(node); });
-    dispatcher.Install(AST_TAG_PRIMARY, [this](Object & node) -> Value { return EvalPrimary(node); });
-    dispatcher.Install(AST_TAG_LVALUE, [this](Object & node) -> Value { return EvalLValue(node); });
-    dispatcher.Install(AST_TAG_CONST, [this](Object & node) -> Value { return EvalConst(node); });
-    dispatcher.Install(AST_TAG_NUMBER, [this](Object & node) -> Value { return EvalNumber(node); });
-    dispatcher.Install(AST_TAG_STRING, [this](Object & node) -> Value { return EvalString(node); });
-    dispatcher.Install(AST_TAG_NILL, [this](Object & node) -> Value { return EvalNill(node); });
-    dispatcher.Install(AST_TAG_TRUE, [this](Object & node) -> Value { return EvalTrue(node); });
-    dispatcher.Install(AST_TAG_FALSE, [this](Object & node) -> Value { return EvalFalse(node); });
-    dispatcher.Install(AST_TAG_ID, [this](Object & node) -> Value { return EvalId(node); });
-    dispatcher.Install(AST_TAG_DOUBLECOLON_ID, [this](Object & node) -> Value { return EvalDoubleColon(node); });
-    dispatcher.Install(AST_TAG_LOCAL_ID, [this](Object & node) -> Value { return EvalLocal(node); });
+    INSTALL(AST_TAG_PROGRAM, EvalProgram);
+    INSTALL(AST_TAG_STMTS, EvalStatements);
+    INSTALL(AST_TAG_STMT, EvalStatement);
+    INSTALL(AST_TAG_EXPR, EvalExpression);
+    INSTALL(AST_TAG_ASSIGN, EvalAssign);
+    INSTALL(AST_TAG_PLUS, EvalPlus);
+    INSTALL(AST_TAG_MINUS, EvalMinus);
+    INSTALL(AST_TAG_MUL, EvalMul);
+    INSTALL(AST_TAG_DIV, EvalDiv);
+    INSTALL(AST_TAG_MODULO, EvalModulo);
+    INSTALL(AST_TAG_GREATER, EvalGreater);
+    INSTALL(AST_TAG_LESS, EvalLess);
+    INSTALL(AST_TAG_GEQUAL, EvalGreaterEqual);
+    INSTALL(AST_TAG_LEQUAL, EvalLessEqual);
+    INSTALL(AST_TAG_TERM, EvalTerm);
+    INSTALL(AST_TAG_PRIMARY, EvalPrimary);
+    INSTALL(AST_TAG_LVALUE, EvalLValue);
+    INSTALL(AST_TAG_CONST, EvalConst);
+    INSTALL(AST_TAG_NUMBER, EvalNumber);
+    INSTALL(AST_TAG_STRING, EvalString);
+    INSTALL(AST_TAG_NILL, EvalNill);
+    INSTALL(AST_TAG_TRUE, EvalTrue);
+    INSTALL(AST_TAG_FALSE, EvalFalse);
+    INSTALL(AST_TAG_ID, EvalId);
+    INSTALL(AST_TAG_DOUBLECOLON_ID, EvalDoubleColon);
+    INSTALL(AST_TAG_LOCAL_ID, EvalLocal);
+    INSTALL(AST_TAG_FUNCTION_DEF, EvalFunctionDef);
+    INSTALL(AST_TAG_EQUAL, EvalEqual);
+    INSTALL(AST_TAG_NEQUAL, EvalNotEqual);
+    INSTALL(AST_TAG_AND, EvalAnd);
+    INSTALL(AST_TAG_OR, EvalOr);
+    INSTALL(AST_TAG_UMINUS, EvalUnaryMinus);
+    INSTALL(AST_TAG_NOT, EvalNot);
 }
 
 const Value Interpreter::EvalProgram(Object &node) {
@@ -109,8 +147,14 @@ const Value Interpreter::EvalAssign(Object &node) {
     auto lvalue = EVAL(AST_TAG_LVALUE);
     auto rvalue = EVAL(AST_TAG_RVALUE);
 
-    currentScope->Set(lvalue.ToString(), rvalue);
-    //std::cout << lvalue.ToString() << " = " << rvalue.ToNumber() << std::endl;
+    /* TODO: Check if lvalue is an object, a function, a dollar ID */
+
+    Value * value = const_cast<Value *>(LookupAllScopes(lvalue.ToString()));
+    assert(value);
+
+    /* TODO: Discuss if this is a good idea */
+    value->~Value();
+    new (value) Value(rvalue);
 
     return rvalue;
 }
@@ -129,6 +173,10 @@ const Value Interpreter::EvalMath(Object & node, MathOp op) {
         case MathOp::Minus: return op1.ToNumber() - op2.ToNumber();
         case MathOp::Mul: return op1.ToNumber() * op2.ToNumber();
         case MathOp::Div: return op1.ToNumber() / op2.ToNumber();
+        case MathOp::Greater: return op1.ToNumber() > op2.ToNumber();
+        case MathOp::Less: return op1.ToNumber() < op2.ToNumber();
+        case MathOp::GreaterEqual: return op1.ToNumber() >= op2.ToNumber();
+        case MathOp::LessEqual: return op1.ToNumber() <= op2.ToNumber();
         case MathOp::Mod: {
             double val = static_cast<unsigned>(op1.ToNumber()) % static_cast<unsigned>(op2.ToNumber());
             return val;
@@ -164,42 +212,84 @@ const Value Interpreter::EvalModulo(Object &node) {
 
 const Value Interpreter::EvalGreater(Object &node) {
     ASSERT_TYPE(AST_TAG_GREATER);
-    return NIL_VAL;
+    return EvalMath(node, MathOp::Greater);
 }
 
 const Value Interpreter::EvalLess(Object &node) {
     ASSERT_TYPE(AST_TAG_LESS);
-    return NIL_VAL;
+    return EvalMath(node, MathOp::Less);
 }
 
 const Value Interpreter::EvalGreaterEqual(Object &node) {
     ASSERT_TYPE(AST_TAG_GEQUAL);
-    return NIL_VAL;
+    return EvalMath(node, MathOp::GreaterEqual);
 }
 
 const Value Interpreter::EvalLessEqual(Object &node) {
     ASSERT_TYPE(AST_TAG_LEQUAL);
-    return NIL_VAL;
+    return EvalMath(node, MathOp::LessEqual);
+}
+
+bool Interpreter::ValuesAreEqual(const Value & v1, const Value & v2) {
+    assert(v1.IsValid());
+    assert(v2.IsValid());
+
+    /* We do not allow comparisons with Undef */
+    if (v1.IsUndef() || v2.IsUndef()) RuntimeError("Undef found in equality operator");
+    /* If one of the operands is boolean simply convert the other operand to
+     * boolean and compare them. */
+    if (v1.IsBoolean() || v2.IsBoolean()) return (static_cast<bool>(v1) == static_cast<bool>(v2));
+    /* If one of the operands is nil and the other operand is not boolean then
+     * the result is true only if both operands are nil */
+    if (v1.IsNil() || v2.IsNil()) return (v1.IsNil() && v2.IsNil());
+    /* In any other case the operands must have the same type */
+    if (v1.GetType() != v2.GetType()) RuntimeError("Cannot compare operands of different types (" + v1.GetTypeToString() + " and " + v2.GetTypeToString() + ")");
+
+    /* Compare based on type of operands */
+    if (v1.IsNumber()) return Utilities::DoublesAreEqual(v1.ToNumber(), v2.ToNumber());
+    else if (v1.IsString()) return v1.ToString() == v2.ToString();
+    else if (v1.IsProgramFunction()) return v1.ToProgramFunctionAST() == v2.ToProgramFunctionAST();
+    else if (v1.IsLibraryFunction()) return v1.ToLibraryFunction() == v2.ToLibraryFunction();
+    else if (v1.IsNativePtr()) return v1.ToNativePtr() == v2.ToNativePtr();
+    else assert(false);
 }
 
 const Value Interpreter::EvalEqual(Object &node) {
     ASSERT_TYPE(AST_TAG_EQUAL);
-    return NIL_VAL;
+
+    auto op1 = EVAL(AST_TAG_FIRST_EXPR);
+    auto op2 = EVAL(AST_TAG_SECOND_EXPR);
+
+    return ValuesAreEqual(op1, op2);
 }
 
 const Value Interpreter::EvalNotEqual(Object &node) {
     ASSERT_TYPE(AST_TAG_NEQUAL);
-    return NIL_VAL;
+
+    auto op1 = EVAL(AST_TAG_FIRST_EXPR);
+    auto op2 = EVAL(AST_TAG_SECOND_EXPR);
+
+    return !ValuesAreEqual(op1, op2);
 }
 
 const Value Interpreter::EvalAnd(Object &node) {
     ASSERT_TYPE(AST_TAG_AND);
-    return NIL_VAL;
+
+    auto op1 = EVAL(AST_TAG_FIRST_EXPR);
+    if (!op1) return false;
+
+    auto op2 = EVAL(AST_TAG_SECOND_EXPR);
+    return static_cast<bool>(op2);
 }
 
 const Value Interpreter::EvalOr(Object &node) {
     ASSERT_TYPE(AST_TAG_OR);
-    return NIL_VAL;
+
+    auto op1 = EVAL(AST_TAG_FIRST_EXPR);
+    if (op1) return true;
+
+    auto op2 = EVAL(AST_TAG_SECOND_EXPR);
+    return static_cast<bool>(op2);
 }
 
 const Value Interpreter::EvalTerm(Object &node) {
@@ -209,12 +299,15 @@ const Value Interpreter::EvalTerm(Object &node) {
 
 const Value Interpreter::EvalUnaryMinus(Object &node) {
     ASSERT_TYPE(AST_TAG_UMINUS);
-    return NIL_VAL;
+    const Value val = EVAL_CHILD();
+    if (!val.IsNumber()) RuntimeError("Illegal expression to unary minus (-)");
+    return -val.ToNumber();
 }
 
 const Value Interpreter::EvalNot(Object &node) {
     ASSERT_TYPE(AST_TAG_NOT);
-    return NIL_VAL;
+    const Value val = EVAL_CHILD();
+    return !static_cast<bool>(val);
 }
 
 const Value Interpreter::EvalPlusPlusBefore(Object &node) {
@@ -239,12 +332,20 @@ const Value Interpreter::EvalMinusMinusAfter(Object &node) {
 
 const Value Interpreter::EvalPrimary(Object &node) {
     ASSERT_TYPE(AST_TAG_PRIMARY);
+
+    if(node[AST_TAG_CHILD]->ToObject()->operator[](AST_TAG_TYPE_KEY)->ToString() == AST_TAG_LVALUE) {
+        const Value symbol = EVAL_CHILD();
+        assert(symbol.IsString());
+        const Value res = *(LookupAllScopes(symbol.ToString()));
+        return res;
+    }
+
     return EVAL_CHILD();
 }
 
 const Value Interpreter::EvalLValue(Object &node) {
     ASSERT_TYPE(AST_TAG_LVALUE);
-    return EVAL_CHILD();;
+    return EVAL_CHILD();
 }
 
 const Value Interpreter::EvalId(Object &node) {
@@ -267,7 +368,7 @@ const Value Interpreter::EvalLocal(Object &node) {
 
     currentScope->Set(symbol, Value());
 
-    return NIL_VAL;
+    return symbol;
 }
 
 const Value Interpreter::EvalDoubleColon(Object &node) {
@@ -346,6 +447,20 @@ const Value Interpreter::EvalBlock(Object &node) {
 
 const Value Interpreter::EvalFunctionDef(Object &node) {
     ASSERT_TYPE(AST_TAG_FUNCTION_DEF);
+
+    const Object * child = node[AST_TAG_FUNCTION_ID]->ToObject();
+    std::string name = (*child)[AST_TAG_ID]->ToString();
+
+    if(IsLibFunc(name)) RuntimeError("Cannot define function \"" + name +"\". It shadows the library function.");
+    if (LookupCurrentScope(name)) RuntimeError("Cannot define function \"" + name + "\". Symbol name already exists.");
+
+    currentScope->Set(name, Value(&node, currentScope));
+
+    Object * slice = new Object();
+    slice->Set(PREVIOUS_RESERVED_FIELD, currentScope);
+    currentScope = slice;
+    currentScope->IncreaseRefCounter();
+
     return NIL_VAL;
 }
 
@@ -416,7 +531,11 @@ const Value Interpreter::EvalContinue(Object &node) {
 
 Interpreter::Interpreter(void) {
     globalScope = new Object();
+    globalScope->IncreaseRefCounter();
+    scopeStack.push_front(globalScope);
+
     currentScope = globalScope;
+    currentScope->IncreaseRefCounter();
 
     /* TODO: Install Library Functions in global scope */
     globalScope->Set("print", Value(LibFunc::Print, "print"));

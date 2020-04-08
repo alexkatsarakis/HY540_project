@@ -89,6 +89,7 @@ c = 1.12;
 d = 3.141592653589793238;
 */
 
+/*
 x = 1+2;
 x = 4*5;
 y = 10 - 2.5;
@@ -96,6 +97,26 @@ z = 40 / 4;
 w = 29 % 7;
 ::y = 2;
 
+3 > 2;
+
+z = x + y + 12;
+::y = 3;
+result = z < y * 10;
+omega = -3.14;
+
+f1 = f;
+f2 = "foobar";
+boolean = not f1 and f2;
+*/
+
+x = 1;
+function f() { }
+y = 2;
+x = 3;
+z = x + y * 10;
+
 // Error cases
-//z = 10 + false;
-//::f = 3;
+// function print() { }
+// function x() { }
+// z = 10 + false;
+// ::I_did_not_define_this = 3;
