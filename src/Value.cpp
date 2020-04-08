@@ -349,21 +349,6 @@ std::string Value::ToNativeTypeId(void) const {
     return std::string(data.nativePtrVal.typeId);
 }
 
-Object * Value::ToObjectNoConst(void) const {
-    assert(IsObject());
-    return data.objectVal;
-}
-
-Object * Value::ToProgramFunctionASTNoConst(void) const {
-    assert(IsProgramFunction());
-    return data.programFunctionVal.ast;
-}
-
-Object * Value::ToProgramFunctionClosureNoConst(void) const {
-    assert(IsProgramFunction());
-    return data.programFunctionVal.closure;
-}
-
 /****** Replicator ******/
 
 Value *Value::Clone(void) const {

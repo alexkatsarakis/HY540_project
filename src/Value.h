@@ -133,12 +133,6 @@ public:
 
     std::string ToNativeTypeId(void) const;
 
-    Object * ToObjectNoConst(void) const;
-
-    Object * ToProgramFunctionASTNoConst(void) const;
-
-    Object * ToProgramFunctionClosureNoConst(void) const;
-
     /****** Replicator ******/
 
     Value *Clone(void) const;
