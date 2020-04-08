@@ -3,18 +3,83 @@
 
 #include "TreeVisitor.h"
 
-#include <stack>
 #include <string>
+#include <vector>
 
 class UnparseVisitor : public TreeVisitor {
 private:
-    std::stack<std::string> stack;
     std::string fileName;
-    void WriteFile(void);
+    void WriteFile(const std::string &program);
+    const std::string GetUnparsed(const Value *val) const;
+
+    const std::string UnparseProgram(const std::string &stmts);
+    const std::string UnparseStatements(const std::vector<std::string> &statements);
+    const std::string UnparseStatement(const std::string &stmt = "");
+    const std::string UnparseStatementNOSEMICOLON(const std::string &stmt);
+    const std::string UnparseExpression(const std::string &expr);
+    const std::string UnparseAssign(const std::string &lvalue, const std::string &rvalue);
+    const std::string UnparsePlus(const std::string &expr1, const std::string &expr2);
+    const std::string UnparseMinus(const std::string &expr1, const std::string &expr2);
+    const std::string UnparseMul(const std::string &expr1, const std::string &expr2);
+    const std::string UnparseDiv(const std::string &expr1, const std::string &expr2);
+    const std::string UnparseModulo(const std::string &expr1, const std::string &expr2);
+    const std::string UnparseGreater(const std::string &expr1, const std::string &expr2);
+    const std::string UnparseLess(const std::string &expr1, const std::string &expr2);
+    const std::string UnparseGreaterEqual(const std::string &expr1, const std::string &expr2);
+    const std::string UnparseLessEqual(const std::string &expr1, const std::string &expr2);
+    const std::string UnparseEqual(const std::string &expr1, const std::string &expr2);
+    const std::string UnparseNotEqual(const std::string &expr1, const std::string &expr2);
+    const std::string UnparseAnd(const std::string &expr1, const std::string &expr2);
+    const std::string UnparseOr(const std::string &expr1, const std::string &expr2);
+    const std::string UnparseTerm(const std::string &expr);
+    const std::string UnparseTermPARENTHESIS(const std::string &expr);
+    const std::string UnparseUnaryMinus(const std::string &expr);
+    const std::string UnparseNot(const std::string &expr);
+    const std::string UnparsePlusPlusBefore(const std::string &expr);
+    const std::string UnparsePlusPlusAfter(const std::string &expr);
+    const std::string UnparseMinusMinusBefore(const std::string &expr);
+    const std::string UnparseMinusMinusAfter(const std::string &expr);
+    const std::string UnparsePrimary(const std::string &primary);
+    const std::string UnparsePrimaryPARENTHESIS(const std::string &funcdef);
+    const std::string UnparseLValue(const std::string &lvalue);
+    const std::string UnparseId(const std::string &value);
+    const std::string UnparseLocal(const std::string &value);
+    const std::string UnparseDoubleColon(const std::string &value);
+    const std::string UnparseDollar(const std::string &value);
+    const std::string UnparseMember(const std::string &member);
+    const std::string UnparseDot(const std::string &lvalue, const std::string &id);
+    const std::string UnparseBracket(const std::string &lvalue, const std::string &id);
+    const std::string UnparseCallPARENTHESIS(const std::string &call, const std::string &elist);
+    const std::string UnparseCall(const std::string &call, const std::string &elist);
+    const std::string UnparseCallPARENTHESISTWIN(const std::string &funcdef, const std::string &elist);
+    const std::string UnparseCallSuffix(const std::string &call);
+    const std::string UnparseNormalCall(const std::string &elist);
+    const std::string UnparseMethodCall(const std::string &id, const std::string &elist);
+    const std::string UnparseExpressionList(const std::vector<std::string> &expressions);
+    const std::string UnparseObjectDef(const std::string &child);
+    const std::string UnparseIndexed(const std::vector<std::string> &indexedElements);
+    const std::string UnparseIndexedElem(const std::string &key, const std::string &value);
+    const std::string UnparseBlock(const std::string &stmts);
+    const std::string UnparseFunctionDef(const std::string &id, const std::string &idlist, const std::string &block);
+    const std::string UnparseConst(const std::string &child);
+    const std::string UnparseNumber(const double &value);
+    const std::string UnparseString(const std::string &value);
+    const std::string UnparseNill();
+    const std::string UnparseTrue();
+    const std::string UnparseFalse();
+    const std::string UnparseIdList(const std::vector<std::string> &ids);
+    const std::string UnparseIf(const std::string &cond, const std::string &stmt, const std::string &elseStmt = "");
+    const std::string UnparseWhile(const std::string &expr, const std::string &stmt);
+    const std::string UnparseFor(const std::string &elist1, const std::string &expr, const std::string &elist2, const std::string &stmt);
+    const std::string UnparseReturn(const std::string &expr = "");
+    const std::string UnparseBreak(void);
+    const std::string UnparseContinue(void);
 
 public:
     UnparseVisitor(const std::string &_fileName = "alpha_unparse.alpha");
+    virtual ~UnparseVisitor();
     TreeVisitor *Clone(void) const override;
+
     void VisitProgram(const Object &node) override;
     void VisitStatements(const Object &node) override;
     void VisitStatement(const Object &node) override;
@@ -72,8 +137,6 @@ public:
     void VisitReturn(const Object &node) override;
     void VisitBreak(const Object &node) override;
     void VisitContinue(const Object &node) override;
-
-    ~UnparseVisitor();
 };
 
 #endif

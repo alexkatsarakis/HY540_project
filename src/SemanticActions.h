@@ -103,7 +103,7 @@ Object *ParseIndexed(Object *indexedelem, Object *rest);
 
 Object *ParseIndexedElem(Object *key, Object *value);
 
-Object *ParseIndexedElem(Object *key, Object *value);
+Object *ParseIndexedElem(Object *key, Object *value);    //redefinition of top, why g++ allowed this?
 
 Object *ParseBlock(Object *stmts);
 

@@ -317,6 +317,18 @@ const Object *Value::ToProgramFunctionClosure(void) const {
     return data.programFunctionVal.closure;
 }
 
+Object *Value::ToObject_NoConst(void) const {
+    return const_cast<Object *>(ToObject());
+}
+
+Object *Value::ToProgramFunctionAST_NoConst(void) const {
+    return const_cast<Object *>(ToProgramFunctionAST());
+}
+
+Object *Value::ToProgramFunctionClosure_NoConst(void) const {
+    return const_cast<Object *>(ToProgramFunctionClosure());
+}
+
 LibraryFunc Value::ToLibraryFunction(void) const {
     assert(IsLibraryFunction());
     return data.libraryFunctionVal.function;
