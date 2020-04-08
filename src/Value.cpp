@@ -287,6 +287,21 @@ Value::Type Value::GetType(void) const {
     return type;
 }
 
+std::string Value::GetTypeToString(void) const {
+    switch(type) {
+        case Type::UndefType: return "undef";
+        case Type::NumberType: return "number";
+        case Type::BooleanType: return "boolean";
+        case Type::StringType: return "string";
+        case Type::ObjectType: return "object";
+        case Type::ProgramFunctionType: return "program function";
+        case Type::LibraryFunctionType: return "library function";
+        case Type::NativePtrType: return "native pointer";
+        case Type::NilType: return "nil";
+        default: assert(false);
+    }
+}
+
 double Value::ToNumber(void) const {
     assert(IsNumber());
     return data.numVal;

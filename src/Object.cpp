@@ -152,7 +152,7 @@ void Object::Set(double key, const Value &value) {
     assert(IsValid());
 
     auto val = new Value(value);
-    numMap.insert(std::pair<double, ValuePtr>(key, val));
+    numMap[key] = val;
 
     assert(numMap.size() > 0);
     assert(IsValid());
@@ -164,7 +164,7 @@ void Object::Set(const std::string &key, const Value &value) {
     assert(IsValid());
 
     auto val = new Value(value);
-    strMap.insert(std::pair<std::string, ValuePtr>(key, val));
+    strMap[key] = val;
 
     assert(strMap.size() > 0);
     assert(IsValid());

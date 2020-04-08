@@ -13,3 +13,8 @@ bool Utilities::IsInt(double num) {
     double epsilon = std::numeric_limits<double>::epsilon();
     return (std::abs(num - flooredValue) < epsilon);
 }
+
+bool Utilities::DoublesAreEqual(double a, double b) {
+    double epsilon = std::numeric_limits<double>::epsilon();
+    return std::fabs(a - b) < epsilon;
+}

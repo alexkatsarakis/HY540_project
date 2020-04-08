@@ -7,6 +7,7 @@ namespace Utilities {
 
     bool IsInt(double);
 
+    bool DoublesAreEqual(double a, double b);
 }
 
 #endif
