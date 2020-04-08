@@ -6,6 +6,8 @@
 
 #include <string>
 
-const Value * GetArgument(Object & env, unsigned argNo, const std::string & optArgName = "");
+namespace LibFunc {
+    void Print(Object & env);
+}
 
 #endif
