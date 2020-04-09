@@ -13,3 +13,20 @@ bool Utilities::IsInt(double num) {
     double epsilon = std::numeric_limits<double>::epsilon();
     return (std::abs(num - flooredValue) < epsilon);
 }
+
+std::string Utilities::UnparserFormatEscChars(const std::string &str) {
+    std::string out;
+    for (const auto &c : str) {
+        if (c == '\n')
+            out += "\\n";
+        else if (c == '\t')
+            out += "\\t";
+        else if (c == '\"')
+            out += "\\\"";
+        else if (c == '\\')
+            out += "\\\\";
+        else
+            out += c;
+    }
+    return out;
+}

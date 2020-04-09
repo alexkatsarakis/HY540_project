@@ -11,7 +11,7 @@
 
 using namespace std;
 
-string formatEscChars(const string &str) {
+string UnparserFormatEscChars(const string &str) {
     // size_t index = 0;
     // index = str.find("\n");
     string out;
@@ -432,7 +432,7 @@ void UnparseVisitor::VisitNumber(const Object &node) {
 void UnparseVisitor::VisitString(const Object &node) {
     stringstream code;
     string inStr = node[AST_TAG_VALUE]->ToString();
-    string outStr = formatEscChars(inStr);
+    string outStr = UnparserFormatEscChars(inStr);
     code << "\"";
     code << outStr;
     code << "\"";

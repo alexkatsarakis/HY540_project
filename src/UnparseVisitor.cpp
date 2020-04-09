@@ -2,39 +2,13 @@
 
 #include "Object.h"
 #include "TreeTags.h"
+#include "Utilities.h"
 
 #include <cassert>
 #include <fstream>
 
 #define UNPARSE_VALUE "$$UnparseValue"
 using namespace std;
-
-string formatEscChars(const string &str) {
-    string out;
-    for (const auto &c : str) {
-        if (c == '\n')
-            out += "\\n";
-        else if (c == '\t')
-            out += "\\t";
-        else if (c == '\"')
-            out += "\\\"";
-        else if (c == '\\')
-            out += "\\\\";
-        else
-            out += c;
-    }
-    return out;
-}
-
-//Prepared for merge with Utilities.h
-#include <cmath>
-#include <limits>
-bool IsInt(double num) {
-    double flooredValue = std::floor(std::abs(num));
-    double epsilon = std::numeric_limits<double>::epsilon();
-    return (std::abs(num - flooredValue) < epsilon);
-}
-//Prepared for merge with Utilities.h
 
 void UnparseVisitor::WriteFile(const std::string &program) {
     ofstream f(fileName.c_str(), ios_base::out);
@@ -210,10 +184,10 @@ const std::string UnparseVisitor::UnparseConst(const std::string &child) {
     return child;
 }
 const std::string UnparseVisitor::UnparseNumber(const double &value) {
-    return IsInt(value) ? to_string(static_cast<int>(value)) : to_string(value);
+    return Utilities::IsInt(value) ? to_string(static_cast<int>(value)) : to_string(value);
 }
 const std::string UnparseVisitor::UnparseString(const std::string &value) {
-    string valStr = formatEscChars(value);
+    string valStr = Utilities::UnparserFormatEscChars(value);
     return string("\"" + valStr + "\"");
 }
 const std::string UnparseVisitor::UnparseNill() {
