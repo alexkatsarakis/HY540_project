@@ -14,6 +14,11 @@ bool Utilities::IsInt(double num) {
     return (std::abs(num - flooredValue) < epsilon);
 }
 
+bool Utilities::DoublesAreEqual(double a, double b) {
+    double epsilon = std::numeric_limits<double>::epsilon();
+    return std::fabs(a - b) < epsilon;
+}
+
 std::string Utilities::UnparserFormatEscChars(const std::string &str) {
     std::string out;
     for (const auto &c : str) {
@@ -29,10 +34,4 @@ std::string Utilities::UnparserFormatEscChars(const std::string &str) {
             out += c;
     }
     return out;
-}
-
-
-bool Utilities::DoublesAreEqual(double a, double b) {
-    double epsilon = std::numeric_limits<double>::epsilon();
-    return std::fabs(a - b) < epsilon;
 }

@@ -352,9 +352,9 @@ Object *ParseString(char *value) {
     return node;
 }
 
-Object *ParseNill(void) {
+Object *ParseNil(void) {
     auto node = new Object();
-    node->Set(AST_TAG_TYPE_KEY, AST_TAG_NILL);
+    node->Set(AST_TAG_TYPE_KEY, AST_TAG_NIL);
     node->Set(AST_TAG_VALUE, Value(NilTypeValue::Nil));
 
     assert(node->IsValid());

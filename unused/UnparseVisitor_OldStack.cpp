@@ -438,8 +438,8 @@ void UnparseVisitor::VisitString(const Object &node) {
     code << "\"";
     stack.push(code.str());
 }
-void UnparseVisitor::VisitNill(const Object &node) {
-    stack.push("nill");
+void UnparseVisitor::VisitNil(const Object &node) {
+    stack.push("nil");
 }
 void UnparseVisitor::VisitTrue(const Object &node) {
     stack.push("true");

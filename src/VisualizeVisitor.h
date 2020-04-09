@@ -94,7 +94,7 @@ public:
     virtual void VisitConst(const Object &node) override;
     virtual void VisitNumber(const Object &node) override;
     virtual void VisitString(const Object &node) override;
-    virtual void VisitNill(const Object &node) override;
+    virtual void VisitNil(const Object &node) override;
     virtual void VisitTrue(const Object &node) override;
     virtual void VisitFalse(const Object &node) override;
     virtual void VisitIdList(const Object &node) override;

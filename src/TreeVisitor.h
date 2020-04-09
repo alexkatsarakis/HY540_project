@@ -53,7 +53,7 @@ public:
     virtual void VisitConst(const Object &node) = 0;
     virtual void VisitNumber(const Object &node) = 0;
     virtual void VisitString(const Object &node) = 0;
-    virtual void VisitNill(const Object &node) = 0;
+    virtual void VisitNil(const Object &node) = 0;
     virtual void VisitTrue(const Object &node) = 0;
     virtual void VisitFalse(const Object &node) = 0;
     virtual void VisitIdList(const Object &node) = 0;

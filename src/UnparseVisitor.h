@@ -64,7 +64,7 @@ private:
     const std::string UnparseConst(const std::string &child);
     const std::string UnparseNumber(const double &value);
     const std::string UnparseString(const std::string &value);
-    const std::string UnparseNill();
+    const std::string UnparseNil();
     const std::string UnparseTrue();
     const std::string UnparseFalse();
     const std::string UnparseIdList(const std::vector<std::string> &ids);
@@ -77,7 +77,7 @@ private:
 
 public:
     UnparseVisitor(const std::string &_fileName = "alpha_unparse.alpha");
-    virtual ~UnparseVisitor();
+    virtual ~UnparseVisitor(){};
     TreeVisitor *Clone(void) const override;
 
     void VisitProgram(const Object &node) override;
@@ -127,7 +127,7 @@ public:
     void VisitConst(const Object &node) override;
     void VisitNumber(const Object &node) override;
     void VisitString(const Object &node) override;
-    void VisitNill(const Object &node) override;
+    void VisitNil(const Object &node) override;
     void VisitTrue(const Object &node) override;
     void VisitFalse(const Object &node) override;
     void VisitIdList(const Object &node) override;

@@ -6,6 +6,7 @@
     #include "TreeHost.h"
     #include "UnparseVisitor.h"
     #include "VisualizeVisitor.h"
+    #include "SetParentTreeVisitor.h"
     #include "Deallocator.h"
     #include "Interpreter.h"
 
@@ -43,6 +44,7 @@
     unsigned namelessFunctions = 0;
 
     TreeHost * unparseHost = nullptr;
+    TreeHost * setParentTreeHost = nullptr;
     TreeHost * visualizeHost = nullptr;
     Interpreter * interpreter = nullptr;
 %}
@@ -277,7 +279,7 @@ funcdef : FUNCTION ID LEFT_PAR idlist RIGHT_PAR block { $$ = ParseFuncDef(ParseS
 
 const : NUMBER { $$ = ParseConst(ParseNumber($1)); }
       | STRING { $$ = ParseConst(ParseString($1)); }
-      | NIL    { $$ = ParseConst(ParseNill()); }
+      | NIL    { $$ = ParseConst(ParseNil()); }
       | TRUE   { $$ = ParseConst(ParseTrue()); }
       | FALSE  { $$ = ParseConst(ParseFalse()); }
       ;
@@ -328,7 +330,8 @@ void ProcessAST(Object * ast) {
 
     unparseHost->Accept(*ast);
     visualizeHost->Accept(*ast);
-    interpreter->Execute(*ast);
+    setParentTreeHost->Accept(*ast);
+    // interpreter->Execute(*ast);
 
 #define AST_MEM_CLEANUP
 #ifdef AST_MEM_CLEANUP
@@ -353,6 +356,7 @@ int main(int argc, char ** argv) {
 
         unparseHost = new TreeHost(new UnparseVisitor());
         visualizeHost = new TreeHost(new VisualizeVisitor());
+        setParentTreeHost = new TreeHost(new SetParentTreeVisitor());
         interpreter = new Interpreter();
 
         /* The Bison parser */

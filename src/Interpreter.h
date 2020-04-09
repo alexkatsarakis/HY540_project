@@ -13,21 +13,28 @@ using Symbol = std::pair<Object *, std::string>;
 
 class Interpreter {
 private:
-
-    class BreakException { };
-    class ContinueException { };
+    class BreakException {};
+    class ContinueException {};
 
     EvalDispatcher dispatcher;
 
-    Object * currentScope;
+    Object *currentScope;
 
-    Object * globalScope;
+    Object *globalScope;
 
     std::list<Object *> scopeStack;
 
     std::list<std::string> libraryFuncs;
 
-    enum MathOp { Plus, Minus, Mul, Div, Mod, Greater, Less, GreaterEqual, LessEqual };
+    enum MathOp { Plus,
+                  Minus,
+                  Mul,
+                  Div,
+                  Mod,
+                  Greater,
+                  Less,
+                  GreaterEqual,
+                  LessEqual };
 
     Symbol EvalLvalueWrite(Object &node);
 
@@ -35,27 +42,27 @@ private:
 
     void BlockExit(void);
 
-    void RuntimeError(const std::string & msg);
+    void RuntimeError(const std::string &msg);
 
-    const Value HandleAggregators(Object & node, MathOp op, bool returnChanged);
+    const Value HandleAggregators(Object &node, MathOp op, bool returnChanged);
 
-    const Value * LookupScope(Object * scope, const std::string & symbol) const;
+    const Value *LookupScope(Object *scope, const std::string &symbol) const;
 
-    const Value * LookupCurrentScope(const std::string & symbol) const;
+    const Value *LookupCurrentScope(const std::string &symbol) const;
 
-    const Value * LookupGlobalScope(const std::string & symbol) const;
+    const Value *LookupGlobalScope(const std::string &symbol) const;
 
-    const Value * LookupAllScopes(const std::string & symbol) const;
+    const Value *LookupAllScopes(const std::string &symbol) const;
 
-    Object * FindScope(const std::string & symbol) const;
+    Object *FindScope(const std::string &symbol) const;
 
-    bool IsLibFunc(const std::string & symbol) const;
+    bool IsLibFunc(const std::string &symbol) const;
 
     void InstallEvaluators(void);
 
-    const Value EvalMath(Object & node, MathOp op);
+    const Value EvalMath(Object &node, MathOp op);
 
-    bool ValuesAreEqual(const Value & v1, const Value & v2);
+    bool ValuesAreEqual(const Value &v1, const Value &v2);
 
     const Value EvalProgram(Object &node);
     const Value EvalStatements(Object &node);
@@ -104,7 +111,7 @@ private:
     const Value EvalConst(Object &node);
     const Value EvalNumber(Object &node);
     const Value EvalString(Object &node);
-    const Value EvalNill(Object &node);
+    const Value EvalNil(Object &node);
     const Value EvalTrue(Object &node);
     const Value EvalFalse(Object &node);
     const Value EvalIdList(Object &node);
@@ -118,7 +125,7 @@ private:
 public:
     Interpreter(void);
 
-    void Execute(Object & program);
+    void Execute(Object &program);
 
     virtual ~Interpreter();
 };

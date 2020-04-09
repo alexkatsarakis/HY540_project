@@ -58,7 +58,7 @@ public:
     virtual void VisitConst(const Object &node) override { DELETE(); }
     virtual void VisitNumber(const Object &node) override { DELETE(); }
     virtual void VisitString(const Object &node) override { DELETE(); }
-    virtual void VisitNill(const Object &node) override { DELETE(); }
+    virtual void VisitNil(const Object &node) override { DELETE(); }
     virtual void VisitTrue(const Object &node) override { DELETE(); }
     virtual void VisitFalse(const Object &node) override { DELETE(); }
     virtual void VisitIdList(const Object &node) override { DELETE(); }
