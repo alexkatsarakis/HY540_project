@@ -7,6 +7,7 @@
     #include "UnparseVisitor.h"
     #include "VisualizeVisitor.h"
     #include "Deallocator.h"
+    #include "Interpreter.h"
 
     #include <iostream>
     #include <vector>
@@ -43,6 +44,7 @@
 
     TreeHost * unparseHost = nullptr;
     TreeHost * visualizeHost = nullptr;
+    Interpreter * interpreter = nullptr;
 %}
 
 /* This is used so lexxer won't have to include an extra file.Basically we
@@ -326,6 +328,7 @@ void ProcessAST(Object * ast) {
 
     unparseHost->Accept(*ast);
     visualizeHost->Accept(*ast);
+    interpreter->Execute(*ast);
 
 #define AST_MEM_CLEANUP
 #ifdef AST_MEM_CLEANUP
@@ -350,6 +353,7 @@ int main(int argc, char ** argv) {
 
         unparseHost = new TreeHost(new UnparseVisitor());
         visualizeHost = new TreeHost(new VisualizeVisitor());
+        interpreter = new Interpreter();
 
         /* The Bison parser */
         yyparse();
@@ -358,6 +362,7 @@ int main(int argc, char ** argv) {
 
         delete unparseHost;
         delete visualizeHost;
+        delete interpreter;
 
         fclose(yyin);
 

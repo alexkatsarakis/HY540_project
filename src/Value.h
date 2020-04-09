@@ -107,6 +107,8 @@ public:
 
     Type GetType(void) const;
 
+    std::string GetTypeToString(void) const;
+
     double ToNumber(void) const;
 
     bool ToBoolean(void) const;

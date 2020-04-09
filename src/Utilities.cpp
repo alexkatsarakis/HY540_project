@@ -30,3 +30,9 @@ std::string Utilities::UnparserFormatEscChars(const std::string &str) {
     }
     return out;
 }
+
+
+bool Utilities::DoublesAreEqual(double a, double b) {
+    double epsilon = std::numeric_limits<double>::epsilon();
+    return std::fabs(a - b) < epsilon;
+}

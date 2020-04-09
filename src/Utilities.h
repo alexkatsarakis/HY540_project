@@ -10,6 +10,8 @@ namespace Utilities {
     bool IsInt(double);
 
     std::string UnparserFormatEscChars(const std::string &str);
+    bool DoublesAreEqual(double a, double b);
+}
 
 }    // namespace Utilities
 
