@@ -213,10 +213,23 @@ print(var);
 print("\n\n\n\n");
 */
 
+//t = [];
+//var = t.x;
+//print(var);
+//t.x = 3;
+//print(t.x);
+//t.x++;
+//print(t.x);
+
 t = [];
-var = t.x;
-print(var);
-t.x = 3;
 print(t.x);
-t.x++;
-print(t.x);
+/*
+a = [];
+b = [ { "a": 10 } , { "b" : 20 } ];
+t = [1 + 2, 3, 35 * 10];
+functor = ["()", (function (){ } )];
+c = [20, false, undef, nil, b];
+d = [ { "x" : print } , { 30 : "foo" } , { 40 : c} ];
+
+print(d[40][4].a);
+*/

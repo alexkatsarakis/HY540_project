@@ -35,6 +35,10 @@ private:
 
     Symbol EvalDotWrite(Object & node);
 
+    const Value TableGetElem(const Value lvalue, const Value index);
+
+    const Value GetIdName(const Object & node);
+
     void BlockEnter(void);
 
     void BlockExit(void);

@@ -162,6 +162,7 @@ void Interpreter::InstallEvaluators(void) {
     INSTALL(AST_TAG_OBJECT_DEF, EvalObjectDef);
     INSTALL(AST_TAG_MEMBER, EvalMember);
     INSTALL(AST_TAG_DOT, EvalDot);
+    INSTALL(AST_TAG_BRACKET, EvalBracket);
 }
 
 const Value Interpreter::EvalProgram(Object &node) {
@@ -412,6 +413,7 @@ bool ChildIsMember(const Object & node) {
 const Value Interpreter::EvalLValue(Object &node) {
     ASSERT_TYPE(AST_TAG_LVALUE);
 
+    /* EvalMember has already looked up the symbol and got its value */
     if (ChildIsMember(node)) return EVAL_CHILD();
 
     const Value name = EVAL_CHILD();
@@ -437,6 +439,11 @@ Symbol Interpreter::EvalLvalueWrite(Object &node) {
 const Value Interpreter::EvalId(Object &node) {
     ASSERT_TYPE(AST_TAG_ID);
 
+    /* Lookup all scopes starting from the current one and moving backwards. If
+     * the given symbol is not found in any scope then add in the current one.
+     * If the symbol already exists in a scope, we refer to it and EvalLvalue
+     * will get its value */
+
     auto symbol = node[AST_TAG_ID]->ToString();
     if (!LookupAllScopes(symbol)) currentScope->Set(symbol, Value());
 
@@ -446,10 +453,14 @@ const Value Interpreter::EvalId(Object &node) {
 const Value Interpreter::EvalLocal(Object &node) {
     ASSERT_TYPE(AST_TAG_LOCAL_ID);
 
+    /* Lookup the current scope. If the symbol is found then this is the one
+     * that we will use and EvalLvalue will get its value. If nothing is found,
+     * we have to create a new symbol in the current scope. Before doing so we
+     * must check for a collision with a library function. */
+
     auto symbol = node[AST_TAG_ID]->ToString();
 
     if (LookupCurrentScope(symbol)) return symbol;
-
     if (IsLibFunc(symbol)) RuntimeError("Local variable \"" + symbol + "\" shadows library function");
 
     currentScope->Set(symbol, Value());
@@ -460,8 +471,12 @@ const Value Interpreter::EvalLocal(Object &node) {
 const Value Interpreter::EvalDoubleColon(Object &node) {
     ASSERT_TYPE(AST_TAG_DOUBLECOLON_ID);
 
+    /* Lookup global scope. If a symbol is found then this is the one that we
+     * wil use and EvalLvalue will get its value. If no symbol is found: Runtime
+     * error */
+
     auto symbol = node[AST_TAG_ID]->ToString();
-    if (!LookupGlobalScope(symbol)) RuntimeError("Global symbol \"" + symbol + "\" does not exist");
+    if (!LookupGlobalScope(symbol)) RuntimeError("Global symbol \"" + symbol + "\" does not exist (Undefined Symbol)");
 
     return symbol;
 }
@@ -494,28 +509,17 @@ Symbol Interpreter::EvalDotWrite(Object & node) {
     return Symbol(table, id.ToString());
 }
 
-const Value Interpreter::EvalDot(Object &node) {
-    ASSERT_TYPE(AST_TAG_DOT);
-
-    auto lvalue = EVAL(AST_TAG_LVALUE);
-    auto id = EVAL(AST_TAG_ID);
-
-    assert(lvalue.IsObject());
-    assert(id.IsString());
-
-    const Object * table = lvalue.ToObject();
-    if(!table->ElementExists(id.ToString())) return Value(); // Undef
-    else return *(*table)[id.ToString()];
+const Value Interpreter::GetIdName(const Object & node) {
+    ASSERT_TYPE(AST_TAG_ID);
+    auto name = node[AST_TAG_ID];
+    assert(name->IsString());
+    return *name;
 }
 
-const Value Interpreter::EvalBracket(Object &node) {
-    ASSERT_TYPE(AST_TAG_BRACKET);
-
-    auto lvalue = EVAL(AST_TAG_LVALUE);
-    auto index = EVAL(AST_TAG_EXPR);
+const Value Interpreter::TableGetElem(const Value lvalue, const Value index) {
 
     assert(lvalue.IsObject());
-    assert(index.IsString() || index.IsNumber());
+    if (!index.IsString() && !index.IsNumber()) RuntimeError("Keys of objects can only be strings or numbers");
 
     const Object * table = lvalue.ToObject();
 
@@ -528,6 +532,20 @@ const Value Interpreter::EvalBracket(Object &node) {
     }
 
     assert(false);
+}
+
+const Value Interpreter::EvalDot(Object &node) {
+    ASSERT_TYPE(AST_TAG_DOT);
+    const Value lvalue = EVAL(AST_TAG_LVALUE);
+    const Value index = GetIdName(*node[AST_TAG_ID]->ToObject());
+    return TableGetElem(lvalue, index);
+}
+
+const Value Interpreter::EvalBracket(Object &node) {
+    ASSERT_TYPE(AST_TAG_BRACKET);
+    const Value lvalue = EVAL(AST_TAG_LVALUE);
+    const Value index = EVAL(AST_TAG_EXPR);
+    return TableGetElem(lvalue, index);
 }
 
 const Value Interpreter::EvalCall(Object &node) {
