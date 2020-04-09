@@ -157,6 +157,9 @@ void Interpreter::InstallEvaluators(void) {
     INSTALL(AST_TAG_FOR, EvalFor);
     INSTALL(AST_TAG_BREAK, EvalBreak);
     INSTALL(AST_TAG_CONTINUE, EvalContinue);
+    INSTALL(AST_TAG_INDEXED_ELEM, EvalIndexedElem);
+    INSTALL(AST_TAG_INDEXED, EvalIndexed);
+    INSTALL(AST_TAG_OBJECT_DEF, EvalObjectDef);
 }
 
 const Value Interpreter::EvalProgram(Object &node) {
@@ -527,17 +530,44 @@ const Value Interpreter::EvalExpressionList(Object &node) {
 
 const Value Interpreter::EvalObjectDef(Object &node) {
     ASSERT_TYPE(AST_TAG_OBJECT_DEF);
-    return NIL_VAL;
+    return EVAL(AST_TAG_CHILD);
 }
 
 const Value Interpreter::EvalIndexed(Object &node) {
     ASSERT_TYPE(AST_TAG_INDEXED);
-    return NIL_VAL;
+
+    Object * table = new Object();
+    for(register unsigned i = 0; i < node.GetNumericSize(); ++i) {
+        const Value v = dispatcher.Eval(*node[i]->ToObject_NoConst());
+        assert(v.IsObject());
+
+        Object * o = v.ToObject_NoConst();
+        o->Visit([table](const Value &key, const Value &val) {
+            if (key.IsString()) table->Set(key.ToString(), val);
+            else if (key.IsNumber()) table->Set(key.ToNumber(), val);
+            else assert(false);
+        });
+
+        o->Clear();
+        delete o;
+    }
+
+    return table;
 }
 
 const Value Interpreter::EvalIndexedElem(Object &node) {
     ASSERT_TYPE(AST_TAG_INDEXED_ELEM);
-    return NIL_VAL;
+
+    Object * pair = new Object();
+
+    auto key = EVAL(AST_TAG_OBJECT_KEY);
+    auto value = EVAL(AST_TAG_OBJECT_VALUE);
+
+    if (key.IsString()) pair->Set(key.ToString(), value);
+    else if (key.IsNumber()) pair->Set(key.ToNumber(), value);
+    else RuntimeError("Keys of objects can only be strings or numbers");
+
+    return pair;
 }
 
 void Interpreter::BlockEnter(void) {
@@ -598,7 +628,7 @@ const Value Interpreter::EvalFunctionDef(Object &node) {
     currentScope = slice;
     currentScope->IncreaseRefCounter();
 
-    return NIL_VAL;
+    return Value(&node, currentScope);
 }
 
 const Value Interpreter::EvalConst(Object &node) {

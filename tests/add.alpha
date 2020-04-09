@@ -138,41 +138,55 @@ boolean = not f1 and f2;
 // Error cases
 // function print() { }
 // function x() { }
-// z = 10 + false;
-// ::I_did_not_define_this = 3;
+//// z = 10 + false;
+//// ::I_did_not_define_this = 3;
 
-x = 1;
-{
-    y = 2;
-    function f() {
+//x = 1;
+//{
+//    y = 2;
+//    function f() {
+//
+//    }
+//    z = 3;
+//    print(x, y, z);
+//}
+//w = 4;
+//print(x, w, y);
+//
+//if (x >= 1) print("Here");
+//else print("There");
+//
+//print("\n\n\n\n\n");
+//x = 5;
+//while(x >= 0) {
+//    print(x);
+//    x--;
+//}
+//
+//print("\n\n\n\n\n");
+//for(i = 0; i < 15; ++i) {
+//    if(i == 5) continue;
+//    print(i);
+//    if(i == 10) break;
+//}
+//
+//print("\n");
+//x = 10;
+//if(false) print(1);
+//else if (false) print(2);
+//else if (x > 5) print(3);
+//else print(4);
 
-    }
-    z = 3;
-    print(x, y, z);
-}
-w = 4;
-print(x, w, y);
+a = [];
+b = [ { "a": 10 } , { "b" : 20 } ];
+t = [1 + 2, 3, 35 * 10];
+functor = ["()", (function (){ } )];
+c = [20, false, undef, nil, b];
+d = [ { "x" : print } , { 30 : "foo" } , { 40 : c} ];
 
-if (x >= 1) print("Here");
-else print("There");
-
-print("\n\n\n\n\n");
-x = 5;
-while(x >= 0) {
-    print(x);
-    x--;
-}
-
-print("\n\n\n\n\n");
-for(i = 0; i < 15; ++i) {
-    if(i == 5) continue;
-    print(i);
-    if(i == 10) break;
-}
-
-print("\n");
-x = 10;
-if(false) print(1);
-else if (false) print(2);
-else if (x > 5) print(3);
-else print(4);
+print(a);
+print(b);
+print(t);
+print(functor);
+print(c);
+print(d);
