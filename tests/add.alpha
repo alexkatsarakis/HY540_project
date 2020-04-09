@@ -177,6 +177,7 @@ boolean = not f1 and f2;
 //else if (x > 5) print(3);
 //else print(4);
 
+/*
 a = [];
 b = [ { "a": 10 } , { "b" : 20 } ];
 t = [1 + 2, 3, 35 * 10];
@@ -190,3 +191,32 @@ print(t);
 print(functor);
 print(c);
 print(d);
+*/
+
+/*
+function f(){}
+g = f;
+g = 2;
+f = 3;
+print(f);
+*/
+
+/*
+t = [];
+x = 10;
+
+var = 2;
+print(var);
+var = x;
+print(var);
+
+print("\n\n\n\n");
+*/
+
+t = [];
+var = t.x;
+print(var);
+t.x = 3;
+print(t.x);
+t.x++;
+print(t.x);

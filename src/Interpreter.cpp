@@ -160,6 +160,8 @@ void Interpreter::InstallEvaluators(void) {
     INSTALL(AST_TAG_INDEXED_ELEM, EvalIndexedElem);
     INSTALL(AST_TAG_INDEXED, EvalIndexed);
     INSTALL(AST_TAG_OBJECT_DEF, EvalObjectDef);
+    INSTALL(AST_TAG_MEMBER, EvalMember);
+    INSTALL(AST_TAG_DOT, EvalDot);
 }
 
 const Value Interpreter::EvalProgram(Object &node) {
@@ -400,8 +402,18 @@ const Value Interpreter::EvalPrimary(Object &node) {
     return EVAL_CHILD();
 }
 
+bool ChildIsMember(const Object & node) {
+    const Object * child = node[AST_TAG_CHILD]->ToObject();
+    std::string type = (*child)[AST_TAG_TYPE_KEY]->ToString();
+    return type == AST_TAG_MEMBER;
+    //return (*node[AST_TAG_CHILD]->ToObject())[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_MEMBER;
+}
+
 const Value Interpreter::EvalLValue(Object &node) {
     ASSERT_TYPE(AST_TAG_LVALUE);
+
+    if (ChildIsMember(node)) return EVAL_CHILD();
+
     const Value name = EVAL_CHILD();
     assert(name.IsString());
     const Value * val = LookupAllScopes(name.ToString());
@@ -412,8 +424,10 @@ const Value Interpreter::EvalLValue(Object &node) {
 Symbol Interpreter::EvalLvalueWrite(Object &node) {
     ASSERT_TYPE(AST_TAG_LVALUE);
     const Value name = EVAL_CHILD();
-    assert(name.IsString());
 
+    if (ChildIsMember(node)) return EvalMemberWrite(*node[AST_TAG_CHILD]->ToObject_NoConst());
+
+    assert(name.IsString());
     Object * context = FindScope(name.ToString());
     assert(context && context->IsValid());
 
@@ -459,17 +473,61 @@ const Value Interpreter::EvalDollar(Object &node) {
 
 const Value Interpreter::EvalMember(Object &node) {
     ASSERT_TYPE(AST_TAG_MEMBER);
-    return NIL_VAL;
+    return EVAL_CHILD();
+}
+
+
+Symbol Interpreter::EvalMemberWrite(Object &node) {
+    ASSERT_TYPE(AST_TAG_MEMBER);
+    return EvalDotWrite(*node[AST_TAG_CHILD]->ToObject_NoConst());
+}
+
+Symbol Interpreter::EvalDotWrite(Object & node) {
+    ASSERT_TYPE(AST_TAG_DOT);
+
+    auto lvalue = EVAL(AST_TAG_LVALUE);
+    auto id = EVAL(AST_TAG_ID);
+
+    assert(lvalue.IsObject());
+
+    Object * table = lvalue.ToObject_NoConst();
+    return Symbol(table, id.ToString());
 }
 
 const Value Interpreter::EvalDot(Object &node) {
     ASSERT_TYPE(AST_TAG_DOT);
-    return NIL_VAL;
+
+    auto lvalue = EVAL(AST_TAG_LVALUE);
+    auto id = EVAL(AST_TAG_ID);
+
+    assert(lvalue.IsObject());
+    assert(id.IsString());
+
+    const Object * table = lvalue.ToObject();
+    if(!table->ElementExists(id.ToString())) return Value(); // Undef
+    else return *(*table)[id.ToString()];
 }
 
 const Value Interpreter::EvalBracket(Object &node) {
     ASSERT_TYPE(AST_TAG_BRACKET);
-    return NIL_VAL;
+
+    auto lvalue = EVAL(AST_TAG_LVALUE);
+    auto index = EVAL(AST_TAG_EXPR);
+
+    assert(lvalue.IsObject());
+    assert(index.IsString() || index.IsNumber());
+
+    const Object * table = lvalue.ToObject();
+
+    if (index.IsString()) {
+        if(!table->ElementExists(index.ToString())) return Value(); // Undef
+        else return *(*table)[index.ToString()];
+    } else if (index.IsNumber()) {
+        if(!table->ElementExists(index.ToNumber())) return Value(); // Undef
+        else return *(*table)[index.ToNumber()];
+    }
+
+    assert(false);
 }
 
 const Value Interpreter::EvalCall(Object &node) {

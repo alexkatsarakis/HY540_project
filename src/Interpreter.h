@@ -31,6 +31,10 @@ private:
 
     Symbol EvalLvalueWrite(Object &node);
 
+    Symbol EvalMemberWrite(Object &node);
+
+    Symbol EvalDotWrite(Object & node);
+
     void BlockEnter(void);
 
     void BlockExit(void);
