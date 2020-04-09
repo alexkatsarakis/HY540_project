@@ -79,6 +79,7 @@ void Object::IncreaseRefCounter(void) { refCounter += 1; }
 void Object::DecreaseRefCounter(void) {
     assert(refCounter > 0);
     refCounter -= 1;
+    if (refCounter == 0) Clear();
 }
 
 const Value *Object::GetAndRemove(double key) {
@@ -163,6 +164,8 @@ void Object::Set(const std::string &key, const Value &value) {
     assert(value.IsValid());
     assert(IsValid());
 
+    /* TODISCUSS: If the specific key has already a value, this will lead to a
+     * memory leak */
     auto val = new Value(value);
     strMap[key] = val;
 

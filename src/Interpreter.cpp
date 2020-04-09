@@ -5,9 +5,11 @@
 
 #include <iostream>
 #include <cassert>
+#include <algorithm>
 
 #define PREVIOUS_RESERVED_FIELD "$previous"
 #define OUTER_RESERVED_FIELD "$outer"
+#define RETVAL_RESERVED_FIELD "$retval"
 
 #define NIL_VAL Value(NilTypeValue::Nil);
 
@@ -32,9 +34,10 @@ const Value * Interpreter::LookupScope(Object * scope, const std::string & symbo
     if (scope->ElementExists(symbol)) return (*scope)[symbol];
 
     /* Check if the scope is sliced */
-    if (scope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
-        const Object * previous = (*scope)[PREVIOUS_RESERVED_FIELD]->ToObject();
+    while (scope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
+        Object * previous = (*scope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
         if(previous->ElementExists(symbol)) return (*previous)[symbol];
+        scope = previous;
     }
 
     return nullptr;
@@ -57,25 +60,53 @@ const Value * Interpreter::LookupGlobalScope(const std::string & symbol) const {
 const Value * Interpreter::LookupAllScopes(const std::string & symbol) const {
     assert(!symbol.empty());
 
-    const Value * value = nullptr;
     Object * scope = currentScope;
 
-    while(true) {
-        value = LookupScope(scope, symbol);
+     while(true) {
+        if (scope->ElementExists(symbol)) return (*scope)[symbol];
 
-        if (value) return value;
+        /* Check if the scope is sliced */
+        while(scope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
+            Object * previous = (*scope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
+            if(previous->ElementExists(symbol)) return (*previous)[symbol];
+            scope = previous;
+        }
 
         if (!scope->ElementExists(OUTER_RESERVED_FIELD)) return nullptr;
 
         scope = (*scope)[OUTER_RESERVED_FIELD]->ToObject_NoConst();
     }
+
+    assert(false);
+}
+
+Object * Interpreter::FindScope(const std::string & symbol) const {
+    assert(!symbol.empty());
+
+    Object * scope = currentScope;
+
+    while(true) {
+        if (scope->ElementExists(symbol)) return scope;
+
+        /* Check if the scope is sliced */
+        while(scope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
+            Object * previous = (*scope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
+            if(previous->ElementExists(symbol)) return previous;
+            scope = previous;
+        }
+
+        if (!scope->ElementExists(OUTER_RESERVED_FIELD)) return nullptr;
+
+        scope = (*scope)[OUTER_RESERVED_FIELD]->ToObject_NoConst();
+    }
+
+    assert(false);
 }
 
 bool Interpreter::IsLibFunc(const std::string & symbol) const {
     assert(!symbol.empty());
 
-    if (!globalScope->ElementExists(symbol)) return false;
-    else return globalScope->operator[](symbol)->IsLibraryFunction();
+    return std::find(libraryFuncs.begin(), libraryFuncs.end(), symbol) != libraryFuncs.end();
 }
 
 void Interpreter::InstallEvaluators(void) {
@@ -112,6 +143,20 @@ void Interpreter::InstallEvaluators(void) {
     INSTALL(AST_TAG_OR, EvalOr);
     INSTALL(AST_TAG_UMINUS, EvalUnaryMinus);
     INSTALL(AST_TAG_NOT, EvalNot);
+    INSTALL(AST_TAG_BPLUSPLUS, EvalPlusPlusBefore);
+    INSTALL(AST_TAG_APLUSPLUS, EvalPlusPlusAfter);
+    INSTALL(AST_TAG_BMINUSMINUS, EvalMinusMinusBefore);
+    INSTALL(AST_TAG_AMINUSMINUS, EvalMinusMinusAfter);
+    INSTALL(AST_TAG_ELIST, EvalExpressionList);
+    INSTALL(AST_TAG_CALL_SUFFIX, EvalCallSuffix);
+    INSTALL(AST_TAG_CALL, EvalCall);
+    INSTALL(AST_TAG_NORMAL_CALL, EvalNormalCall);
+    INSTALL(AST_TAG_BLOCK, EvalBlock);
+    INSTALL(AST_TAG_IF, EvalIf);
+    INSTALL(AST_TAG_WHILE, EvalWhile);
+    INSTALL(AST_TAG_FOR, EvalFor);
+    INSTALL(AST_TAG_BREAK, EvalBreak);
+    INSTALL(AST_TAG_CONTINUE, EvalContinue);
 }
 
 const Value Interpreter::EvalProgram(Object &node) {
@@ -144,17 +189,14 @@ const Value Interpreter::EvalExpression(Object &node) {
 const Value Interpreter::EvalAssign(Object &node) {
     ASSERT_TYPE(AST_TAG_ASSIGN);
 
-    auto lvalue = EVAL(AST_TAG_LVALUE);
+    Symbol lvalue = EvalLvalueWrite(*node[AST_TAG_LVALUE]->ToObject_NoConst());
     auto rvalue = EVAL(AST_TAG_RVALUE);
 
-    /* TODO: Check if lvalue is an object, a function, a dollar ID */
-
-    Value * value = const_cast<Value *>(LookupAllScopes(lvalue.ToString()));
-    assert(value);
+    lvalue.first->Set(lvalue.second, rvalue);
 
     /* TODO: Discuss if this is a good idea */
-    value->~Value();
-    new (value) Value(rvalue);
+    //value->~Value();
+    //new (value) Value(rvalue);
 
     return rvalue;
 }
@@ -310,42 +352,69 @@ const Value Interpreter::EvalNot(Object &node) {
     return !static_cast<bool>(val);
 }
 
+const Value Interpreter::HandleAggregators(Object & node, MathOp op, bool returnChanged) {
+    assert(node.IsValid());
+
+    Symbol lvalue = EvalLvalueWrite(*node[AST_TAG_CHILD]->ToObject_NoConst());
+    assert(lvalue.first);
+    assert(!lvalue.second.empty());
+
+    double number = (*lvalue.first)[lvalue.second]->ToNumber();
+    double result = number;
+
+    if (op == MathOp::Plus) result = number + 1;
+    else if (op == MathOp::Minus) result = number - 1;
+    else assert(false);
+
+    lvalue.first->Set(lvalue.second, result);
+
+    if (returnChanged) return result;
+    else return number;
+}
+
 const Value Interpreter::EvalPlusPlusBefore(Object &node) {
     ASSERT_TYPE(AST_TAG_BPLUSPLUS);
-    return NIL_VAL;
+    return HandleAggregators(node, MathOp::Plus, true);
 }
 
 const Value Interpreter::EvalPlusPlusAfter(Object &node) {
     ASSERT_TYPE(AST_TAG_APLUSPLUS);
-    return NIL_VAL;
+    return HandleAggregators(node, MathOp::Plus, false);
 }
 
 const Value Interpreter::EvalMinusMinusBefore(Object &node) {
     ASSERT_TYPE(AST_TAG_BMINUSMINUS);
-    return NIL_VAL;
+    return HandleAggregators(node, MathOp::Minus, true);
 }
 
 const Value Interpreter::EvalMinusMinusAfter(Object &node) {
     ASSERT_TYPE(AST_TAG_AMINUSMINUS);
-    return NIL_VAL;
+    return HandleAggregators(node, MathOp::Minus, false);
 }
 
 const Value Interpreter::EvalPrimary(Object &node) {
     ASSERT_TYPE(AST_TAG_PRIMARY);
-
-    if(node[AST_TAG_CHILD]->ToObject()->operator[](AST_TAG_TYPE_KEY)->ToString() == AST_TAG_LVALUE) {
-        const Value symbol = EVAL_CHILD();
-        assert(symbol.IsString());
-        const Value res = *(LookupAllScopes(symbol.ToString()));
-        return res;
-    }
-
     return EVAL_CHILD();
 }
 
 const Value Interpreter::EvalLValue(Object &node) {
     ASSERT_TYPE(AST_TAG_LVALUE);
-    return EVAL_CHILD();
+    const Value name = EVAL_CHILD();
+    assert(name.IsString());
+    const Value * val = LookupAllScopes(name.ToString());
+    assert(val);
+    return *val;
+}
+
+Symbol Interpreter::EvalLvalueWrite(Object &node) {
+    ASSERT_TYPE(AST_TAG_LVALUE);
+    const Value name = EVAL_CHILD();
+    assert(name.IsString());
+
+    Object * context = FindScope(name.ToString());
+    assert(context && context->IsValid());
+
+    return Symbol(context, name.ToString());
 }
 
 const Value Interpreter::EvalId(Object &node) {
@@ -402,17 +471,41 @@ const Value Interpreter::EvalBracket(Object &node) {
 
 const Value Interpreter::EvalCall(Object &node) {
     ASSERT_TYPE(AST_TAG_CALL);
-    return NIL_VAL;
+
+    auto function = EVAL(AST_TAG_FUNCTION);
+    auto arguments = EVAL(AST_TAG_SUFFIX);
+
+    assert(function.IsLibraryFunction() || function.IsProgramFunction());
+    assert(arguments.IsObject());
+
+    if (function.IsLibraryFunction()) {
+        function.ToLibraryFunction()(*arguments.ToObject_NoConst());
+    } else {
+        assert(false);
+    }
+
+    const Value * retval = (*arguments.ToObject())[RETVAL_RESERVED_FIELD];
+    Value result;
+
+    /* TODISCUSS: Is this a good practice? */
+    if(!retval) result.FromUndef();
+    else new (&result) Value(*retval);
+
+    arguments.ToObject_NoConst()->Clear();
+    delete arguments.ToObject_NoConst();
+    arguments.FromUndef();
+
+    return result;
 }
 
 const Value Interpreter::EvalCallSuffix(Object &node) {
     ASSERT_TYPE(AST_TAG_CALL_SUFFIX);
-    return NIL_VAL;
+    return EVAL_CHILD();
 }
 
 const Value Interpreter::EvalNormalCall(Object &node) {
     ASSERT_TYPE(AST_TAG_NORMAL_CALL);
-    return NIL_VAL;
+    return EVAL_CHILD();
 }
 
 const Value Interpreter::EvalMethodCall(Object &node) {
@@ -422,7 +515,14 @@ const Value Interpreter::EvalMethodCall(Object &node) {
 
 const Value Interpreter::EvalExpressionList(Object &node) {
     ASSERT_TYPE(AST_TAG_ELIST);
-    return NIL_VAL;
+
+    Object * table = new Object();
+    for(register unsigned i = 0; i < node.GetNumericSize(); ++i) {
+        const Value v = dispatcher.Eval(*node[i]->ToObject_NoConst());
+        table->Set(i, v);
+    }
+
+    return table;
 }
 
 const Value Interpreter::EvalObjectDef(Object &node) {
@@ -440,8 +540,44 @@ const Value Interpreter::EvalIndexedElem(Object &node) {
     return NIL_VAL;
 }
 
+void Interpreter::BlockEnter(void) {
+    Object * scope = new Object();
+    scope->Set(OUTER_RESERVED_FIELD, currentScope);
+    scope->IncreaseRefCounter();
+    currentScope = scope;
+}
+
+void Interpreter::BlockExit(void) {
+    Object * scope = nullptr;
+    Object * tmp = nullptr;
+
+    bool shouldSlice = currentScope->ElementExists(PREVIOUS_RESERVED_FIELD);
+    while(currentScope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
+        tmp = currentScope;
+        currentScope = (*currentScope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
+        tmp->DecreaseRefCounter();
+    }
+
+    assert(currentScope->ElementExists(OUTER_RESERVED_FIELD));
+    tmp = currentScope;
+    currentScope = (*currentScope)[OUTER_RESERVED_FIELD]->ToObject_NoConst();
+    tmp->DecreaseRefCounter();
+
+    if(shouldSlice) {
+        scope = new Object();
+        scope->Set(PREVIOUS_RESERVED_FIELD, currentScope);
+        scope->IncreaseRefCounter();
+        currentScope = scope;
+    }
+}
+
 const Value Interpreter::EvalBlock(Object &node) {
     ASSERT_TYPE(AST_TAG_BLOCK);
+
+    BlockEnter();
+    EVAL_CHILD();
+    BlockExit();
+
     return NIL_VAL;
 }
 
@@ -455,6 +591,7 @@ const Value Interpreter::EvalFunctionDef(Object &node) {
     if (LookupCurrentScope(name)) RuntimeError("Cannot define function \"" + name + "\". Symbol name already exists.");
 
     currentScope->Set(name, Value(&node, currentScope));
+    currentScope->IncreaseRefCounter();
 
     Object * slice = new Object();
     slice->Set(PREVIOUS_RESERVED_FIELD, currentScope);
@@ -501,16 +638,38 @@ const Value Interpreter::EvalIdList(Object &node) {
 
 const Value Interpreter::EvalIf(Object &node) {
     ASSERT_TYPE(AST_TAG_IF);
+
+    if(EVAL(AST_TAG_CONDITION)) EVAL(AST_TAG_STMT);
+    else if(node.ElementExists(AST_TAG_ELSE_STMT)) EVAL(AST_TAG_ELSE_STMT);
+
     return NIL_VAL;
 }
 
 const Value Interpreter::EvalWhile(Object &node) {
     ASSERT_TYPE(AST_TAG_WHILE);
+
+    while(EVAL(AST_TAG_CONDITION)) {
+        try {
+            EVAL(AST_TAG_STMT);
+        }
+        catch(const BreakException & e) { break; }
+        catch(const ContinueException & e) { continue; }
+    }
+
     return NIL_VAL;
 }
 
 const Value Interpreter::EvalFor(Object &node) {
     ASSERT_TYPE(AST_TAG_FOR);
+
+    for(EVAL(AST_TAG_FOR_PRE_ELIST); EVAL(AST_TAG_CONDITION); EVAL(AST_TAG_FOR_POST_ELIST)) {
+        try {
+            EVAL(AST_TAG_STMT);
+        }
+        catch(const BreakException & e) { break; }
+        catch(const ContinueException & e) { continue; }
+    }
+
     return NIL_VAL;
 }
 
@@ -521,12 +680,12 @@ const Value Interpreter::EvalReturn(Object &node) {
 
 const Value Interpreter::EvalBreak(Object &node) {
     ASSERT_TYPE(AST_TAG_BREAK);
-    return NIL_VAL;
+    throw BreakException();
 }
 
 const Value Interpreter::EvalContinue(Object &node) {
     ASSERT_TYPE(AST_TAG_CONTINUE);
-    return NIL_VAL;
+    throw ContinueException();
 }
 
 Interpreter::Interpreter(void) {
@@ -539,6 +698,7 @@ Interpreter::Interpreter(void) {
 
     /* TODO: Install Library Functions in global scope */
     globalScope->Set("print", Value(LibFunc::Print, "print"));
+    libraryFuncs.push_front("print");
 
     InstallEvaluators();
 }

@@ -6,9 +6,17 @@
 #include "Value.h"
 
 #include <list>
+#include <string>
+#include <utility> /* For std::pair */
+
+using Symbol = std::pair<Object *, std::string>;
 
 class Interpreter {
 private:
+
+    class BreakException { };
+    class ContinueException { };
+
     EvalDispatcher dispatcher;
 
     Object * currentScope;
@@ -17,9 +25,19 @@ private:
 
     std::list<Object *> scopeStack;
 
+    std::list<std::string> libraryFuncs;
+
     enum MathOp { Plus, Minus, Mul, Div, Mod, Greater, Less, GreaterEqual, LessEqual };
 
+    Symbol EvalLvalueWrite(Object &node);
+
+    void BlockEnter(void);
+
+    void BlockExit(void);
+
     void RuntimeError(const std::string & msg);
+
+    const Value HandleAggregators(Object & node, MathOp op, bool returnChanged);
 
     const Value * LookupScope(Object * scope, const std::string & symbol) const;
 
@@ -28,6 +46,8 @@ private:
     const Value * LookupGlobalScope(const std::string & symbol) const;
 
     const Value * LookupAllScopes(const std::string & symbol) const;
+
+    Object * FindScope(const std::string & symbol) const;
 
     bool IsLibFunc(const std::string & symbol) const;
 
