@@ -177,6 +177,7 @@ boolean = not f1 and f2;
 //else if (x > 5) print(3);
 //else print(4);
 
+/*
 a = [];
 b = [ { "a": 10 } , { "b" : 20 } ];
 t = [1 + 2, 3, 35 * 10];
@@ -190,3 +191,133 @@ print(t);
 print(functor);
 print(c);
 print(d);
+*/
+
+/*
+function f(){}
+g = f;
+g = 2;
+f = 3;
+print(f);
+*/
+
+/*
+t = [];
+x = 10;
+
+var = 2;
+print(var);
+var = x;
+print(var);
+
+print("\n\n\n\n");
+*/
+
+//t = [];
+//var = t.x;
+//print(var);
+//t.x = 3;
+//print(t.x);
+//t.x++;
+//print(t.x);
+
+/*
+a = [];
+b = [ { "a": 10 } , { "b" : 20 } ];
+t = [1 + 2, 3, 35 * 10];
+functor = ["()", (function (){ } )];
+c = [20, false, undef, nil, b];
+d = [ { "x" : print } , { 30 : "foo" } , { 40 : c} ];
+
+print(d[40][4].a);
+*/
+
+/*
+t = [];
+print(t.x);
+t.x = 23;
+t.y = 40;
+t.foo = "text";
+print(t);
+print(t.y);
+print(t.$foo);
+t.$closure = "foobar";
+print(t.$closure);
+
+t[20] = 42;
+x = 20;
+print(t[20]);
+print(t[x]);
+print(t[10 + 10]);
+*/
+
+/*
+x = 20;
+{
+    local x;
+    print(x);
+    x = "test";
+    print(x);
+    ::x = 30;
+}
+print(x);
+print(::x);
+*/
+
+/*
+x = 2;
+{
+    {
+        {
+            {
+                {
+                    local x = 1;
+                    print(x);
+                    print(::x);
+                    ::x = 3;
+                    print(::x);
+                }
+            }
+        }
+    }
+}
+print(x);;;;
+
+for(i = 0; i < 5; ++i) {
+    if (i == 3) continue;
+    print(i);
+}
+
+x = 5;
+t = [ { "a" : 21 } ];
+
+print("\n\n\n\n");
+print(x);
+print(t.a);
+print(++x);
+print(t.a--);
+print(t.a);
+
+*/
+
+x = "foobaridion";
+w = 3;
+table = [ { x : w } ];
+print(table);
+print("\n\n\n\n");
+print(typeof(print));
+print(typeof(w));
+print(typeof(2));
+print(typeof("fo"));
+
+table.x = 1;
+table.y = 2;
+table.z = 3;
+table[0] = "a";
+table[1] = "b";
+print(object_size(table));
+print(object_keys(table));
+
+t = [];
+t.p = print;
+t.p("\"Hacked\"");
