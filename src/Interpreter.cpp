@@ -18,8 +18,8 @@
 #define EVAL_CHILD() dispatcher.Eval(*node[AST_TAG_CHILD]->ToObject_NoConst())
 #define EVAL(type) dispatcher.Eval(*node[type]->ToObject_NoConst())
 #define ASSERT_TYPE(type) assert(node[AST_TAG_TYPE_KEY]->ToString() == type);
-#define INSTALL(tag, method) dispatcher.Install(tag, [this](Object & node) { return method(node); });
-#define INSTALL_WRITE_FUNC(tag, method) dispatcher.InstallWriteFunc(tag, [this](Object & node) { return method(node); });
+#define INSTALL(tag, method) dispatcher.Install(tag, [this](Object &node) { return method(node); });
+#define INSTALL_WRITE_FUNC(tag, method) dispatcher.InstallWriteFunc(tag, [this](Object &node) { return method(node); });
 #define EVAL_WRITE(type) dispatcher.EvalWriteFunc(*node[type]->ToObject_NoConst())
 
 void Interpreter::RuntimeError(const std::string &msg) {
@@ -53,9 +53,9 @@ const Value *Interpreter::LookupCurrentScope(const std::string &symbol) const {
 const Value *Interpreter::LookupGlobalScope(const std::string &symbol) const {
     assert(!symbol.empty());
 
-    Object * scope = currentScope;
-    const Value * value = LookupScope(scope, OUTER_RESERVED_FIELD);
-    while(value) {
+    Object *scope = currentScope;
+    const Value *value = LookupScope(scope, OUTER_RESERVED_FIELD);
+    while (value) {
         scope = value->ToObject_NoConst();
         value = LookupScope(scope, OUTER_RESERVED_FIELD);
     }
@@ -189,9 +189,12 @@ const Value Interpreter::EvalAssign(Object &node) {
     Symbol lvalue = EVAL_WRITE(AST_TAG_LVALUE);
     auto rvalue = EVAL(AST_TAG_RVALUE);
 
-    if (lvalue.second.IsString()) lvalue.first->Set(lvalue.second.ToString(), rvalue);
-    else if (lvalue.second.IsNumber()) lvalue.first->Set(lvalue.second.ToNumber(), rvalue);
-    else assert(false);
+    if (lvalue.second.IsString())
+        lvalue.first->Set(lvalue.second.ToString(), rvalue);
+    else if (lvalue.second.IsNumber())
+        lvalue.first->Set(lvalue.second.ToNumber(), rvalue);
+    else
+        assert(false);
 
     return rvalue;
 }
@@ -359,10 +362,13 @@ const Value Interpreter::HandleAggregators(Object &node, MathOp op, bool returnC
     Symbol lvalue = EVAL_WRITE(AST_TAG_CHILD);
     assert(lvalue.first);
 
-    const Value * value = nullptr;
-    if (lvalue.second.IsString()) value = (*lvalue.first)[lvalue.second.ToString()];
-    else if (lvalue.second.IsNumber()) value = (*lvalue.first)[lvalue.second.ToNumber()];
-    else assert(false);
+    const Value *value = nullptr;
+    if (lvalue.second.IsString())
+        value = (*lvalue.first)[lvalue.second.ToString()];
+    else if (lvalue.second.IsNumber())
+        value = (*lvalue.first)[lvalue.second.ToNumber()];
+    else
+        assert(false);
 
     if (!value->IsNumber()) RuntimeError("Increment/decrement operators can only be applied to numbers not to " + value->GetTypeToString());
 
@@ -376,9 +382,12 @@ const Value Interpreter::HandleAggregators(Object &node, MathOp op, bool returnC
     else
         assert(false);
 
-    if (lvalue.second.IsString()) lvalue.first->Set(lvalue.second.ToString(), result);
-    else if (lvalue.second.IsNumber()) lvalue.first->Set(lvalue.second.ToNumber(), result);
-    else assert(false);
+    if (lvalue.second.IsString())
+        lvalue.first->Set(lvalue.second.ToString(), result);
+    else if (lvalue.second.IsNumber())
+        lvalue.first->Set(lvalue.second.ToNumber(), result);
+    else
+        assert(false);
 
     if (returnChanged)
         return result;
@@ -416,14 +425,14 @@ Symbol Interpreter::EvalMemberWrite(Object &node) {
     return EVAL_WRITE(AST_TAG_CHILD);
 }
 
-bool Interpreter::IsReservedField(const std::string & index) const {
+bool Interpreter::IsReservedField(const std::string &index) const {
     return (index == OUTER_RESERVED_FIELD ||
             index == PREVIOUS_RESERVED_FIELD ||
             index == RETVAL_RESERVED_FIELD ||
             index == CLOSURE_RESERVED_FIELD);
 }
 
-Symbol Interpreter::EvalDotWrite(Object & node) {
+Symbol Interpreter::EvalDotWrite(Object &node) {
     ASSERT_TYPE(AST_TAG_DOT);
 
     auto lvalue = EVAL(AST_TAG_LVALUE);
@@ -431,7 +440,7 @@ Symbol Interpreter::EvalDotWrite(Object & node) {
     return TableSetElem(lvalue, index);
 }
 
-Symbol Interpreter::EvalBracketWrite(Object & node) {
+Symbol Interpreter::EvalBracketWrite(Object &node) {
     ASSERT_TYPE(AST_TAG_BRACKET);
     const Value lvalue = EVAL(AST_TAG_LVALUE);
     const Value index = EVAL(AST_TAG_EXPR);
@@ -445,24 +454,27 @@ Symbol Interpreter::TableSetElem(const Value lvalue, const Value index) {
     if (!index.IsString() && !index.IsNumber())
         RuntimeError("Keys of objects can only be strings or numbers");
 
-    Object * table = lvalue.ToObject_NoConst();
+    Object *table = lvalue.ToObject_NoConst();
 
-    if (index.IsNumber()) return Symbol(table, index.ToNumber());
-    else if (index.IsString()) return Symbol(table, index.ToString());
-    else assert(false);
+    if (index.IsNumber())
+        return Symbol(table, index.ToNumber());
+    else if (index.IsString())
+        return Symbol(table, index.ToString());
+    else
+        assert(false);
 }
 
-Symbol Interpreter::EvalIdWrite(Object & node) {
+Symbol Interpreter::EvalIdWrite(Object &node) {
     ASSERT_TYPE(AST_TAG_ID);
 
     std::string name = node[AST_TAG_ID]->ToString();
-    Object * scope = FindScope(name);
-    if(!scope) scope = currentScope;
+    Object *scope = FindScope(name);
+    if (!scope) scope = currentScope;
 
     return Symbol(scope, name);
 }
 
-Symbol Interpreter::EvalGlobalIdWrite(Object & node){
+Symbol Interpreter::EvalGlobalIdWrite(Object &node) {
     ASSERT_TYPE(AST_TAG_DOUBLECOLON_ID);
 
     std::string symbol = node[AST_TAG_ID]->ToString();
@@ -471,7 +483,7 @@ Symbol Interpreter::EvalGlobalIdWrite(Object & node){
     return Symbol(globalScope, symbol);
 }
 
-Symbol Interpreter::EvalLocalIdWrite(Object & node){
+Symbol Interpreter::EvalLocalIdWrite(Object &node) {
     ASSERT_TYPE(AST_TAG_LOCAL_ID);
     std::string symbol = node[AST_TAG_ID]->ToString();
     return Symbol(currentScope, symbol);
@@ -495,7 +507,7 @@ const Value Interpreter::EvalId(Object &node) {
      * If the symbol already exists in a scope, we get its value */
 
     std::string symbol = node[AST_TAG_ID]->ToString();
-    Object * scope = FindScope(symbol);
+    Object *scope = FindScope(symbol);
 
     if (!scope) {
         currentScope->Set(symbol, Value());
@@ -531,7 +543,7 @@ const Value Interpreter::EvalDoubleColon(Object &node) {
      * found: Runtime error */
 
     std::string symbol = node[AST_TAG_ID]->ToString();
-    const Value * val = LookupGlobalScope(symbol);
+    const Value *val = LookupGlobalScope(symbol);
     if (!val) RuntimeError("Global symbol \"" + symbol + "\" does not exist (Undefined Symbol)");
 
     return *val;
@@ -547,7 +559,7 @@ const Value Interpreter::EvalMember(Object &node) {
     return EVAL_CHILD();
 }
 
-const Value Interpreter::GetIdName(const Object & node) {
+const Value Interpreter::GetIdName(const Object &node) {
     assert(node.ElementExists(AST_TAG_ID));
     auto name = node[AST_TAG_ID];
     assert(name->IsString());
@@ -555,18 +567,21 @@ const Value Interpreter::GetIdName(const Object & node) {
 }
 
 const Value Interpreter::TableGetElem(const Value lvalue, const Value index) {
-
     if (!index.IsString() && !index.IsNumber()) RuntimeError("Keys of objects can only be strings or numbers");
     if (!lvalue.IsObject()) RuntimeError("Cannot get field \"" + (index.IsString() ? index.ToString() : std::to_string(index.ToNumber())) + "\" of something that is not an object");
 
-    const Object * table = lvalue.ToObject();
+    const Object *table = lvalue.ToObject();
 
     if (index.IsString()) {
-        if(!table->ElementExists(index.ToString())) return Value(); // Undef
-        else return *(*table)[index.ToString()];
+        if (!table->ElementExists(index.ToString()))
+            return Value();    // Undef
+        else
+            return *(*table)[index.ToString()];
     } else if (index.IsNumber()) {
-        if(!table->ElementExists(index.ToNumber())) return Value(); // Undef
-        else return *(*table)[index.ToNumber()];
+        if (!table->ElementExists(index.ToNumber()))
+            return Value();    // Undef
+        else
+            return *(*table)[index.ToNumber()];
     }
 
     assert(false);
@@ -655,8 +670,8 @@ const Value Interpreter::EvalCall(Object &node) {
 
         const Value * retval = (*arguments.ToObject())[RETVAL_RESERVED_FIELD];
 
-        /* TODISCUSS: Is this a good practice? */
-        if(!retval) retvalRegister.FromUndef();
+        //TODISCUSS: Is this a good practice?
+     if(!retval) retvalRegister.FromUndef();
         else new (&retvalRegister) Value(*retval);
 
     } else {
@@ -674,8 +689,7 @@ const Value Interpreter::EvalCall(Object &node) {
 
     arguments.ToObject_NoConst()->Clear();
     delete arguments.ToObject_NoConst();
-    arguments.FromUndef();
- */
+    arguments.FromUndef(); */
     // return result;
 }
 
@@ -721,9 +735,12 @@ const Value Interpreter::EvalIndexed(Object &node) {
 
         Object *o = v.ToObject_NoConst();
         o->Visit([table](const Value &key, const Value &val) {
-            if (key.IsString()) table->Set(key.ToString(), val);
-            else if (key.IsNumber()) table->Set(key.ToNumber(), val);
-            else assert(false);
+            if (key.IsString())
+                table->Set(key.ToString(), val);
+            else if (key.IsNumber())
+                table->Set(key.ToNumber(), val);
+            else
+                assert(false);
         });
 
         o->Clear();
@@ -741,9 +758,12 @@ const Value Interpreter::EvalIndexedElem(Object &node) {
     auto key = EVAL(AST_TAG_OBJECT_KEY);
     auto value = EVAL(AST_TAG_OBJECT_VALUE);
 
-    if (key.IsString()) pair->Set(key.ToString(), value);
-    else if (key.IsNumber()) pair->Set(key.ToNumber(), value);
-    else RuntimeError("Keys of objects can only be strings or numbers");
+    if (key.IsString())
+        pair->Set(key.ToString(), value);
+    else if (key.IsNumber())
+        pair->Set(key.ToNumber(), value);
+    else
+        RuntimeError("Keys of objects can only be strings or numbers");
 
     return pair;
 }
@@ -861,9 +881,9 @@ const Value Interpreter::EvalWhile(Object &node) {
     while (EVAL(AST_TAG_CONDITION)) {
         try {
             EVAL(AST_TAG_STMT);
+        } catch (const BreakException &e) { break; } catch (const ContinueException &e) {
+            continue;
         }
-        catch (const BreakException &e) { break; }
-        catch (const ContinueException &e) { continue; }
     }
 
     return NIL_VAL;
@@ -875,9 +895,9 @@ const Value Interpreter::EvalFor(Object &node) {
     for (EVAL(AST_TAG_FOR_PRE_ELIST); EVAL(AST_TAG_CONDITION); EVAL(AST_TAG_FOR_POST_ELIST)) {
         try {
             EVAL(AST_TAG_STMT);
+        } catch (const BreakException &e) { break; } catch (const ContinueException &e) {
+            continue;
         }
-        catch (const BreakException &e) { break; }
-        catch (const ContinueException &e) { continue; }
     }
 
     return NIL_VAL;
