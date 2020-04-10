@@ -592,7 +592,7 @@ const Value Interpreter::EvalCall(Object &node) {
     auto function = EVAL(AST_TAG_FUNCTION);
     auto arguments = EVAL(AST_TAG_SUFFIX);
 
-    assert(function.IsLibraryFunction() || function.IsProgramFunction());
+    if (!function.IsLibraryFunction() && !function.IsProgramFunction()) RuntimeError("Cannot call " + function.GetTypeToString());
     assert(arguments.IsObject());
 
     if (function.IsLibraryFunction()) {
@@ -856,8 +856,8 @@ void Interpreter::InstallLibFuncs(void) {
 
     libraryFuncs.push_front("print");
     libraryFuncs.push_front("typeof");
-    libraryFuncs.push_front("object_keys,");
-    libraryFuncs.push_front("object_size,");
+    libraryFuncs.push_front("object_keys");
+    libraryFuncs.push_front("object_size");
 }
 
 void Interpreter::Execute(Object &program) {
