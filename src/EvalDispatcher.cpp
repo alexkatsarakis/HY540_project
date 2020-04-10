@@ -15,6 +15,13 @@ void EvalDispatcher::Install(const std::string & tag, const Func & f) {
     evals[tag] = f;
 }
 
+void EvalDispatcher::InstallWriteFunc(const std::string & tag, const WriteFunc & f) {
+    assert(!tag.empty());
+    assert(f);
+
+    evalsWrite[tag] = f;
+}
+
 void EvalDispatcher::Clear(void) {
     evals.clear();
 }
@@ -23,6 +30,11 @@ const Value EvalDispatcher::Eval(Object & node) {
     assert(node.IsValid());
 
     return evals[node[AST_TAG_TYPE_KEY]->ToString()](node);
+}
+
+Symbol EvalDispatcher::EvalWriteFunc(Object & node) {
+    assert(node.IsValid());
+    return evalsWrite[node[AST_TAG_TYPE_KEY]->ToString()](node);
 }
 
 EvalDispatcher::~EvalDispatcher() { }
