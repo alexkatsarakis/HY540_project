@@ -7,6 +7,7 @@ PROJECTDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 # Project structure
 ODIR=obj
 SRCDIR=src
+INCLDIR=include
 TESTDIR=tests
 
 # Name of the executable file
@@ -16,7 +17,10 @@ EXECUTABLE=interpreter.out
 SAMPLE_TEST=$(TESTDIR)/add.alpha
 
 # Specify the include directories
-INCLDIR=-I$(PROJECTDIR)$
+LINKER_PREFIX = -I$(PROJECTDIR)${INCLDIR}
+LINKER= $(LINKER_PREFIX) $(LINKER_PREFIX)/parser $(LINKER_PREFIX)/object $(LINKER_PREFIX)/tree $(LINKER_PREFIX)/visitors
+PARSER_LINKER= $(LINKER_PREFIX)/parser $(LINKER_PREFIX)/object $(LINKER_PREFIX)/tree $(LINKER_PREFIX)/visitors
+LEXXER_LINKER= $(LINKER_PREFIX)/parser $(LINKER_PREFIX)/object
 
 # Set compilation flags
 # -Wshadow: Warn whenever a local variable or type declaration shadows another
@@ -37,7 +41,7 @@ CFLAGS=-O0 -g3 -std=c++14 -Wshadow -Wall -Wextra -Wold-style-cast -Wpedantic\
 -Wfloat-equal -Wpointer-arith -Wcast-qual -Wstrict-overflow=5 -Wwrite-strings\
 -Wswitch-default -Wswitch-enum -Wunreachable-code -Winit-self\
 -Wno-unused-parameter\
-$(INCLDIR)
+$(LINKER)
 # -Wconversion
 
 # Find all source files
@@ -48,7 +52,7 @@ OBJECTS=$(SRCS:%.cpp=%.o)
 # Files related to Bison
 PARSER_NAME=parser
 PARSER_Y=$(SRCDIR)/$(PARSER_NAME).y
-PARSER_H=$(SRCDIR)/$(PARSER_NAME).h
+PARSER_H=$(INCLDIR)/parser/$(PARSER_NAME).h
 PARSER_CPP=$(SRCDIR)/$(PARSER_NAME).cpp
 PARSER_OUT=$(SRCDIR)/$(PARSER_NAME).output
 PARSER_O=$(ODIR)/$(PARSER_NAME).o
@@ -85,11 +89,11 @@ $(PARSER_CPP): $(PARSER_Y)
 
 $(LEXXER_O): $(LEXXER_CPP)
 	@mkdir -p $(ODIR)
-	$(CC) $^ -o $@ -c
+	$(CC) $^ -o $@ -c $(LEXXER_LINKER)
 
 $(PARSER_O): $(PARSER_CPP)
 	@mkdir -p $(ODIR)
-	$(CC) -Wno-write-strings $^ -o $@ -c
+	$(CC) -Wno-write-strings $^ -o $@ -c ${PARSER_LINKER}
 
 $(EXECUTABLE): $(PARSER_O) $(LEXXER_O) $(OBJ)
 	@echo 'Creating interpreter'
