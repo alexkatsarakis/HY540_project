@@ -22,7 +22,7 @@ private:
 
     Object *globalScope;
 
-    std::list<Object *> scopeStack;
+    std::list<Object *> scopeStack;    // Current scope is front scope, at beginning of list
 
     std::list<std::string> libraryFuncs;
 
@@ -41,6 +41,10 @@ private:
     void BlockEnter(void);
 
     void BlockExit(void);
+
+    void FuncEnter(void);
+
+    void FuncExit(void);
 
     void RuntimeError(const std::string &msg);
 

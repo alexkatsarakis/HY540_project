@@ -486,16 +486,69 @@ const Value Interpreter::EvalBracket(Object &node) {
     return NIL_VAL;
 }
 
+// std::vector<Object> Interpreter::FuncEnter(const Value arguments) {
+// }
+
+// void Interpreter::FuncCall(const Value function) {
+// }
+
+// void Interpreter::FuncExit() {
+// }
+
 const Value Interpreter::EvalCall(Object &node) {
     ASSERT_TYPE(AST_TAG_CALL);
 
-    auto function = EVAL(AST_TAG_FUNCTION);
-    auto arguments = EVAL(AST_TAG_SUFFIX);
+    //FUNC_ENTER
+    const Value functionVal = EVAL(AST_TAG_FUNCTION);
+    const Value argumentsVal = EVAL(AST_TAG_SUFFIX);    //actuals table
+    assert(functionVal.IsLibraryFunction() || functionVal.IsProgramFunction());
+    assert(argumentsVal.IsObject());
+    const Object *arguments = argumentsVal.ToObject_NoConst();
 
-    assert(function.IsLibraryFunction() || function.IsProgramFunction());
-    assert(arguments.IsObject());
+    Object *functionAst = functionVal.ToProgramFunctionAST_NoConst();
+    Object *functionClosure = functionVal.ToProgramFunctionClosure_NoConst();
 
-    if (function.IsLibraryFunction()) {
+    //CALL
+    //new function scope list
+    scopeStack.push_front(functionClosure);
+    functionClosure->IncreaseRefCounter();
+
+    //new function scope
+    Object *scope = new Object();
+    scope->Set(OUTER_RESERVED_FIELD, Value(functionClosure));
+    functionClosure->IncreaseRefCounter();
+    currentScope = scope;
+    currentScope->IncreaseRefCounter();
+
+    //formals - actuals mapping
+    Object *formals = (*functionAst)[AST_TAG_FUNCTION_FORMALS]->ToObject_NoConst();
+    for (register unsigned i = 0; i < formals->GetStringSize(); ++i) {
+        std::string namedFormal = (*formals)[i]->ToString();
+        Value actualValue = (*arguments)[i];
+        currentScope->Set(namedFormal, actualValue);
+    }
+
+    //function body evaluation
+    dispatcher.Eval(*((*functionAst)[AST_TAG_STMT]->ToObject_NoConst()));
+
+    //RETURN_VAL
+
+    //FUNC_EXIT
+    //remove function scope
+    currentScope->DecreaseRefCounter();
+    currentScope = nullptr;
+    functionClosure->DecreaseRefCounter();
+    scope->Set(OUTER_RESERVED_FIELD, Value());
+    scope->DecreaseRefCounter();
+
+    //remove function scope list
+    functionClosure->DecreaseRefCounter();
+    scopeStack.pop_front();
+    currentScope = functionClosure;
+
+    return NIL_VAL;
+
+    /* if (function.IsLibraryFunction()) {
         function.ToLibraryFunction()(*arguments.ToObject_NoConst());
     } else {
         assert(false);
@@ -504,7 +557,7 @@ const Value Interpreter::EvalCall(Object &node) {
     const Value *retval = (*arguments.ToObject())[RETVAL_RESERVED_FIELD];
     Value result;
 
-    /* TODISCUSS: Is this a good practice? */
+    // TODISCUSS: Is this a good practice?
     if (!retval)
         result.FromUndef();
     else
@@ -513,8 +566,8 @@ const Value Interpreter::EvalCall(Object &node) {
     arguments.ToObject_NoConst()->Clear();
     delete arguments.ToObject_NoConst();
     arguments.FromUndef();
-
-    return result;
+ */
+    // return result;
 }
 
 const Value Interpreter::EvalCallSuffix(Object &node) {

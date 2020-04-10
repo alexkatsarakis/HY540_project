@@ -331,7 +331,7 @@ void ProcessAST(Object * ast) {
     unparseHost->Accept(*ast);
     visualizeHost->Accept(*ast);
     setParentTreeHost->Accept(*ast);
-    // interpreter->Execute(*ast);
+    interpreter->Execute(*ast);
 
 #define AST_MEM_CLEANUP
 #ifdef AST_MEM_CLEANUP
