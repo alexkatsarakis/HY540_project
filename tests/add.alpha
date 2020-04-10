@@ -324,5 +324,5 @@ t.p("\"Hacked\"");
 
 
 function f(){
-    return;
+    return 5;
 }
