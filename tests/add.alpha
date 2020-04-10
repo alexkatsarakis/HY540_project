@@ -221,6 +221,18 @@ print("\n\n\n\n");
 //t.x++;
 //print(t.x);
 
+/*
+a = [];
+b = [ { "a": 10 } , { "b" : 20 } ];
+t = [1 + 2, 3, 35 * 10];
+functor = ["()", (function (){ } )];
+c = [20, false, undef, nil, b];
+d = [ { "x" : print } , { 30 : "foo" } , { 40 : c} ];
+
+print(d[40][4].a);
+*/
+
+/*
 t = [];
 print(t.x);
 t.x = 23;
@@ -237,14 +249,71 @@ x = 20;
 print(t[20]);
 print(t[x]);
 print(t[10 + 10]);
+*/
 
 /*
-a = [];
-b = [ { "a": 10 } , { "b" : 20 } ];
-t = [1 + 2, 3, 35 * 10];
-functor = ["()", (function (){ } )];
-c = [20, false, undef, nil, b];
-d = [ { "x" : print } , { 30 : "foo" } , { 40 : c} ];
-
-print(d[40][4].a);
+x = 20;
+{
+    local x;
+    print(x);
+    x = "test";
+    print(x);
+    ::x = 30;
+}
+print(x);
+print(::x);
 */
+
+/*
+x = 2;
+{
+    {
+        {
+            {
+                {
+                    local x = 1;
+                    print(x);
+                    print(::x);
+                    ::x = 3;
+                    print(::x);
+                }
+            }
+        }
+    }
+}
+print(x);;;;
+
+for(i = 0; i < 5; ++i) {
+    if (i == 3) continue;
+    print(i);
+}
+
+x = 5;
+t = [ { "a" : 21 } ];
+
+print("\n\n\n\n");
+print(x);
+print(t.a);
+print(++x);
+print(t.a--);
+print(t.a);
+
+*/
+
+x = "foobaridion";
+w = 3;
+table = [ { x : w } ];
+print(table);
+print("\n\n\n\n");
+print(typeof(print));
+print(typeof(w));
+print(typeof(2));
+print(typeof("fo"));
+
+table.x = 1;
+table.y = 2;
+table.z = 3;
+table[0] = "a";
+table[1] = "b";
+print(object_size(table));
+print(object_keys(table));

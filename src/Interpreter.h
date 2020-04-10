@@ -4,103 +4,75 @@
 #include "EvalDispatcher.h"
 #include "Object.h"
 #include "Value.h"
+#include "WriteField.h"
 
 #include <list>
 #include <string>
 #include <utility> /* For std::pair */
-#include <cassert>
-
-class WriteField {
-private:
-    std::string strVal;
-    double numVal;
-
-    bool isNumber = false;
-    bool isString = false;
-
-public:
-
-    WriteField(const std::string & str) : strVal(str) {
-        isString = true;
-        isNumber = false;
-    }
-
-    WriteField(double num) : numVal(num) {
-        isNumber = true;
-        isString = false;
-    }
-
-    bool IsString(void) const { return isString; }
-    bool IsNumber(void) const { return isNumber; }
-
-    double ToNumber(void) const {
-        assert(IsNumber());
-        return numVal;
-    }
-
-    std::string ToString(void) const {
-        assert(IsString());
-        return strVal;
-    }
-};
-
-using Symbol = std::pair<Object *, WriteField>;
 
 class Interpreter {
 private:
 
+    /****** Defines ******/
+
     class BreakException { };
     class ContinueException { };
 
+    enum MathOp { Plus, Minus, Mul, Div, Mod, Greater, Less, GreaterEqual, LessEqual };
+
+    /****** Fields ******/
+
     EvalDispatcher dispatcher;
+    Value retvalRegister;
 
     Object * currentScope;
-
     Object * globalScope;
 
     std::list<Object *> scopeStack;
-
     std::list<std::string> libraryFuncs;
 
-    enum MathOp { Plus, Minus, Mul, Div, Mod, Greater, Less, GreaterEqual, LessEqual };
+    /****** Lvalue Write Access ******/
 
     Symbol EvalLvalueWrite(Object &node);
     Symbol EvalMemberWrite(Object &node);
     Symbol EvalDotWrite(Object & node);
     Symbol EvalBracketWrite(Object & node);
     Symbol EvalIdWrite(Object & node);
-
-    const Value TableGetElem(const Value lvalue, const Value index);
+    Symbol EvalGlobalIdWrite(Object & node);
+    Symbol EvalLocalIdWrite(Object & node);
     Symbol TableSetElem(const Value lvalue, const Value index);
 
+    /****** Evaluation Helpers ******/
+
+    const Value TableGetElem(const Value lvalue, const Value index);
     const Value GetIdName(const Object & node);
+    const Value HandleAggregators(Object & node, MathOp op, bool returnChanged);
+    const Value EvalMath(Object & node, MathOp op);
+    bool ValuesAreEqual(const Value & v1, const Value & v2);
+
+    /****** Evaluation Side Actions ******/
 
     void BlockEnter(void);
-
     void BlockExit(void);
 
-    void RuntimeError(const std::string & msg);
-
-    const Value HandleAggregators(Object & node, MathOp op, bool returnChanged);
+    /****** Symbol Lookup ******/
 
     const Value * LookupScope(Object * scope, const std::string & symbol) const;
-
     const Value * LookupCurrentScope(const std::string & symbol) const;
-
     const Value * LookupGlobalScope(const std::string & symbol) const;
-
-    const Value * LookupAllScopes(const std::string & symbol) const;
-
     Object * FindScope(const std::string & symbol) const;
 
-    bool IsLibFunc(const std::string & symbol) const;
+    /****** Start-up ******/
 
     void InstallEvaluators(void);
     void InstallLibFuncs(void);
 
-    const Value EvalMath(Object & node, MathOp op);
+    /****** Helpers ******/
 
-    bool ValuesAreEqual(const Value & v1, const Value & v2);
+    bool IsLibFunc(const std::string & symbol) const;
+    bool IsReservedField(const std::string & index) const;
+
+    /****** Evaluators ******/
 
     const Value EvalProgram(Object &node);
     const Value EvalStatements(Object &node);
@@ -164,6 +136,8 @@ public:
     Interpreter(void);
 
     void Execute(Object & program);
+
+    void RuntimeError(const std::string & msg);
 
     virtual ~Interpreter();
 };
