@@ -15,8 +15,8 @@ private:
 
     /****** Defines ******/
 
-    class BreakException { };
-    class ContinueException { };
+    class BreakException {};
+    class ContinueException {};
 
     enum MathOp { Plus, Minus, Mul, Div, Mod, Greater, Less, GreaterEqual, LessEqual };
 
@@ -121,7 +121,7 @@ private:
     const Value EvalConst(Object &node);
     const Value EvalNumber(Object &node);
     const Value EvalString(Object &node);
-    const Value EvalNill(Object &node);
+    const Value EvalNil(Object &node);
     const Value EvalTrue(Object &node);
     const Value EvalFalse(Object &node);
     const Value EvalIdList(Object &node);
@@ -135,7 +135,7 @@ private:
 public:
     Interpreter(void);
 
-    void Execute(Object & program);
+    void Execute(Object &program);
 
     void RuntimeError(const std::string & msg);
 

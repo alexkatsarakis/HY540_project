@@ -317,3 +317,7 @@ table[0] = "a";
 table[1] = "b";
 print(object_size(table));
 print(object_keys(table));
+
+t = [];
+t.p = print;
+t.p("\"Hacked\"");

@@ -62,7 +62,7 @@ public:
     void VisitConst(const Object &node) override;
     void VisitNumber(const Object &node) override;
     void VisitString(const Object &node) override;
-    void VisitNill(const Object &node) override;
+    void VisitNil(const Object &node) override;
     void VisitTrue(const Object &node) override;
     void VisitFalse(const Object &node) override;
     void VisitIdList(const Object &node) override;

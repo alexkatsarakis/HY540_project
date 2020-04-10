@@ -68,7 +68,7 @@ public:
     void AcceptConst(const Object &node);
     void AcceptNumber(const Object &node);
     void AcceptString(const Object &node);
-    void AcceptNill(const Object &node);
+    void AcceptNil(const Object &node);
     void AcceptTrue(const Object &node);
     void AcceptFalse(const Object &node);
     void AcceptIdList(const Object &node);

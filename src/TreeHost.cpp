@@ -67,7 +67,7 @@ void TreeHost::InstallAllAcceptors(void) {
     InstallAcceptor(AST_TAG_CONST, LAMBDA(AcceptConst));
     InstallAcceptor(AST_TAG_NUMBER, LAMBDA(AcceptNumber));
     InstallAcceptor(AST_TAG_STRING, LAMBDA(AcceptString));
-    InstallAcceptor(AST_TAG_NILL, LAMBDA(AcceptNill));
+    InstallAcceptor(AST_TAG_NIL, LAMBDA(AcceptNil));
     InstallAcceptor(AST_TAG_TRUE, LAMBDA(AcceptTrue));
     InstallAcceptor(AST_TAG_FALSE, LAMBDA(AcceptFalse));
     InstallAcceptor(AST_TAG_ID_LIST, LAMBDA(AcceptIdList));
@@ -495,11 +495,11 @@ void TreeHost::AcceptString(const Object &node) {
     visitor->VisitString(node);
 }
 
-void TreeHost::AcceptNill(const Object &node) {
-    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NILL);
+void TreeHost::AcceptNil(const Object &node) {
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NIL);
     assert(node.ElementExists(AST_TAG_VALUE));
 
-    visitor->VisitNill(node);
+    visitor->VisitNil(node);
 }
 
 void TreeHost::AcceptTrue(const Object &node) {

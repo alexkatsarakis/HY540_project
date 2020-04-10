@@ -1,11 +1,11 @@
 #include "Interpreter.h"
-#include "TreeTags.h"
 #include "LibraryFunctions.h"
+#include "TreeTags.h"
 #include "Utilities.h"
 
-#include <iostream>
-#include <cassert>
 #include <algorithm>
+#include <cassert>
+#include <iostream>
 
 /****** Reserved Fields ******/
 #define PREVIOUS_RESERVED_FIELD "$previous"
@@ -22,12 +22,13 @@
 #define INSTALL_WRITE_FUNC(tag, method) dispatcher.InstallWriteFunc(tag, [this](Object & node) { return method(node); });
 #define EVAL_WRITE(type) dispatcher.EvalWriteFunc(*node[type]->ToObject_NoConst())
 
-void Interpreter::RuntimeError(const std::string & msg) {
-    std::cerr << "\033[31;1m" << "Runtime Error: " << msg << "\033[0m" << std::endl;
+void Interpreter::RuntimeError(const std::string &msg) {
+    std::cerr << "\033[31;1m"
+              << "Runtime Error: " << msg << "\033[0m" << std::endl;
     exit(EXIT_FAILURE);
 }
 
-const Value * Interpreter::LookupScope(Object * scope, const std::string & symbol) const {
+const Value *Interpreter::LookupScope(Object *scope, const std::string &symbol) const {
     assert(scope && scope->IsValid());
     assert(!symbol.empty());
 
@@ -36,20 +37,20 @@ const Value * Interpreter::LookupScope(Object * scope, const std::string & symbo
 
     /* Check if the scope is sliced */
     while (scope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
-        Object * previous = (*scope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
-        if(previous->ElementExists(symbol)) return (*previous)[symbol];
+        Object *previous = (*scope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
+        if (previous->ElementExists(symbol)) return (*previous)[symbol];
         scope = previous;
     }
 
     return nullptr;
 }
 
-const Value * Interpreter::LookupCurrentScope(const std::string & symbol) const {
+const Value *Interpreter::LookupCurrentScope(const std::string &symbol) const {
     assert(!symbol.empty());
     return LookupScope(currentScope, symbol);
 }
 
-const Value * Interpreter::LookupGlobalScope(const std::string & symbol) const {
+const Value *Interpreter::LookupGlobalScope(const std::string &symbol) const {
     assert(!symbol.empty());
 
     Object * scope = currentScope;
@@ -62,18 +63,18 @@ const Value * Interpreter::LookupGlobalScope(const std::string & symbol) const {
     return LookupScope(scope, symbol);
 }
 
-Object * Interpreter::FindScope(const std::string & symbol) const {
+Object *Interpreter::FindScope(const std::string &symbol) const {
     assert(!symbol.empty());
 
-    Object * scope = currentScope;
+    Object *scope = currentScope;
 
-    while(true) {
+    while (true) {
         if (scope->ElementExists(symbol)) return scope;
 
         /* Check if the scope is sliced */
-        while(scope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
-            Object * previous = (*scope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
-            if(previous->ElementExists(symbol)) return previous;
+        while (scope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
+            Object *previous = (*scope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
+            if (previous->ElementExists(symbol)) return previous;
             scope = previous;
         }
 
@@ -85,7 +86,7 @@ Object * Interpreter::FindScope(const std::string & symbol) const {
     assert(false);
 }
 
-bool Interpreter::IsLibFunc(const std::string & symbol) const {
+bool Interpreter::IsLibFunc(const std::string &symbol) const {
     assert(!symbol.empty());
     return std::find(libraryFuncs.begin(), libraryFuncs.end(), symbol) != libraryFuncs.end();
 }
@@ -112,7 +113,7 @@ void Interpreter::InstallEvaluators(void) {
     INSTALL(AST_TAG_CONST, EvalConst);
     INSTALL(AST_TAG_NUMBER, EvalNumber);
     INSTALL(AST_TAG_STRING, EvalString);
-    INSTALL(AST_TAG_NILL, EvalNill);
+    INSTALL(AST_TAG_NIL, EvalNil);
     INSTALL(AST_TAG_TRUE, EvalTrue);
     INSTALL(AST_TAG_FALSE, EvalFalse);
     INSTALL(AST_TAG_ID, EvalId);
@@ -164,7 +165,7 @@ const Value Interpreter::EvalProgram(Object &node) {
 const Value Interpreter::EvalStatements(Object &node) {
     ASSERT_TYPE(AST_TAG_STMTS);
 
-    for(register unsigned i = 0; i < node.GetNumericSize(); ++i) {
+    for (register unsigned i = 0; i < node.GetNumericSize(); ++i) {
         dispatcher.Eval(*node[i]->ToObject_NoConst());
     }
 
@@ -195,7 +196,7 @@ const Value Interpreter::EvalAssign(Object &node) {
     return rvalue;
 }
 
-const Value Interpreter::EvalMath(Object & node, MathOp op) {
+const Value Interpreter::EvalMath(Object &node, MathOp op) {
     assert(node.IsValid());
 
     auto op1 = EVAL(AST_TAG_FIRST_EXPR);
@@ -204,7 +205,7 @@ const Value Interpreter::EvalMath(Object & node, MathOp op) {
     if (!op1.IsNumber()) RuntimeError("First operand is not a number in an arithmetic operation");
     if (!op2.IsNumber()) RuntimeError("Second operand is not a number in an arithmetic operation");
 
-    switch(op) {
+    switch (op) {
         case MathOp::Plus: return op1.ToNumber() + op2.ToNumber();
         case MathOp::Minus: return op1.ToNumber() - op2.ToNumber();
         case MathOp::Mul: return op1.ToNumber() * op2.ToNumber();
@@ -266,7 +267,7 @@ const Value Interpreter::EvalLessEqual(Object &node) {
     return EvalMath(node, MathOp::LessEqual);
 }
 
-bool Interpreter::ValuesAreEqual(const Value & v1, const Value & v2) {
+bool Interpreter::ValuesAreEqual(const Value &v1, const Value &v2) {
     assert(v1.IsValid());
     assert(v2.IsValid());
 
@@ -282,12 +283,18 @@ bool Interpreter::ValuesAreEqual(const Value & v1, const Value & v2) {
     if (v1.GetType() != v2.GetType()) RuntimeError("Cannot compare operands of different types (" + v1.GetTypeToString() + " and " + v2.GetTypeToString() + ")");
 
     /* Compare based on type of operands */
-    if (v1.IsNumber()) return Utilities::DoublesAreEqual(v1.ToNumber(), v2.ToNumber());
-    else if (v1.IsString()) return v1.ToString() == v2.ToString();
-    else if (v1.IsProgramFunction()) return v1.ToProgramFunctionAST() == v2.ToProgramFunctionAST();
-    else if (v1.IsLibraryFunction()) return v1.ToLibraryFunction() == v2.ToLibraryFunction();
-    else if (v1.IsNativePtr()) return v1.ToNativePtr() == v2.ToNativePtr();
-    else assert(false);
+    if (v1.IsNumber())
+        return Utilities::DoublesAreEqual(v1.ToNumber(), v2.ToNumber());
+    else if (v1.IsString())
+        return v1.ToString() == v2.ToString();
+    else if (v1.IsProgramFunction())
+        return v1.ToProgramFunctionAST() == v2.ToProgramFunctionAST();
+    else if (v1.IsLibraryFunction())
+        return v1.ToLibraryFunction() == v2.ToLibraryFunction();
+    else if (v1.IsNativePtr())
+        return v1.ToNativePtr() == v2.ToNativePtr();
+    else
+        assert(false);
 }
 
 const Value Interpreter::EvalEqual(Object &node) {
@@ -346,7 +353,7 @@ const Value Interpreter::EvalNot(Object &node) {
     return !static_cast<bool>(val);
 }
 
-const Value Interpreter::HandleAggregators(Object & node, MathOp op, bool returnChanged) {
+const Value Interpreter::HandleAggregators(Object &node, MathOp op, bool returnChanged) {
     assert(node.IsValid());
 
     Symbol lvalue = EVAL_WRITE(AST_TAG_CHILD);
@@ -362,16 +369,21 @@ const Value Interpreter::HandleAggregators(Object & node, MathOp op, bool return
     double number = value->ToNumber();
     double result = number;
 
-    if (op == MathOp::Plus) result = number + 1;
-    else if (op == MathOp::Minus) result = number - 1;
-    else assert(false);
+    if (op == MathOp::Plus)
+        result = number + 1;
+    else if (op == MathOp::Minus)
+        result = number - 1;
+    else
+        assert(false);
 
     if (lvalue.second.IsString()) lvalue.first->Set(lvalue.second.ToString(), result);
     else if (lvalue.second.IsNumber()) lvalue.first->Set(lvalue.second.ToNumber(), result);
     else assert(false);
 
-    if (returnChanged) return result;
-    else return number;
+    if (returnChanged)
+        return result;
+    else
+        return number;
 }
 
 const Value Interpreter::EvalPlusPlusBefore(Object &node) {
@@ -623,8 +635,8 @@ const Value Interpreter::EvalMethodCall(Object &node) {
 const Value Interpreter::EvalExpressionList(Object &node) {
     ASSERT_TYPE(AST_TAG_ELIST);
 
-    Object * table = new Object();
-    for(register unsigned i = 0; i < node.GetNumericSize(); ++i) {
+    Object *table = new Object();
+    for (register unsigned i = 0; i < node.GetNumericSize(); ++i) {
         const Value v = dispatcher.Eval(*node[i]->ToObject_NoConst());
         table->Set(i, v);
     }
@@ -640,12 +652,12 @@ const Value Interpreter::EvalObjectDef(Object &node) {
 const Value Interpreter::EvalIndexed(Object &node) {
     ASSERT_TYPE(AST_TAG_INDEXED);
 
-    Object * table = new Object();
-    for(register unsigned i = 0; i < node.GetNumericSize(); ++i) {
+    Object *table = new Object();
+    for (register unsigned i = 0; i < node.GetNumericSize(); ++i) {
         const Value v = dispatcher.Eval(*node[i]->ToObject_NoConst());
         assert(v.IsObject());
 
-        Object * o = v.ToObject_NoConst();
+        Object *o = v.ToObject_NoConst();
         o->Visit([table](const Value &key, const Value &val) {
             if (key.IsString()) table->Set(key.ToString(), val);
             else if (key.IsNumber()) table->Set(key.ToNumber(), val);
@@ -662,7 +674,7 @@ const Value Interpreter::EvalIndexed(Object &node) {
 const Value Interpreter::EvalIndexedElem(Object &node) {
     ASSERT_TYPE(AST_TAG_INDEXED_ELEM);
 
-    Object * pair = new Object();
+    Object *pair = new Object();
 
     auto key = EVAL(AST_TAG_OBJECT_KEY);
     auto value = EVAL(AST_TAG_OBJECT_VALUE);
@@ -675,18 +687,18 @@ const Value Interpreter::EvalIndexedElem(Object &node) {
 }
 
 void Interpreter::BlockEnter(void) {
-    Object * scope = new Object();
+    Object *scope = new Object();
     scope->Set(OUTER_RESERVED_FIELD, currentScope);
     scope->IncreaseRefCounter();
     currentScope = scope;
 }
 
 void Interpreter::BlockExit(void) {
-    Object * scope = nullptr;
-    Object * tmp = nullptr;
+    Object *scope = nullptr;
+    Object *tmp = nullptr;
 
     bool shouldSlice = currentScope->ElementExists(PREVIOUS_RESERVED_FIELD);
-    while(currentScope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
+    while (currentScope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
         tmp = currentScope;
         currentScope = (*currentScope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
         tmp->DecreaseRefCounter();
@@ -697,7 +709,7 @@ void Interpreter::BlockExit(void) {
     currentScope = (*currentScope)[OUTER_RESERVED_FIELD]->ToObject_NoConst();
     tmp->DecreaseRefCounter();
 
-    if(shouldSlice) {
+    if (shouldSlice) {
         scope = new Object();
         scope->Set(PREVIOUS_RESERVED_FIELD, currentScope);
         scope->IncreaseRefCounter();
@@ -718,16 +730,16 @@ const Value Interpreter::EvalBlock(Object &node) {
 const Value Interpreter::EvalFunctionDef(Object &node) {
     ASSERT_TYPE(AST_TAG_FUNCTION_DEF);
 
-    const Object * child = node[AST_TAG_FUNCTION_ID]->ToObject();
+    const Object *child = node[AST_TAG_FUNCTION_ID]->ToObject();
     std::string name = (*child)[AST_TAG_ID]->ToString();
 
-    if(IsLibFunc(name)) RuntimeError("Cannot define function \"" + name +"\". It shadows the library function.");
+    if (IsLibFunc(name)) RuntimeError("Cannot define function \"" + name + "\". It shadows the library function.");
     if (LookupCurrentScope(name)) RuntimeError("Cannot define function \"" + name + "\". Symbol name already exists.");
 
     currentScope->Set(name, Value(&node, currentScope));
     currentScope->IncreaseRefCounter();
 
-    Object * slice = new Object();
+    Object *slice = new Object();
     slice->Set(PREVIOUS_RESERVED_FIELD, currentScope);
     currentScope = slice;
     currentScope->IncreaseRefCounter();
@@ -750,8 +762,8 @@ const Value Interpreter::EvalString(Object &node) {
     return *node[AST_TAG_VALUE];
 }
 
-const Value Interpreter::EvalNill(Object &node) {
-    ASSERT_TYPE(AST_TAG_NILL);
+const Value Interpreter::EvalNil(Object &node) {
+    ASSERT_TYPE(AST_TAG_NIL);
     return NIL_VAL;
 }
 
@@ -773,8 +785,10 @@ const Value Interpreter::EvalIdList(Object &node) {
 const Value Interpreter::EvalIf(Object &node) {
     ASSERT_TYPE(AST_TAG_IF);
 
-    if(EVAL(AST_TAG_CONDITION)) EVAL(AST_TAG_STMT);
-    else if(node.ElementExists(AST_TAG_ELSE_STMT)) EVAL(AST_TAG_ELSE_STMT);
+    if (EVAL(AST_TAG_CONDITION))
+        EVAL(AST_TAG_STMT);
+    else if (node.ElementExists(AST_TAG_ELSE_STMT))
+        EVAL(AST_TAG_ELSE_STMT);
 
     return NIL_VAL;
 }
@@ -782,12 +796,12 @@ const Value Interpreter::EvalIf(Object &node) {
 const Value Interpreter::EvalWhile(Object &node) {
     ASSERT_TYPE(AST_TAG_WHILE);
 
-    while(EVAL(AST_TAG_CONDITION)) {
+    while (EVAL(AST_TAG_CONDITION)) {
         try {
             EVAL(AST_TAG_STMT);
         }
-        catch(const BreakException & e) { break; }
-        catch(const ContinueException & e) { continue; }
+        catch (const BreakException &e) { break; }
+        catch (const ContinueException &e) { continue; }
     }
 
     return NIL_VAL;
@@ -796,12 +810,12 @@ const Value Interpreter::EvalWhile(Object &node) {
 const Value Interpreter::EvalFor(Object &node) {
     ASSERT_TYPE(AST_TAG_FOR);
 
-    for(EVAL(AST_TAG_FOR_PRE_ELIST); EVAL(AST_TAG_CONDITION); EVAL(AST_TAG_FOR_POST_ELIST)) {
+    for (EVAL(AST_TAG_FOR_PRE_ELIST); EVAL(AST_TAG_CONDITION); EVAL(AST_TAG_FOR_POST_ELIST)) {
         try {
             EVAL(AST_TAG_STMT);
         }
-        catch(const BreakException & e) { break; }
-        catch(const ContinueException & e) { continue; }
+        catch (const BreakException &e) { break; }
+        catch (const ContinueException &e) { continue; }
     }
 
     return NIL_VAL;
@@ -846,7 +860,7 @@ void Interpreter::InstallLibFuncs(void) {
     libraryFuncs.push_front("object_size,");
 }
 
-void Interpreter::Execute(Object & program) {
+void Interpreter::Execute(Object &program) {
     assert(program[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_PROGRAM);
     assert(program.ElementExists(AST_TAG_CHILD));
 

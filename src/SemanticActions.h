@@ -115,7 +115,7 @@ Object *ParseNumber(double value);
 
 Object *ParseString(char *value);
 
-Object *ParseNill(void);
+Object *ParseNil(void);
 
 Object *ParseTrue(void);
 

@@ -436,7 +436,7 @@ void VisualizeVisitor::VisitNumber(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NUMBER);
     SaveOrphan();
     double value = node[AST_TAG_VALUE]->ToNumber();
-    std::string str = ( Utilities::IsInt(value) ) ? std::to_string(static_cast<int>(value)) : std::to_string(value);
+    std::string str = (Utilities::IsInt(value)) ? std::to_string(static_cast<int>(value)) : std::to_string(value);
     CreateNewNode(str);
 }
 
@@ -449,10 +449,10 @@ void VisualizeVisitor::VisitString(const Object &node) {
     CreateNewNode("\\\"" + label + "\\\"");
 }
 
-void VisualizeVisitor::VisitNill(const Object &node) {
-    eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NILL);
+void VisualizeVisitor::VisitNil(const Object &node) {
+    eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NIL);
     SaveOrphan();
-    CreateNewNode(AST_TAG_NILL);
+    CreateNewNode(AST_TAG_NIL);
 }
 
 void VisualizeVisitor::VisitTrue(const Object &node) {

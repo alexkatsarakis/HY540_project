@@ -83,7 +83,7 @@
 
 #define AST_TAG_NUMBER "number"
 #define AST_TAG_STRING "string"
-#define AST_TAG_NILL "nill"
+#define AST_TAG_NIL "nil"
 #define AST_TAG_TRUE "true"
 #define AST_TAG_FALSE "false"
 
