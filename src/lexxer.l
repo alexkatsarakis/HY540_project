@@ -118,7 +118,7 @@ dollar_id       $[a-zA-Z][a-zA-Z_0-9]*
 
 {dollar_id} {
   HandleToken(C_IDENTIFIER, A_DOLLAR_ID);
-  yylval.strVal = strdup(&yytext[1]);  /* Do not include the $ sign */
+  yylval.strVal = strdup(&yytext[0]);
   return DOLLAR_ID;
 }
 
