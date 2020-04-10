@@ -8,8 +8,43 @@
 #include <list>
 #include <string>
 #include <utility> /* For std::pair */
+#include <cassert>
 
-using Symbol = std::pair<Object *, std::string>;
+class WriteField {
+private:
+    std::string strVal;
+    double numVal;
+
+    bool isNumber = false;
+    bool isString = false;
+
+public:
+
+    WriteField(const std::string & str) : strVal(str) {
+        isString = true;
+        isNumber = false;
+    }
+
+    WriteField(double num) : numVal(num) {
+        isNumber = true;
+        isString = false;
+    }
+
+    bool IsString(void) const { return isString; }
+    bool IsNumber(void) const { return isNumber; }
+
+    double ToNumber(void) const {
+        assert(IsNumber());
+        return numVal;
+    }
+
+    std::string ToString(void) const {
+        assert(IsString());
+        return strVal;
+    }
+};
+
+using Symbol = std::pair<Object *, WriteField>;
 
 class Interpreter {
 private:
@@ -30,12 +65,13 @@ private:
     enum MathOp { Plus, Minus, Mul, Div, Mod, Greater, Less, GreaterEqual, LessEqual };
 
     Symbol EvalLvalueWrite(Object &node);
-
     Symbol EvalMemberWrite(Object &node);
-
     Symbol EvalDotWrite(Object & node);
+    Symbol EvalBracketWrite(Object & node);
+    Symbol EvalIdWrite(Object & node);
 
     const Value TableGetElem(const Value lvalue, const Value index);
+    Symbol TableSetElem(const Value lvalue, const Value index);
 
     const Value GetIdName(const Object & node);
 
@@ -60,6 +96,7 @@ private:
     bool IsLibFunc(const std::string & symbol) const;
 
     void InstallEvaluators(void);
+    void InstallLibFuncs(void);
 
     const Value EvalMath(Object & node, MathOp op);
 

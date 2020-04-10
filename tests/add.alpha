@@ -223,6 +223,21 @@ print("\n\n\n\n");
 
 t = [];
 print(t.x);
+t.x = 23;
+t.y = 40;
+t.foo = "text";
+print(t);
+print(t.y);
+print(t.$foo);
+t.$closure = "foobar";
+print(t.$closure);
+
+t[20] = 42;
+x = 20;
+print(t[20]);
+print(t[x]);
+print(t[10 + 10]);
+
 /*
 a = [];
 b = [ { "a": 10 } , { "b" : 20 } ];
