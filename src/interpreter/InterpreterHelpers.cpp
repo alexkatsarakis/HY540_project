@@ -204,15 +204,38 @@ bool Interpreter::ValuesAreEqual(const Value &v1, const Value &v2) {
         assert(false);
 }
 
+void Interpreter::AssignToContext(const Symbol & lvalue, const Value & rvalue) {
+    assert(lvalue.IsValid());
+    assert(rvalue.IsValid());
+
+    if (lvalue.IsIndexString()) lvalue.GetContext()->Set(lvalue.ToString(), rvalue);
+    else if (lvalue.IsIndexNumber()) lvalue.GetContext()->Set(lvalue.ToNumber(), rvalue);
+    else assert(false);
+
+    if (rvalue.IsObject()) rvalue.ToObject_NoConst()->IncreaseRefCounter();
+}
+
+void Interpreter::RemoveFromContext(const Symbol & lvalue, const Value & rvalue) {
+    assert(lvalue.IsValid());
+    assert(rvalue.IsValid());
+
+    const Value * old = nullptr;
+    if (lvalue.IsIndexString()) old = lvalue.GetContext()->GetAndRemove(lvalue.ToString());
+    else if (lvalue.IsIndexNumber()) old = lvalue.GetContext()->GetAndRemove(lvalue.ToNumber());
+    else assert(false);
+
+    if (old->IsObject()) old->ToObject_NoConst()->DecreaseRefCounter();
+}
+
 const Value Interpreter::HandleAggregators(Object &node, MathOp op, bool returnChanged) {
     assert(node.IsValid());
 
     Symbol lvalue = EVAL_WRITE(AST_TAG_CHILD);
-    assert(lvalue.first);
+    assert(lvalue.IsValid());
 
     const Value * value = nullptr;
-    if (lvalue.second.IsString()) value = (*lvalue.first)[lvalue.second.ToString()];
-    else if (lvalue.second.IsNumber()) value = (*lvalue.first)[lvalue.second.ToNumber()];
+    if (lvalue.IsIndexString()) value = (*lvalue.GetContext())[lvalue.ToString()];
+    else if (lvalue.IsIndexNumber()) value = (*lvalue.GetContext())[lvalue.ToNumber()];
     else assert(false);
 
     if (!value->IsNumber()) RuntimeError("Increment/decrement operators can only be applied to numbers not to " + value->GetTypeToString());
@@ -227,8 +250,8 @@ const Value Interpreter::HandleAggregators(Object &node, MathOp op, bool returnC
     else
         assert(false);
 
-    if (lvalue.second.IsString()) lvalue.first->Set(lvalue.second.ToString(), result);
-    else if (lvalue.second.IsNumber()) lvalue.first->Set(lvalue.second.ToNumber(), result);
+    if (lvalue.IsIndexString()) lvalue.GetContext()->Set(lvalue.ToString(), result);
+    else if(lvalue.IsIndexNumber()) lvalue.GetContext()->Set(lvalue.ToNumber(), result);
     else assert(false);
 
     if (returnChanged)

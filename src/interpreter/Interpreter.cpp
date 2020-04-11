@@ -38,9 +38,11 @@ const Value Interpreter::EvalAssign(Object &node) {
     Symbol lvalue = EVAL_WRITE(AST_TAG_LVALUE);
     auto rvalue = EVAL(AST_TAG_RVALUE);
 
-    if (lvalue.second.IsString()) lvalue.first->Set(lvalue.second.ToString(), rvalue);
-    else if (lvalue.second.IsNumber()) lvalue.first->Set(lvalue.second.ToNumber(), rvalue);
-    else assert(false);
+    assert(lvalue.IsValid());
+    assert(rvalue.IsValid());
+
+    if (rvalue.IsNil()) RemoveFromContext(lvalue, rvalue);
+    else AssignToContext(lvalue, rvalue);
 
     return rvalue;
 }

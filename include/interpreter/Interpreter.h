@@ -4,11 +4,10 @@
 #include "EvalDispatcher.h"
 #include "Object.h"
 #include "Value.h"
-#include "WriteField.h"
+#include "Symbol.h"
 
 #include <list>
 #include <string>
-#include <utility> /* For std::pair */
 
 class Interpreter {
 private:
@@ -49,6 +48,8 @@ private:
     const Value HandleAggregators(Object & node, MathOp op, bool returnChanged);
     const Value EvalMath(Object & node, MathOp op);
     bool ValuesAreEqual(const Value & v1, const Value & v2);
+    void AssignToContext(const Symbol & lvalue, const Value & rvalue);
+    void RemoveFromContext(const Symbol & lvalue, const Value & rvalue);
 
     /****** Evaluation Side Actions ******/
 

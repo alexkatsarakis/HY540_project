@@ -332,3 +332,22 @@ string = "$closure";
 f[string].foo = 142;
 print(t);
 print(foo);
+
+print("\n\n\n\n");
+
+m = [
+    { "a" : 1 },
+    { "b" : 2 },
+    { "c" : 3 },
+    { "d" : 4 },
+    { "e" : 5 }
+];
+
+print(object_keys(m));
+print(object_size(m));
+
+m.a = nil;
+m.d = nil;
+
+print(object_keys(m));
+print(object_size(m));
