@@ -267,48 +267,77 @@ const Value Interpreter::GetIdName(const Object & node) {
     return *name;
 }
 
-const Value Interpreter::TableGetElem(const Value lvalue, const Value index) {
-
-    if (!index.IsString() && !index.IsNumber()) RuntimeError("Keys of objects can only be strings or numbers");
-    if (!lvalue.IsObject() && !lvalue.IsProgramFunction()) RuntimeError("Cannot get field \"" + (index.IsString() ? index.ToString() : std::to_string(index.ToNumber())) + "\" of something that is not an object");
-
-    Object * table = nullptr;
-    if (lvalue.IsObject())table = lvalue.ToObject_NoConst();
-    else if (lvalue.IsProgramFunction()) {
-        if (index.ToString() == CLOSURE_RESERVED_FIELD) return lvalue.ToProgramFunctionClosure_NoConst();
-        table = lvalue.ToProgramFunctionClosure_NoConst();
-    }
-    else assert(false);
-
+/* TODO: Please refactor this mess */
+const Value Interpreter::GetFromContext(Object * table, const Value & index, bool lookupFail) {
     if (index.IsString()) {
-        if(!table->ElementExists(index.ToString())) return Value(NilTypeValue::Nil);
+        bool elementExits = table->ElementExists(index.ToString());
+
+        if (!elementExits && lookupFail) RuntimeError("Field \"" + index.ToString() + "\" does not exist");
+        else if(!elementExits) return Value(NilTypeValue::Nil);
         else return *(*table)[index.ToString()];
+
     } else if (index.IsNumber()) {
-        if(!table->ElementExists(index.ToNumber())) return Value(NilTypeValue::Nil);
-        else return *(*table)[index.ToNumber()];
+        bool elementExits = table->ElementExists(index.ToNumber());
+
+        if (!elementExits && lookupFail) RuntimeError("Field " + std::to_string(index.ToNumber()) + " does not exist");
+        else if(!elementExits) return Value(NilTypeValue::Nil);
+        else return *(*table)[index.ToString()];
     }
 
     assert(false);
 }
 
-Symbol Interpreter::TableSetElem(const Value lvalue, const Value index) {
+const Value Interpreter::TableGetElem(const Value & lvalue, const Value & index) {
+
+    if (!lvalue.IsObject() && !lvalue.IsProgramFunction()) RuntimeError("Cannot get field \"" + (index.IsString() ? index.ToString() : std::to_string(index.ToNumber())) + "\" of something that is not an object");
+    if (!index.IsString() && !index.IsNumber()) RuntimeError("Keys of objects can only be strings or numbers");
+
+    /* f.$closure.x is the same as f.x so that means that f.$closure is the same
+     * as f */
+    if (lvalue.IsProgramFunction() &&
+        index.ToString() == CLOSURE_RESERVED_FIELD)
+        return lvalue;
+
+    Object * table = nullptr;
+    if (lvalue.IsObject())table = lvalue.ToObject_NoConst();
+    else table = lvalue.ToProgramFunctionClosure_NoConst();
+
+    return GetFromContext(table, index, lvalue.IsProgramFunction());
+}
+
+Symbol Interpreter::ClosureSetElem(const Value & lvalue, const Value & index) {
+    assert(lvalue.IsProgramFunction());
+
+    Object * table = nullptr;
+    table = lvalue.ToProgramFunctionClosure_NoConst();
+
+    if (index.IsNumber() && !table->ElementExists(index.ToNumber())) RuntimeError("Cannot set field. Field " + std::to_string(index.ToNumber()) + " does not exist");
+    else if (index.IsString() && !table->ElementExists(index.ToString())) RuntimeError("Cannot set field. Field " + index.ToString() + " does not exist");
+
+    if (index.IsNumber()) return Symbol(table, index.ToNumber());
+    else if (index.IsString()) return Symbol(table, index.ToString());
+    else assert(false);
+}
+
+Symbol Interpreter::ObjectSetElem(const Value & lvalue, const Value & index) {
+    assert(lvalue.IsObject());
+
+    Object * table = lvalue.ToObject_NoConst();
+
+    if (index.IsNumber()) return Symbol(table, index.ToNumber());
+    else if (index.IsString()) return Symbol(table, index.ToString());
+    else assert(false);
+}
+
+Symbol Interpreter::TableSetElem(const Value & lvalue, const Value & index) {
     if (!lvalue.IsObject() && !lvalue.IsProgramFunction())
         RuntimeError("Cannot set field \"" + (index.IsString() ? index.ToString() : std::to_string(index.ToNumber())) + "\" of something that is not an object");
 
     if (!index.IsString() && !index.IsNumber())
         RuntimeError("Keys of objects can only be strings or numbers");
 
-    Object * table = nullptr;
-    if (lvalue.IsObject()) table = lvalue.ToObject_NoConst();
-    else if (lvalue.IsProgramFunction()) {
-        if (index.ToString() == CLOSURE_RESERVED_FIELD) table = lvalue.ToProgramFunctionClosure_NoConst();
-        else table = lvalue.ToProgramFunctionClosure_NoConst();
-    }
-    else assert(false);
-
-    if (index.IsNumber()) return Symbol(table, index.ToNumber());
-    else if (index.IsString()) return Symbol(table, index.ToString());
-    else assert(false);
+    if (lvalue.IsProgramFunction()) return ClosureSetElem(lvalue, index);
+    else return ObjectSetElem(lvalue, index);
 }
 
 Symbol Interpreter::EvalMemberWrite(Object &node) {

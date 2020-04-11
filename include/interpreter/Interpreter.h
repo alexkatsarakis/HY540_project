@@ -39,11 +39,11 @@ private:
     Symbol EvalIdWrite(Object & node);
     Symbol EvalGlobalIdWrite(Object & node);
     Symbol EvalLocalIdWrite(Object & node);
-    Symbol TableSetElem(const Value lvalue, const Value index);
+    Symbol TableSetElem(const Value & lvalue, const Value & index);
 
     /****** Evaluation Helpers ******/
 
-    const Value TableGetElem(const Value lvalue, const Value index);
+    const Value TableGetElem(const Value & lvalue, const Value & index);
     const Value GetIdName(const Object & node);
     const Value HandleAggregators(Object & node, MathOp op, bool returnChanged);
     const Value EvalMath(Object & node, MathOp op);
@@ -72,6 +72,9 @@ private:
 
     bool IsLibFunc(const std::string & symbol) const;
     bool IsReservedField(const std::string & index) const;
+    const Value GetFromContext(Object * table, const Value & index, bool lookupFail);
+    Symbol ClosureSetElem(const Value & lvalue, const Value & index);
+    Symbol ObjectSetElem(const Value & lvalue, const Value & index);
 
     /****** Evaluators ******/
 

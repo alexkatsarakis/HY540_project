@@ -329,10 +329,9 @@ print(f.$closure.t);
 
 f.t = 3;
 string = "$closure";
-f[string].foo = 142;
+//print(f[string].foo);
+//f[string].foo = 142;
 print(t);
-print(foo);
-
 print("\n\n\n\n");
 
 m = [
@@ -351,3 +350,6 @@ m.d = nil;
 
 print(object_keys(m));
 print(object_size(m));
+
+//f.fgreigeoigje = 23;
+//print(f.fdswfewfe);
