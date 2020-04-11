@@ -675,6 +675,7 @@ const Value Interpreter::CallProgramFunction(Object *functionAst, Object *functi
 
 const Value Interpreter::CallLibraryFunction(const std::string &functionId, LibraryFunc functionLib, Object *arguments) {
     arguments->Set(RETVAL_RESERVED_FIELD, Value(NilTypeValue::Nil));
+    assert(functionLib);
     functionLib(*arguments);
     retvalRegister = (*arguments)[RETVAL_RESERVED_FIELD];    //do we need to modify retval?
     return retvalRegister;
@@ -924,6 +925,7 @@ const Value Interpreter::EvalFor(Object &node) {
 
 const Value Interpreter::EvalReturn(Object &node) {
     ASSERT_TYPE(AST_TAG_RETURN);
+    if (node.ElementExists(AST_TAG_CHILD)) retvalRegister = EVAL_CHILD();
     return NIL_VAL;
 }
 
