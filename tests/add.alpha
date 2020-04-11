@@ -323,6 +323,6 @@ t.p = print;
 t.p("\"Hacked\"");
 
 
-function f(){
-    return 5;
+while(true) {
+    break;
 }

@@ -90,7 +90,7 @@ void ValidityVisitor::VisitReturn(const Object &node) {
 
 void ValidityVisitor::VisitBreak(const Object &node) {
     auto current = *node[PARENT_FIELD]->ToObject();
-    while(current[AST_TAG_TYPE_KEY]->ToString() != AST_TAG_PROGRAM){
+    while(current[AST_TAG_TYPE_KEY]->ToString() != AST_TAG_PROGRAM && current[AST_TAG_TYPE_KEY]->ToString() != AST_TAG_FUNCTION_DEF){
         auto type = current[AST_TAG_TYPE_KEY]->ToString();
         if(type == AST_TAG_FOR || type == AST_TAG_WHILE)return;
         current = *current[PARENT_FIELD]->ToObject();
@@ -102,7 +102,7 @@ void ValidityVisitor::VisitBreak(const Object &node) {
 
 void ValidityVisitor::VisitContinue(const Object &node) {
     auto current = *node[PARENT_FIELD]->ToObject();
-    while(current[AST_TAG_TYPE_KEY]->ToString() != AST_TAG_PROGRAM){
+    while(current[AST_TAG_TYPE_KEY]->ToString() != AST_TAG_PROGRAM && current[AST_TAG_TYPE_KEY]->ToString() != AST_TAG_FUNCTION_DEF){
         auto type = current[AST_TAG_TYPE_KEY]->ToString();
         if(type == AST_TAG_FOR || type == AST_TAG_WHILE)return;
         current = *current[PARENT_FIELD]->ToObject();
