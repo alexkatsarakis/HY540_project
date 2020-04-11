@@ -142,4 +142,19 @@ public:
     virtual ~Interpreter();
 };
 
+/****** Reserved Fields ******/
+#define PREVIOUS_RESERVED_FIELD "$previous"
+#define OUTER_RESERVED_FIELD "$outer"
+#define RETVAL_RESERVED_FIELD "$retval"
+#define CLOSURE_RESERVED_FIELD "$closure"
+
+/****** Macros Shortcuts ******/
+#define NIL_VAL Value(NilTypeValue::Nil);
+#define EVAL_CHILD() dispatcher.Eval(*node[AST_TAG_CHILD]->ToObject_NoConst())
+#define EVAL(type) dispatcher.Eval(*node[type]->ToObject_NoConst())
+#define ASSERT_TYPE(type) assert(node[AST_TAG_TYPE_KEY]->ToString() == type);
+#define INSTALL(tag, method) dispatcher.Install(tag, [this](Object & node) { return method(node); });
+#define INSTALL_WRITE_FUNC(tag, method) dispatcher.InstallWriteFunc(tag, [this](Object & node) { return method(node); });
+#define EVAL_WRITE(type) dispatcher.EvalWriteFunc(*node[type]->ToObject_NoConst())
+
 #endif

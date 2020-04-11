@@ -321,8 +321,14 @@ print(object_keys(table));
 t = [];
 t.p = print;
 t.p("\"Hacked\"");
+t.p(t.y);
 
+function f() {}
+print(f.t);
+print(f.$closure.t);
 
-while(true) {
-    break;
-}
+f.t = 3;
+string = "$closure";
+f[string].foo = 142;
+print(t);
+print(foo);
