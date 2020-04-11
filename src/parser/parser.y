@@ -7,6 +7,7 @@
     #include "UnparseVisitor.h"
     #include "VisualizeVisitor.h"
     #include "SetParentTreeVisitor.h"
+    #include "ValidityVisitor.h"
     #include "Deallocator.h"
     #include "Interpreter.h"
 
@@ -45,6 +46,7 @@
 
     TreeHost * unparseHost = nullptr;
     TreeHost * setParentTreeHost = nullptr;
+    TreeHost * validityVisitor = nullptr;
     TreeHost * visualizeHost = nullptr;
     Interpreter * interpreter = nullptr;
 %}
@@ -331,6 +333,7 @@ void ProcessAST(Object * ast) {
     unparseHost->Accept(*ast);
     visualizeHost->Accept(*ast);
     setParentTreeHost->Accept(*ast);
+    validityVisitor->Accept(*ast);
     interpreter->Execute(*ast);
 
 #define AST_MEM_CLEANUP
@@ -357,6 +360,7 @@ int main(int argc, char ** argv) {
         unparseHost = new TreeHost(new UnparseVisitor());
         visualizeHost = new TreeHost(new VisualizeVisitor());
         setParentTreeHost = new TreeHost(new SetParentTreeVisitor());
+        validityVisitor = new TreeHost(new ValidityVisitor());
         interpreter = new Interpreter();
 
         /* The Bison parser */

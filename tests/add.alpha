@@ -321,3 +321,8 @@ print(object_keys(table));
 t = [];
 t.p = print;
 t.p("\"Hacked\"");
+
+
+while(true) {
+    break;
+}
