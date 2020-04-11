@@ -14,7 +14,7 @@ TESTDIR=tests
 EXECUTABLE=interpreter.out
 
 # Name of a simple test file that can be used as input
-SAMPLE_TEST=$(TESTDIR)/add.alpha
+SAMPLE_TEST=$(TESTDIR)/test.js
 
 # Specify the include directories
 # Find all source files
@@ -71,6 +71,13 @@ OBJ = $(patsubst %,$(ODIR)/%,$(OBJECTS))
 all: $(EXECUTABLE)
 	@echo 'Build successful'
 
+compare: $(EXECUTABLE)
+	@./$(EXECUTABLE) $(SAMPLE_TEST) > output1.txt
+	@node $(SAMPLE_TEST).js > output2.txt
+	diff output1.txt output2.txt
+	@rm output1.txt output2.txt
+	@echo 'Compared successfully'
+
 run: $(EXECUTABLE)
 	./$(EXECUTABLE) $(SAMPLE_TEST)
 
@@ -78,7 +85,7 @@ run: $(EXECUTABLE)
 $(ODIR)/%.o: $(SRCDIR)/%.cpp
 	@echo Compiling $*
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c -o $@ $< $(LINKER)
+	@$(CC) $(CFLAGS) -c -o $@ $< $(LINKER)
 
 # Create lexical analyzer
 $(LEXXER_CPP): $(LEXXER_L)
@@ -89,15 +96,15 @@ $(PARSER_CPP): $(PARSER_Y)
 
 $(LEXXER_O): $(LEXXER_CPP)
 	@mkdir -p $(ODIR)/$(PARSER_DIR)
-	$(CC) $^ -o $@ -c $(LINKER)
+	@$(CC) $^ -o $@ -c $(LINKER)
 
 $(PARSER_O): $(PARSER_CPP)
 	@mkdir -p $(ODIR)/$(PARSER_DIR)
-	$(CC) -Wno-write-strings $^ -o $@ -c ${LINKER}
+	@$(CC) -Wno-write-strings $^ -o $@ -c ${LINKER}
 
 $(EXECUTABLE): $(PARSER_O) $(LEXXER_O) $(OBJ)
 	@echo 'Creating interpreter'
-	$(CC) $(CFLAGS) $^ -o $@
+	@$(CC) $(CFLAGS) $^ -o $@
 	@echo ''
 
 # Clean object files

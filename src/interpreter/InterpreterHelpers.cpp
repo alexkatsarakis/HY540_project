@@ -74,7 +74,7 @@ void Interpreter::InstallEvaluators(void) {
 
 void Interpreter::RuntimeError(const std::string &msg) {
     std::cerr << "\033[31;1m"
-              << "Runtime Error: " << msg << "\033[0m" << std::endl;
+              << "Runtime Error: " << "\033[0m" << msg  << std::endl;
     exit(EXIT_FAILURE);
 }
 
@@ -200,7 +200,9 @@ bool Interpreter::ValuesAreEqual(const Value &v1, const Value &v2) {
         return v1.ToLibraryFunction() == v2.ToLibraryFunction();
     else if (v1.IsNativePtr())
         return v1.ToNativePtr() == v2.ToNativePtr();
-    else
+    else if (v1.IsObject()){
+        return v1.ToObject() == v2.ToObject();
+    }else
         assert(false);
 }
 
