@@ -86,6 +86,36 @@ Object *Interpreter::FindScope(const std::string &symbol) const {
     assert(false);
 }
 
+void Interpreter::PushScopeSpace(Object *scope) {
+    scope->IncreaseRefCounter();
+    scopeStack.push_front(scope);
+    scope->IncreaseRefCounter();
+    currentScope = scope;
+}
+void Interpreter::PopScopeSpace() {
+    Object *scope = scopeStack.front();
+    scopeStack.pop_front();
+    scope->DecreaseRefCounter();
+}
+void Interpreter::PushSlice() {
+    Object *scope = new Object();
+    scope->Set(PREVIOUS_RESERVED_FIELD, Value(currentScope));
+    scope->IncreaseRefCounter();
+    currentScope = scope;
+}
+void Interpreter::PushNested() {
+    Object *scope = new Object();
+    scope->Set(OUTER_RESERVED_FIELD, Value(currentScope));
+    scope->IncreaseRefCounter();
+    currentScope = scope;
+}
+
+void Interpreter::PopScope() {
+    Object *scope = currentScope;
+    currentScope = (*scope)[OUTER_RESERVED_FIELD]->ToObject_NoConst();
+    scope->DecreaseRefCounter();
+}
+
 bool Interpreter::IsLibFunc(const std::string &symbol) const {
     assert(!symbol.empty());
     return std::find(libraryFuncs.begin(), libraryFuncs.end(), symbol) != libraryFuncs.end();
@@ -610,87 +640,76 @@ const Value Interpreter::EvalBracket(Object &node) {
 // void Interpreter::FuncExit() {
 // }
 
-const Value Interpreter::EvalCall(Object &node) {
-    ASSERT_TYPE(AST_TAG_CALL);
-
-    //FUNC_ENTER
-    const Value functionVal = EVAL(AST_TAG_FUNCTION);
-    const Value argumentsVal = EVAL(AST_TAG_SUFFIX);    //actuals table
-    assert(functionVal.IsLibraryFunction() || functionVal.IsProgramFunction());
-    assert(argumentsVal.IsObject());
-    const Object *arguments = argumentsVal.ToObject_NoConst();
-
-    Object *functionAst = functionVal.ToProgramFunctionAST_NoConst();
-    Object *functionClosure = functionVal.ToProgramFunctionClosure_NoConst();
-
+const Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClosure, Object *arguments) {
     //CALL
     //new function scope list
-    scopeStack.push_front(functionClosure);
-    functionClosure->IncreaseRefCounter();
+    PushScopeSpace(functionClosure);
 
     //new function scope
-    Object *scope = new Object();
-    scope->Set(OUTER_RESERVED_FIELD, Value(functionClosure));
-    functionClosure->IncreaseRefCounter();
-    currentScope = scope;
-    currentScope->IncreaseRefCounter();
+    PushNested();
 
     //formals - actuals mapping
     Object *formals = (*functionAst)[AST_TAG_FUNCTION_FORMALS]->ToObject_NoConst();
-    for (register unsigned i = 0; i < formals->GetStringSize(); ++i) {
-        std::string namedFormal = (*formals)[i]->ToString();
-        Value actualValue = (*arguments)[i];
-        currentScope->Set(namedFormal, actualValue);
+    for (register unsigned i = 0; i < formals->GetNumericSize(); ++i) {
+        std::string namedFormal = (*(*formals)[i]->ToObject())[AST_TAG_ID]->ToString();
+        const Value *actualValue = (*arguments)[i];
+        currentScope->Set(namedFormal, *actualValue);
     }
 
     //function body evaluation
     dispatcher.Eval(*((*functionAst)[AST_TAG_STMT]->ToObject_NoConst()));
 
     //RETURN_VAL
+    Value result = retvalRegister;
 
     //FUNC_EXIT
     //remove function scope
-    currentScope->DecreaseRefCounter();
-    currentScope = nullptr;
-    functionClosure->DecreaseRefCounter();
-    scope->Set(OUTER_RESERVED_FIELD, Value());
-    scope->DecreaseRefCounter();
+    PopScope();
 
     //remove function scope list
-    functionClosure->DecreaseRefCounter();
-    scopeStack.pop_front();
+    PopScopeSpace();
     currentScope = functionClosure;
 
-    return NIL_VAL;
+    return result;
+}
 
-    /* if (function.IsLibraryFunction()) {
-        function.ToLibraryFunction()(*arguments.ToObject_NoConst());
+const Value Interpreter::CallLibraryFunction(const std::string &functionId, LibraryFunc functionLib, Object *arguments) {
+    arguments->Set(RETVAL_RESERVED_FIELD, Value(NilTypeValue::Nil));
+    functionLib(*arguments);
+    retvalRegister = (*arguments)[RETVAL_RESERVED_FIELD];    //do we need to modify retval?
+    return retvalRegister;
+    // if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter(); //need to know why
+}
 
-        if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter();
+const Value Interpreter::EvalCall(Object &node) {
+    ASSERT_TYPE(AST_TAG_CALL);
 
-        const Value * retval = (*arguments.ToObject())[RETVAL_RESERVED_FIELD];
+    //FUNC_ENTER
+    const Value functionVal = EVAL(AST_TAG_FUNCTION);
+    Value argumentsVal = EVAL(AST_TAG_SUFFIX);    //actuals table
+    assert(functionVal.IsLibraryFunction() || functionVal.IsProgramFunction());
+    assert(argumentsVal.IsObject());
+    Object *arguments = argumentsVal.ToObject_NoConst();
+    retvalRegister.FromUndef();    //reset retVal register
+    Value result;
 
-        //TODISCUSS: Is this a good practice?
-     if(!retval) retvalRegister.FromUndef();
-        else new (&retvalRegister) Value(*retval);
+    if (functionVal.IsProgramFunction()) {
+        Object *functionAst = functionVal.ToProgramFunctionAST_NoConst();
+        Object *functionClosure = functionVal.ToProgramFunctionClosure_NoConst();
+        result = CallProgramFunction(functionAst, functionClosure, arguments);
 
+    } else if (functionVal.IsLibraryFunction()) {
+        std::string functionId = functionVal.ToLibraryFunctionId();
+        LibraryFunc functionLib = functionVal.ToLibraryFunction();
+        result = CallLibraryFunction(functionId, functionLib, arguments);
     } else {
         assert(false);
     }
 
-    const Value *retval = (*arguments.ToObject())[RETVAL_RESERVED_FIELD];
-    Value result;
-
-    // TODISCUSS: Is this a good practice?
-    if (!retval)
-        result.FromUndef();
-    else
-        new (&result) Value(*retval);
-
-    arguments.ToObject_NoConst()->Clear();
-    delete arguments.ToObject_NoConst();
-    arguments.FromUndef(); */
-    // return result;
+    arguments->Clear();
+    delete arguments;
+    argumentsVal.FromUndef();
+    return result;
 }
 
 const Value Interpreter::EvalCallSuffix(Object &node) {

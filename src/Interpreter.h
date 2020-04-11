@@ -12,21 +12,28 @@
 
 class Interpreter {
 private:
-
     /****** Defines ******/
 
     class BreakException {};
     class ContinueException {};
 
-    enum MathOp { Plus, Minus, Mul, Div, Mod, Greater, Less, GreaterEqual, LessEqual };
+    enum MathOp { Plus,
+                  Minus,
+                  Mul,
+                  Div,
+                  Mod,
+                  Greater,
+                  Less,
+                  GreaterEqual,
+                  LessEqual };
 
     /****** Fields ******/
 
     EvalDispatcher dispatcher;
     Value retvalRegister;
 
-    Object * currentScope;
-    Object * globalScope;
+    Object *currentScope;
+    Object *globalScope;
 
     std::list<Object *> scopeStack;
     std::list<std::string> libraryFuncs;
@@ -35,32 +42,41 @@ private:
 
     Symbol EvalLvalueWrite(Object &node);
     Symbol EvalMemberWrite(Object &node);
-    Symbol EvalDotWrite(Object & node);
-    Symbol EvalBracketWrite(Object & node);
-    Symbol EvalIdWrite(Object & node);
-    Symbol EvalGlobalIdWrite(Object & node);
-    Symbol EvalLocalIdWrite(Object & node);
+    Symbol EvalDotWrite(Object &node);
+    Symbol EvalBracketWrite(Object &node);
+    Symbol EvalIdWrite(Object &node);
+    Symbol EvalGlobalIdWrite(Object &node);
+    Symbol EvalLocalIdWrite(Object &node);
     Symbol TableSetElem(const Value lvalue, const Value index);
 
     /****** Evaluation Helpers ******/
 
     const Value TableGetElem(const Value lvalue, const Value index);
-    const Value GetIdName(const Object & node);
-    const Value HandleAggregators(Object & node, MathOp op, bool returnChanged);
-    const Value EvalMath(Object & node, MathOp op);
-    bool ValuesAreEqual(const Value & v1, const Value & v2);
+    const Value GetIdName(const Object &node);
+    const Value HandleAggregators(Object &node, MathOp op, bool returnChanged);
+    const Value EvalMath(Object &node, MathOp op);
+    bool ValuesAreEqual(const Value &v1, const Value &v2);
 
     /****** Evaluation Side Actions ******/
 
     void BlockEnter(void);
     void BlockExit(void);
+    const Value CallProgramFunction(Object *functionAst, Object *functionClosure, Object *arguments);
+    const Value CallLibraryFunction(const std::string &functionId, LibraryFunc functionLib, Object *arguments);
 
     /****** Symbol Lookup ******/
 
-    const Value * LookupScope(Object * scope, const std::string & symbol) const;
-    const Value * LookupCurrentScope(const std::string & symbol) const;
-    const Value * LookupGlobalScope(const std::string & symbol) const;
-    Object * FindScope(const std::string & symbol) const;
+    const Value *LookupScope(Object *scope, const std::string &symbol) const;
+    const Value *LookupCurrentScope(const std::string &symbol) const;
+    const Value *LookupGlobalScope(const std::string &symbol) const;
+    Object *FindScope(const std::string &symbol) const;
+
+    /****** Environment Actions ******/
+    void PushScopeSpace(Object *scope);
+    void PopScopeSpace();
+    void PushSlice();
+    void PushNested();
+    void PopScope();
 
     /****** Start-up ******/
 
@@ -69,8 +85,8 @@ private:
 
     /****** Helpers ******/
 
-    bool IsLibFunc(const std::string & symbol) const;
-    bool IsReservedField(const std::string & index) const;
+    bool IsLibFunc(const std::string &symbol) const;
+    bool IsReservedField(const std::string &index) const;
 
     /****** Evaluators ******/
 
@@ -137,7 +153,7 @@ public:
 
     void Execute(Object &program);
 
-    void RuntimeError(const std::string & msg);
+    void RuntimeError(const std::string &msg);
 
     virtual ~Interpreter();
 };
