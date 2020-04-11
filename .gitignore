@@ -1,23 +1,30 @@
+# No object files
 obj/*
+
+# No executables
 *.out
+
+# No IDE files
 .vscode/*
+nbproject/*
+
+# No visualization files
 *.dot
-testsNoComments/*
 
+# No interpreter products
 alpha_GrammarRules.txt
-
-myronTest.alpha
-
 alpha_TokenList.txt
 
+# No unparse files
+myronTest.alpha
 AlphaUnparse.alpha
-
 alpha_unparse.alpha
 
-src/lexxer.cpp
+# No Bison/YACC/Flex products
+include/**/parser.h
+src/**/lexxer.cpp
+src/**/parser.cpp
+src/**/parser.output
 
-src/parser.cpp
-
-src/parser.h
-
-src/parser.output
+# Misc (Environment Speicific)
+testsNoComments/*

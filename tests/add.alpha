@@ -321,3 +321,35 @@ print(object_keys(table));
 t = [];
 t.p = print;
 t.p("\"Hacked\"");
+t.p(t.y);
+
+function f() {}
+print(f.t);
+print(f.$closure.t);
+
+f.t = 3;
+string = "$closure";
+//print(f[string].foo);
+//f[string].foo = 142;
+print(t);
+print("\n\n\n\n");
+
+m = [
+    { "a" : 1 },
+    { "b" : 2 },
+    { "c" : 3 },
+    { "d" : 4 },
+    { "e" : 5 }
+];
+
+print(object_keys(m));
+print(object_size(m));
+
+m.a = nil;
+m.d = nil;
+
+print(object_keys(m));
+print(object_size(m));
+
+//f.fgreigeoigje = 23;
+//print(f.fdswfewfe);

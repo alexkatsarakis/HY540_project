@@ -7,6 +7,7 @@ PROJECTDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 # Project structure
 ODIR=obj
 SRCDIR=src
+INCLDIR=include
 TESTDIR=tests
 
 # Name of the executable file
@@ -16,7 +17,10 @@ EXECUTABLE=interpreter.out
 SAMPLE_TEST=$(TESTDIR)/add.alpha
 
 # Specify the include directories
-INCLDIR=-I$(PROJECTDIR)$
+# Find all source files
+LINKER_DIRS:=$(shell cd $(INCLDIR); ls )
+LINKER_PREFIX = -I$(PROJECTDIR)${INCLDIR}
+LINKER= $(patsubst %,$(LINKER_PREFIX)/%,$(LINKER_DIRS))
 
 # Set compilation flags
 # -Wshadow: Warn whenever a local variable or type declaration shadows another
@@ -36,28 +40,28 @@ INCLDIR=-I$(PROJECTDIR)$
 CFLAGS=-O0 -g3 -std=c++14 -Wshadow -Wall -Wextra -Wold-style-cast -Wpedantic\
 -Wfloat-equal -Wpointer-arith -Wcast-qual -Wstrict-overflow=5 -Wwrite-strings\
 -Wswitch-default -Wswitch-enum -Wunreachable-code -Winit-self\
--Wno-unused-parameter\
-$(INCLDIR)
+-Wno-unused-parameter
 # -Wconversion
 
 # Find all source files
-SRCS:=$(shell cd $(SRCDIR); ls *.cpp)
+SRCS:=$(shell cd $(SRCDIR); find -name '*.cpp' -printf '%P\n' )
 # Get all object files by substituting .cpp with .o
 OBJECTS=$(SRCS:%.cpp=%.o)
 
 # Files related to Bison
 PARSER_NAME=parser
-PARSER_Y=$(SRCDIR)/$(PARSER_NAME).y
-PARSER_H=$(SRCDIR)/$(PARSER_NAME).h
-PARSER_CPP=$(SRCDIR)/$(PARSER_NAME).cpp
-PARSER_OUT=$(SRCDIR)/$(PARSER_NAME).output
-PARSER_O=$(ODIR)/$(PARSER_NAME).o
+PARSER_DIR=parser
+PARSER_Y=$(SRCDIR)/$(PARSER_DIR)/$(PARSER_NAME).y
+PARSER_H=$(INCLDIR)/$(PARSER_DIR)/$(PARSER_NAME).h
+PARSER_CPP=$(SRCDIR)/$(PARSER_DIR)/$(PARSER_NAME).cpp
+PARSER_OUT=$(SRCDIR)/$(PARSER_DIR)/$(PARSER_NAME).output
+PARSER_O=$(ODIR)/$(PARSER_DIR)/$(PARSER_NAME).o
 
 # Files related to Yacc
 LEXXER_NAME=lexxer
-LEXXER_L=$(SRCDIR)/$(LEXXER_NAME).l
-LEXXER_CPP=$(SRCDIR)/$(LEXXER_NAME).cpp
-LEXXER_O=$(ODIR)/$(LEXXER_NAME).o
+LEXXER_L=$(SRCDIR)/$(PARSER_DIR)/$(LEXXER_NAME).l
+LEXXER_CPP=$(SRCDIR)/$(PARSER_DIR)/$(LEXXER_NAME).cpp
+LEXXER_O=$(ODIR)/$(PARSER_DIR)/$(LEXXER_NAME).o
 
 # Get object file paths
 OBJ = $(patsubst %,$(ODIR)/%,$(OBJECTS))
@@ -73,8 +77,8 @@ run: $(EXECUTABLE)
 # Create object files of source code
 $(ODIR)/%.o: $(SRCDIR)/%.cpp
 	@echo Compiling $*
-	@mkdir -p $(ODIR)
-	$(CC) $(CFLAGS) -c -o $@ $<
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c -o $@ $< $(LINKER)
 
 # Create lexical analyzer
 $(LEXXER_CPP): $(LEXXER_L)
@@ -84,12 +88,12 @@ $(PARSER_CPP): $(PARSER_Y)
 	bison --yacc --defines=$(PARSER_H) -v --output=$@ $<
 
 $(LEXXER_O): $(LEXXER_CPP)
-	@mkdir -p $(ODIR)
-	$(CC) $^ -o $@ -c
+	@mkdir -p $(ODIR)/$(PARSER_DIR)
+	$(CC) $^ -o $@ -c $(LINKER)
 
 $(PARSER_O): $(PARSER_CPP)
-	@mkdir -p $(ODIR)
-	$(CC) -Wno-write-strings $^ -o $@ -c
+	@mkdir -p $(ODIR)/$(PARSER_DIR)
+	$(CC) -Wno-write-strings $^ -o $@ -c ${LINKER}
 
 $(EXECUTABLE): $(PARSER_O) $(LEXXER_O) $(OBJ)
 	@echo 'Creating interpreter'

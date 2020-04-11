@@ -6,7 +6,7 @@
 
 #include <string>
 #include <functional>
-#include "WriteField.h"
+#include "Symbol.h"
 
 class EvalDispatcher {
 
