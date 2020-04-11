@@ -44,7 +44,7 @@ CFLAGS=-O0 -g3 -std=c++14 -Wshadow -Wall -Wextra -Wold-style-cast -Wpedantic\
 # -Wconversion
 
 # Find all source files
-SRCS:=$(shell cd $(SRCDIR); find -name '*.cpp' )
+SRCS:=$(shell cd $(SRCDIR); find -name '*.cpp' -printf '%P\n' )
 # Get all object files by substituting .cpp with .o
 OBJECTS=$(SRCS:%.cpp=%.o)
 
@@ -68,8 +68,6 @@ OBJ = $(patsubst %,$(ODIR)/%,$(OBJECTS))
 
 #################################### RULES ####################################
 
-
-
 all: $(EXECUTABLE)
 	@echo 'Build successful'
 
@@ -79,7 +77,7 @@ run: $(EXECUTABLE)
 # Create object files of source code
 $(ODIR)/%.o: $(SRCDIR)/%.cpp
 	@echo Compiling $*
-	@mkdir -p $(ODIR)/$*
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $< $(LINKER)
 
 # Create lexical analyzer
