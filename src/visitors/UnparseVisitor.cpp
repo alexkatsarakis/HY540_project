@@ -569,6 +569,11 @@ void UnparseVisitor::VisitIdList(const Object &node) {
         UNPARSE_VALUE,
         Value(UnparseIdList(ids)));
 }
+void UnparseVisitor::VisitFormal(const Object &node) {
+    const_cast<Object &>(node).Set(
+        UNPARSE_VALUE,
+        Value(UnparseId(node[AST_TAG_ID]->ToString())));
+}
 void UnparseVisitor::VisitIf(const Object &node) {
     if (node.ElementExists(AST_TAG_ELSE_STMT))
         const_cast<Object &>(node).Set(

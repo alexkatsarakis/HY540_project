@@ -127,6 +127,8 @@ Object *ParseCommaIds(Object *rest, Object *id);
 
 Object *ParseIdList(Object *id, Object *rest);
 
+Object *ParseFormal(char *value);
+
 Object *ParseIfStmt(Object *cond, Object *stmt, Object *elseStmt = nullptr);
 
 Object *ParseWhileStmt(Object *cond, Object *stmt);

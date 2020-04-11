@@ -119,5 +119,6 @@
 
 #define AST_TAG_ID_LIST "id_list"
 #define AST_TAG_COMMA_IDS "comma_ids"
+#define AST_TAG_FORMAL "formal"
 
 #endif

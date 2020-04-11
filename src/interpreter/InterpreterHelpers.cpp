@@ -72,6 +72,7 @@ void Interpreter::InstallEvaluators(void) {
     INSTALL_WRITE_FUNC(AST_TAG_ID, EvalIdWrite);
     INSTALL_WRITE_FUNC(AST_TAG_DOUBLECOLON_ID, EvalGlobalIdWrite);
     INSTALL_WRITE_FUNC(AST_TAG_LOCAL_ID, EvalLocalIdWrite);
+    INSTALL_WRITE_FUNC(AST_TAG_FORMAL, EvalFormalWrite);
 }
 
 void Interpreter::RuntimeError(const std::string &msg) {
@@ -459,6 +460,20 @@ Symbol Interpreter::EvalLocalIdWrite(Object &node) {
     return Symbol(currentScope, symbol);
 }
 
+Symbol Interpreter::EvalFormalWrite(Object &node) {
+    ASSERT_TYPE(AST_TAG_FORMAL);
+
+    std::string name = node[AST_TAG_ID]->ToString();
+
+    if (IsLibFunc(name)) 
+        RuntimeError("Formal argument \"" + name + "\" shadows library function");
+    
+    if (LookupCurrentScope(name)) 
+        RuntimeError("Formal argument \"" + name + "\" already defined as a formal");
+    
+    return Symbol(currentScope, name);
+}
+
 Symbol Interpreter::EvalLvalueWrite(Object &node) {
     ASSERT_TYPE(AST_TAG_LVALUE);
     return EVAL_WRITE(AST_TAG_CHILD);
@@ -506,9 +521,19 @@ Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClos
     //formals - actuals mapping
     Object *formals = (*functionAst)[AST_TAG_FUNCTION_FORMALS]->ToObject_NoConst();
     for (register unsigned i = 0; i < formals->GetNumericSize(); ++i) {
-        std::string namedFormal = (*(*formals)[i]->ToObject())[AST_TAG_ID]->ToString();
-        const Value *actualValue = (*arguments)[i];
-        currentScope->Set(namedFormal, *actualValue);
+        Object& formal = *(*formals)[i]->ToObject_NoConst();
+        std::string id;
+        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN)
+            id = (*formal[AST_TAG_LVALUE]->ToObject())[AST_TAG_ID]->ToString();
+        else
+            id = formal[AST_TAG_ID]->ToString();
+        
+        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN && i >= arguments->GetNumericSize()){
+            EvalAssign(formal);
+        }else{
+            const Value *actualValue = (*arguments)[i];
+            currentScope->Set(id, *actualValue);
+        }
     }
 
     //function body evaluation

@@ -98,6 +98,7 @@ public:
     virtual void VisitTrue(const Object &node) override;
     virtual void VisitFalse(const Object &node) override;
     virtual void VisitIdList(const Object &node) override;
+    virtual void VisitFormal(const Object &node) override;
     virtual void VisitIf(const Object &node) override;
     virtual void VisitWhile(const Object &node) override;
     virtual void VisitFor(const Object &node) override;

@@ -1,5 +1,12 @@
-function f(x, y){
-    return x + y;
+y = 100;
+x = 100;
+function f(x = 10, y = 10){
+	print(x);
+	print(y);
+	return x + y;
 }
 
-print(f(1,2));
+f(1, 1);
+f(30);
+f(2, 2);
+print(y);

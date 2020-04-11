@@ -391,6 +391,10 @@ Object *ParseIdList(Object *id, Object *rest) {
     return ParseCompleteRecursion(AST_TAG_ID_LIST, id, rest);
 }
 
+Object *ParseFormal(char *value){
+    return ParseID(AST_TAG_FORMAL, value);
+}
+
 Object *ParseIfStmt(Object *cond, Object *stmt, Object *elseStmt) {
     assert(cond && cond->IsValid());
     assert(stmt && stmt->IsValid());
