@@ -62,8 +62,8 @@ private:
 
     void BlockEnter(void);
     void BlockExit(void);
-    const Value CallProgramFunction(Object *functionAst, Object *functionClosure, Object *arguments);
-    const Value CallLibraryFunction(const std::string &functionId, LibraryFunc functionLib, Object *arguments);
+    Value CallProgramFunction(Object *functionAst, Object *functionClosure, Object *arguments);
+    Value CallLibraryFunction(const std::string &functionId, LibraryFunc functionLib, Object *arguments);
 
     /****** Symbol Lookup ******/
 

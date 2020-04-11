@@ -50,12 +50,14 @@ void Interpreter::InstallEvaluators(void) {
     INSTALL(AST_TAG_CALL_SUFFIX, EvalCallSuffix);
     INSTALL(AST_TAG_CALL, EvalCall);
     INSTALL(AST_TAG_NORMAL_CALL, EvalNormalCall);
+    INSTALL(AST_TAG_METHOD_CALL, EvalMethodCall);
     INSTALL(AST_TAG_BLOCK, EvalBlock);
     INSTALL(AST_TAG_IF, EvalIf);
     INSTALL(AST_TAG_WHILE, EvalWhile);
     INSTALL(AST_TAG_FOR, EvalFor);
     INSTALL(AST_TAG_BREAK, EvalBreak);
     INSTALL(AST_TAG_CONTINUE, EvalContinue);
+    INSTALL(AST_TAG_RETURN, EvalReturn);
     INSTALL(AST_TAG_INDEXED_ELEM, EvalIndexedElem);
     INSTALL(AST_TAG_INDEXED, EvalIndexed);
     INSTALL(AST_TAG_OBJECT_DEF, EvalObjectDef);
@@ -493,7 +495,7 @@ void Interpreter::BlockExit(void) {
     }
 }
 
-const Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClosure, Object *arguments) {
+Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClosure, Object *arguments) {
     //CALL
     //new function scope list
     PushScopeSpace(functionClosure);
@@ -513,7 +515,7 @@ const Value Interpreter::CallProgramFunction(Object *functionAst, Object *functi
     dispatcher.Eval(*((*functionAst)[AST_TAG_STMT]->ToObject_NoConst()));
 
     //RETURN_VAL
-    Value result = retvalRegister;
+    Value result = Value(retvalRegister);
 
     //FUNC_EXIT
     //remove function scope
@@ -526,7 +528,7 @@ const Value Interpreter::CallProgramFunction(Object *functionAst, Object *functi
     return result;
 }
 
-const Value Interpreter::CallLibraryFunction(const std::string &functionId, LibraryFunc functionLib, Object *arguments) {
+Value Interpreter::CallLibraryFunction(const std::string &functionId, LibraryFunc functionLib, Object *arguments) {
     arguments->Set(RETVAL_RESERVED_FIELD, Value(NilTypeValue::Nil));
     assert(functionLib);
     functionLib(*arguments);

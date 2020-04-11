@@ -269,7 +269,6 @@ const Value Interpreter::EvalCall(Object &node) {
         Object *functionAst = functionVal.ToProgramFunctionAST_NoConst();
         Object *functionClosure = functionVal.ToProgramFunctionClosure_NoConst();
         result = CallProgramFunction(functionAst, functionClosure, arguments);
-
     } else if (functionVal.IsLibraryFunction()) {
         std::string functionId = functionVal.ToLibraryFunctionId();
         LibraryFunc functionLib = functionVal.ToLibraryFunction();
@@ -296,7 +295,7 @@ const Value Interpreter::EvalNormalCall(Object &node) {
 
 const Value Interpreter::EvalMethodCall(Object &node) {
     ASSERT_TYPE(AST_TAG_METHOD_CALL);
-    return NIL_VAL;
+    return EVAL_CHILD();
 }
 
 const Value Interpreter::EvalExpressionList(Object &node) {
