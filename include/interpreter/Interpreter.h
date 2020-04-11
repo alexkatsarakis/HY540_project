@@ -73,6 +73,8 @@ private:
     bool IsLibFunc(const std::string & symbol) const;
     bool IsReservedField(const std::string & index) const;
     const Value GetFromContext(Object * table, const Value & index, bool lookupFail);
+    const Value GetStringFromContext(Object * table, const Value & index, bool lookupFail);
+    const Value GetNumberFromContext(Object * table, const Value & index, bool lookupFail);
     Symbol ClosureSetElem(const Value & lvalue, const Value & index);
     Symbol ObjectSetElem(const Value & lvalue, const Value & index);
 

@@ -267,24 +267,34 @@ const Value Interpreter::GetIdName(const Object & node) {
     return *name;
 }
 
-/* TODO: Please refactor this mess */
-const Value Interpreter::GetFromContext(Object * table, const Value & index, bool lookupFail) {
-    if (index.IsString()) {
-        bool elementExits = table->ElementExists(index.ToString());
+const Value Interpreter::GetStringFromContext(Object * table, const Value & index, bool lookupFail) {
+    assert(table);
+    assert(index.IsString());
 
-        if (!elementExits && lookupFail) RuntimeError("Field \"" + index.ToString() + "\" does not exist");
-        else if(!elementExits) return Value(NilTypeValue::Nil);
-        else return *(*table)[index.ToString()];
+    std::string str = index.ToString();
 
-    } else if (index.IsNumber()) {
-        bool elementExits = table->ElementExists(index.ToNumber());
+    bool elementExists = table->ElementExists(str);
 
-        if (!elementExits && lookupFail) RuntimeError("Field " + std::to_string(index.ToNumber()) + " does not exist");
-        else if(!elementExits) return Value(NilTypeValue::Nil);
-        else return *(*table)[index.ToString()];
-    }
+    if (!elementExists && lookupFail) RuntimeError("Field \"" + str + "\" does not exist");
+    else if(!elementExists) return Value(NilTypeValue::Nil);
+    else return *(*table)[str];
 
-    assert(false);
+    assert(false);  /* Keep this to suppress -Wreturn-type warning */
+}
+
+const Value Interpreter::GetNumberFromContext(Object * table, const Value & index, bool lookupFail) {
+    assert(table);
+    assert(index.IsNumber());
+
+    double num = index.ToNumber();
+
+    bool elementExists = table->ElementExists(num);
+
+    if (!elementExists && lookupFail) RuntimeError("Field " + std::to_string(num) + " does not exist");
+    else if(!elementExists) return Value(NilTypeValue::Nil);
+    else return *(*table)[num];
+
+    assert(false);  /* Keep this to suppress -Wreturn-type warning */
 }
 
 const Value Interpreter::TableGetElem(const Value & lvalue, const Value & index) {
@@ -302,7 +312,8 @@ const Value Interpreter::TableGetElem(const Value & lvalue, const Value & index)
     if (lvalue.IsObject())table = lvalue.ToObject_NoConst();
     else table = lvalue.ToProgramFunctionClosure_NoConst();
 
-    return GetFromContext(table, index, lvalue.IsProgramFunction());
+    if (index.IsString()) return GetStringFromContext(table, index, lvalue.IsProgramFunction());
+    else return GetNumberFromContext(table, index, lvalue.IsProgramFunction());
 }
 
 Symbol Interpreter::ClosureSetElem(const Value & lvalue, const Value & index) {
