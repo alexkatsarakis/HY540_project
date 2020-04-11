@@ -41,8 +41,10 @@ const Value Interpreter::EvalAssign(Object &node) {
     assert(lvalue.IsValid());
     assert(rvalue.IsValid());
 
-    if (rvalue.IsNil()) RemoveFromContext(lvalue, rvalue);
-    else AssignToContext(lvalue, rvalue);
+    if (rvalue.IsNil())
+        RemoveFromContext(lvalue, rvalue);
+    else
+        AssignToContext(lvalue, rvalue);
 
     return rvalue;
 }
@@ -186,7 +188,7 @@ const Value Interpreter::EvalId(Object &node) {
      * If the symbol already exists in a scope, we get its value */
 
     std::string symbol = node[AST_TAG_ID]->ToString();
-    Object * scope = FindScope(symbol);
+    Object *scope = FindScope(symbol);
 
     if (!scope) {
         currentScope->Set(symbol, Value());
@@ -222,7 +224,7 @@ const Value Interpreter::EvalDoubleColon(Object &node) {
      * found: Runtime error */
 
     std::string symbol = node[AST_TAG_ID]->ToString();
-    const Value * val = LookupGlobalScope(symbol);
+    const Value *val = LookupGlobalScope(symbol);
     if (!val) RuntimeError("Global symbol \"" + symbol + "\" does not exist (Undefined Symbol)");
 
     return *val;
@@ -254,33 +256,32 @@ const Value Interpreter::EvalBracket(Object &node) {
 
 const Value Interpreter::EvalCall(Object &node) {
     ASSERT_TYPE(AST_TAG_CALL);
+    //FUNC_ENTER
+    const Value functionVal = EVAL(AST_TAG_FUNCTION);
+    Value argumentsVal = EVAL(AST_TAG_SUFFIX);    //actuals table
+    assert(functionVal.IsLibraryFunction() || functionVal.IsProgramFunction());
+    assert(argumentsVal.IsObject());
+    Object *arguments = argumentsVal.ToObject_NoConst();
+    retvalRegister.FromUndef();    //reset retVal register
+    Value result;
 
-    auto function = EVAL(AST_TAG_FUNCTION);
-    auto arguments = EVAL(AST_TAG_SUFFIX);
+    if (functionVal.IsProgramFunction()) {
+        Object *functionAst = functionVal.ToProgramFunctionAST_NoConst();
+        Object *functionClosure = functionVal.ToProgramFunctionClosure_NoConst();
+        result = CallProgramFunction(functionAst, functionClosure, arguments);
 
-    if (!function.IsLibraryFunction() && !function.IsProgramFunction()) RuntimeError("Cannot call " + function.GetTypeToString());
-    assert(arguments.IsObject());
-
-    if (function.IsLibraryFunction()) {
-        function.ToLibraryFunction()(*arguments.ToObject_NoConst());
-
-        if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter();
-
-        const Value * retval = (*arguments.ToObject())[RETVAL_RESERVED_FIELD];
-
-        /* TODISCUSS: Is this a good practice? */
-        if(!retval) retvalRegister.FromUndef();
-        else new (&retvalRegister) Value(*retval);
-
+    } else if (functionVal.IsLibraryFunction()) {
+        std::string functionId = functionVal.ToLibraryFunctionId();
+        LibraryFunc functionLib = functionVal.ToLibraryFunction();
+        result = CallLibraryFunction(functionId, functionLib, arguments);
     } else {
         assert(false);
     }
 
-    arguments.ToObject_NoConst()->Clear();
-    delete arguments.ToObject_NoConst();
-    arguments.FromUndef();
-
-    return retvalRegister;
+    arguments->Clear();
+    delete arguments;
+    argumentsVal.FromUndef();
+    return result;
 }
 
 const Value Interpreter::EvalCallSuffix(Object &node) {
@@ -325,9 +326,12 @@ const Value Interpreter::EvalIndexed(Object &node) {
 
         Object *o = v.ToObject_NoConst();
         o->Visit([table](const Value &key, const Value &val) {
-            if (key.IsString()) table->Set(key.ToString(), val);
-            else if (key.IsNumber()) table->Set(key.ToNumber(), val);
-            else assert(false);
+            if (key.IsString())
+                table->Set(key.ToString(), val);
+            else if (key.IsNumber())
+                table->Set(key.ToNumber(), val);
+            else
+                assert(false);
         });
 
         o->Clear();
@@ -345,9 +349,12 @@ const Value Interpreter::EvalIndexedElem(Object &node) {
     auto key = EVAL(AST_TAG_OBJECT_KEY);
     auto value = EVAL(AST_TAG_OBJECT_VALUE);
 
-    if (key.IsString()) pair->Set(key.ToString(), value);
-    else if (key.IsNumber()) pair->Set(key.ToNumber(), value);
-    else RuntimeError("Keys of objects can only be strings or numbers");
+    if (key.IsString())
+        pair->Set(key.ToString(), value);
+    else if (key.IsNumber())
+        pair->Set(key.ToNumber(), value);
+    else
+        RuntimeError("Keys of objects can only be strings or numbers");
 
     return pair;
 }
@@ -434,9 +441,9 @@ const Value Interpreter::EvalWhile(Object &node) {
     while (EVAL(AST_TAG_CONDITION)) {
         try {
             EVAL(AST_TAG_STMT);
+        } catch (const BreakException &e) { break; } catch (const ContinueException &e) {
+            continue;
         }
-        catch (const BreakException &e) { break; }
-        catch (const ContinueException &e) { continue; }
     }
 
     return NIL_VAL;
@@ -448,9 +455,9 @@ const Value Interpreter::EvalFor(Object &node) {
     for (EVAL(AST_TAG_FOR_PRE_ELIST); EVAL(AST_TAG_CONDITION); EVAL(AST_TAG_FOR_POST_ELIST)) {
         try {
             EVAL(AST_TAG_STMT);
+        } catch (const BreakException &e) { break; } catch (const ContinueException &e) {
+            continue;
         }
-        catch (const BreakException &e) { break; }
-        catch (const ContinueException &e) { continue; }
     }
 
     return NIL_VAL;
@@ -458,6 +465,7 @@ const Value Interpreter::EvalFor(Object &node) {
 
 const Value Interpreter::EvalReturn(Object &node) {
     ASSERT_TYPE(AST_TAG_RETURN);
+    if (node.ElementExists(AST_TAG_CHILD)) retvalRegister = EVAL_CHILD();
     return NIL_VAL;
 }
 
