@@ -17,10 +17,10 @@ EXECUTABLE=interpreter.out
 SAMPLE_TEST=$(TESTDIR)/add.alpha
 
 # Specify the include directories
+# Find all source files
+LINKER_DIRS:=$(shell cd $(INCLDIR); ls )
 LINKER_PREFIX = -I$(PROJECTDIR)${INCLDIR}
-LINKER= $(LINKER_PREFIX) $(LINKER_PREFIX)/parser $(LINKER_PREFIX)/object $(LINKER_PREFIX)/tree $(LINKER_PREFIX)/visitors
-PARSER_LINKER= $(LINKER_PREFIX)/parser $(LINKER_PREFIX)/object $(LINKER_PREFIX)/tree $(LINKER_PREFIX)/visitors
-LEXXER_LINKER= $(LINKER_PREFIX)/parser $(LINKER_PREFIX)/object
+LINKER= $(patsubst %,$(LINKER_PREFIX)/%,$(LINKER_DIRS))
 
 # Set compilation flags
 # -Wshadow: Warn whenever a local variable or type declaration shadows another
@@ -40,12 +40,11 @@ LEXXER_LINKER= $(LINKER_PREFIX)/parser $(LINKER_PREFIX)/object
 CFLAGS=-O0 -g3 -std=c++14 -Wshadow -Wall -Wextra -Wold-style-cast -Wpedantic\
 -Wfloat-equal -Wpointer-arith -Wcast-qual -Wstrict-overflow=5 -Wwrite-strings\
 -Wswitch-default -Wswitch-enum -Wunreachable-code -Winit-self\
--Wno-unused-parameter\
-$(LINKER)
+-Wno-unused-parameter
 # -Wconversion
 
 # Find all source files
-SRCS:=$(shell cd $(SRCDIR); ls *.cpp)
+SRCS:=$(shell cd $(SRCDIR); ls -R *.cpp)
 # Get all object files by substituting .cpp with .o
 OBJECTS=$(SRCS:%.cpp=%.o)
 
@@ -78,7 +77,7 @@ run: $(EXECUTABLE)
 $(ODIR)/%.o: $(SRCDIR)/%.cpp
 	@echo Compiling $*
 	@mkdir -p $(ODIR)
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $< $(LINKER)
 
 # Create lexical analyzer
 $(LEXXER_CPP): $(LEXXER_L)
@@ -89,11 +88,11 @@ $(PARSER_CPP): $(PARSER_Y)
 
 $(LEXXER_O): $(LEXXER_CPP)
 	@mkdir -p $(ODIR)
-	$(CC) $^ -o $@ -c $(LEXXER_LINKER)
+	$(CC) $^ -o $@ -c $(LINKER)
 
 $(PARSER_O): $(PARSER_CPP)
 	@mkdir -p $(ODIR)
-	$(CC) -Wno-write-strings $^ -o $@ -c ${PARSER_LINKER}
+	$(CC) -Wno-write-strings $^ -o $@ -c ${LINKER}
 
 $(EXECUTABLE): $(PARSER_O) $(LEXXER_O) $(OBJ)
 	@echo 'Creating interpreter'
