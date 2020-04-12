@@ -482,9 +482,10 @@ Symbol Interpreter::EvalLvalueWrite(Object &node) {
 }
 
 void Interpreter::BlockEnter(void) {
-    Object *scope = new Object();
+    /*  Object *scope = new Object();
     scope->Set(OUTER_RESERVED_FIELD, currentScope);
-    scope->IncreaseRefCounter();
+    scope->IncreaseRefCounter(); */
+    Object *scope = PushNested();
     currentScope = scope;
 }
 
@@ -500,9 +501,10 @@ void Interpreter::BlockExit(void) {
     }
 
     assert(currentScope->ElementExists(OUTER_RESERVED_FIELD));
-    tmp = currentScope;
+    /* tmp = currentScope;
     currentScope = (*currentScope)[OUTER_RESERVED_FIELD]->ToObject_NoConst();
-    tmp->DecreaseRefCounter();
+    tmp->DecreaseRefCounter(); */
+    PopScope();
 
     if (shouldSlice) {
         scope = new Object();
@@ -518,6 +520,7 @@ Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClos
     //Push function environment (TODO: Forbid shadowing, see EvalBlock)
     //Current scope is now the function environment
     currentScope = PushNested();
+    inFunctionScope = true;
 
     const Object &functionFormals = *((*functionAst)[AST_TAG_FUNCTION_FORMALS]->ToObject());
     for (register unsigned i = 0; i < functionFormals.GetNumericSize(); ++i) {
@@ -556,7 +559,7 @@ Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClos
 
     //FUNC_EXIT
     //Pop function environment
-    PopScope();
+    // PopScope(); //Done in BlockExit
 
     //Push scope space pointing to function closure
     PopScopeSpace();
@@ -582,6 +585,7 @@ Interpreter::Interpreter(void) {
 
     currentScope = globalScope;
     currentScope->IncreaseRefCounter();
+    inFunctionScope = false;
 
     InstallLibFuncs();
     InstallEvaluators();

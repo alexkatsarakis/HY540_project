@@ -361,7 +361,8 @@ const Value Interpreter::EvalIndexedElem(Object &node) {
 const Value Interpreter::EvalBlock(Object &node) {
     ASSERT_TYPE(AST_TAG_BLOCK);
 
-    BlockEnter();
+    if (!inFunctionScope) BlockEnter();
+    inFunctionScope = false;
     EVAL_CHILD();
     BlockExit();
 

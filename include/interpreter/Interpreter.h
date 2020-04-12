@@ -30,6 +30,7 @@ private:
 
     EvalDispatcher dispatcher;
     Value retvalRegister;
+    bool inFunctionScope;    // Do not  recreate scope on function body enter. We do not allow shadowing. See EvalCall, EvalBlock.
 
     Object *currentScope;
     Object *globalScope;
