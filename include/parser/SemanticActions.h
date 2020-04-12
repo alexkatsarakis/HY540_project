@@ -125,7 +125,11 @@ Object *ParseEmptyIdlist(void);
 
 Object *ParseCommaIds(Object *rest, Object *id);
 
+Object *ParseOptionals(Object *rest, Object* assignment);
+
 Object *ParseIdList(Object *id, Object *rest);
+
+Object *ParseMixedIdList(Object *required, Object *optionals);
 
 Object *ParseFormal(char *value);
 

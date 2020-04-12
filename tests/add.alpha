@@ -1,12 +1,16 @@
-y = 100;
-x = 100;
-function f(x = 10, y = 10){
-	print(x);
-	print(y);
-	return x + y;
-}
 
-f(1, 1);
-f(30);
-f(2, 2);
-print(y);
+function f(y = 10, x = 10){
+    return;
+}
+function g(x, y = 10, z = 10){
+
+}
+function h(x, y, z, z = 10){
+
+}
+function q(x, y, z, w){
+
+}
+function p(){
+
+}

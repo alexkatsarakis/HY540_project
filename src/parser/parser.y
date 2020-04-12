@@ -84,6 +84,7 @@
 %type <objectVal> const;
 %type <objectVal> idlist;
 %type <objectVal> comma_ids;
+%type <objectVal> optionals;
 %type <objectVal> ifstmt;
 %type <objectVal> whilestmt;
 %type <objectVal> forstmt;
@@ -286,14 +287,23 @@ const : NUMBER { $$ = ParseConst(ParseNumber($1)); }
       | FALSE  { $$ = ParseConst(ParseFalse()); }
       ;
 
-idlist : ID comma_ids               { $$ = ParseIdList(ParseFormal($1), $2); }
-       | ID ASSIGN expr comma_ids   { $$ = ParseIdList(ParseAssign(ParseFormal($1), $3), $4); }
-       | /* Empty */                { $$ = ParseEmptyIdlist(); }
+idlist : ID comma_ids                                   { $$ = ParseIdList(ParseFormal($1), $2); }
+       | ID ASSIGN expr optionals                       { $$ = ParseIdList(ParseAssign(ParseFormal($1), $3), $4); }
+       | ID comma_ids COMMA ID ASSIGN expr optionals    { 
+                                                          $$ = ParseMixedIdList(
+                                                                ParseIdList(ParseFormal($1), $2), 
+                                                                ParseIdList(ParseAssign(ParseFormal($4), $6), $7)
+                                                          ); 
+                                                        }
+       | /* empty */                                    { $$ = ParseEmptyIdlist(); }
        ;
 
-comma_ids : comma_ids COMMA ID              { $$ = ParseCommaIds($1, ParseFormal($3)); }
-          | comma_ids COMMA ID ASSIGN expr  { $$ = ParseCommaIds($1, ParseAssign(ParseFormal($3), $5)); }
-          | /* Empty */                     { $$ = ParseEmptyIdlist(); }
+comma_ids : comma_ids COMMA ID           { $$ = ParseCommaIds($1, ParseFormal($3)); }
+          | /* empty */                  { $$ = ParseEmptyIdlist(); }
+          ;
+
+optionals : optionals COMMA ID ASSIGN expr  { $$ = ParseOptionals($1, ParseAssign(ParseFormal($3), $5)); }
+          | /* empty */                     { $$ = ParseEmptyIdlist(); }
           ;
 
 ifstmt : IF LEFT_PAR expr RIGHT_PAR stmt %prec NO_ELSE { $$ = ParseIfStmt($3, $5); }

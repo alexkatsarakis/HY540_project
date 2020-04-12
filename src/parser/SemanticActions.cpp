@@ -94,6 +94,32 @@ Object *ParseCompleteRecursion(const char *type, Object *current, Object *rest) 
     return table;
 }
 
+Object *MergeNumerics(const char *newType, Object *table1, Object *table2) {
+    assert(newType);
+    assert(table1 && table1->IsValid());
+    assert(table2 && table2->IsValid());
+
+    auto table = new Object();
+    table->Set(AST_TAG_TYPE_KEY, newType);
+
+    for (register unsigned i = 0; i < table1->GetNumericSize(); ++i) {
+        Value v = *(*table1)[double(i)];
+        table->Set(double(i), v);
+    }
+
+    for (register unsigned i = 0; i < table2->GetNumericSize(); ++i) {
+        Value v = *(*table2)[double(i)];
+        table->Set(double(table1->GetNumericSize() + i), v);
+    }
+    assert(table->GetNumericSize() == table1->GetNumericSize() + table2->GetNumericSize());
+    /* TODO: Shoul we delete rest? */
+    table1->Clear(), delete table1;
+    table2->Clear(), delete table2;
+
+    assert(table->IsValid());
+    return table;
+}
+
 /*********** Parse Functions ***********/
 
 Object *ParseProgram(Object *stmts) {
@@ -387,8 +413,20 @@ Object *ParseCommaIds(Object *rest, Object *id) {
     return ParseRecursion(rest, id);
 }
 
+Object *ParseOptionals(Object *rest, Object* assignment){
+    return ParseRecursion(rest, assignment);
+}
+
 Object *ParseIdList(Object *id, Object *rest) {
     return ParseCompleteRecursion(AST_TAG_ID_LIST, id, rest);
+}
+
+Object *ParseMixedIdList(Object *required, Object *optionals) {
+    return MergeNumerics(AST_TAG_ID_LIST, required, optionals);
+}
+
+Object *ParseOptionalIdList(Object *assignment, Object *rest){
+    return ParseCompleteRecursion(AST_TAG_ID_LIST, assignment, rest);
 }
 
 Object *ParseFormal(char *value){
