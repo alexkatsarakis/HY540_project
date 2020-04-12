@@ -64,6 +64,7 @@ public:
         IMPL_VISIT(True)
         IMPL_VISIT(False)
         IMPL_VISIT(IdList)
+        IMPL_VISIT(Formal)
         IMPL_VISIT(If)
         IMPL_VISIT(While)
         IMPL_VISIT(For)

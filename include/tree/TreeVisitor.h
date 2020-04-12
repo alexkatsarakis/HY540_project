@@ -57,6 +57,7 @@ public:
     virtual void VisitTrue(const Object &node) = 0;
     virtual void VisitFalse(const Object &node) = 0;
     virtual void VisitIdList(const Object &node) = 0;
+    virtual void VisitFormal(const Object &node) = 0;
     virtual void VisitIf(const Object &node) = 0;
     virtual void VisitWhile(const Object &node) = 0;
     virtual void VisitFor(const Object &node) = 0;

@@ -423,6 +423,11 @@ const Value Interpreter::EvalIdList(Object &node) {
     return NIL_VAL;
 }
 
+const Value Interpreter::EvalFormal(Object &node){
+    assert(false);
+    return Value();
+}
+
 const Value Interpreter::EvalIf(Object &node) {
     ASSERT_TYPE(AST_TAG_IF);
 

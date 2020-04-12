@@ -46,8 +46,8 @@ private:
     Symbol EvalIdWrite(Object &node);
     Symbol EvalGlobalIdWrite(Object &node);
     Symbol EvalLocalIdWrite(Object &node);
+    Symbol EvalFormalWrite(Object &node);
     Symbol TableSetElem(const Value &lvalue, const Value &index);
-
     /****** Evaluation Helpers ******/
 
     const Value TableGetElem(const Value &lvalue, const Value &index);
@@ -147,6 +147,7 @@ private:
     const Value EvalTrue(Object &node);
     const Value EvalFalse(Object &node);
     const Value EvalIdList(Object &node);
+    const Value EvalFormal(Object &node);
     const Value EvalIf(Object &node);
     const Value EvalWhile(Object &node);
     const Value EvalFor(Object &node);

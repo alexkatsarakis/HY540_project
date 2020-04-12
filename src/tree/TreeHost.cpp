@@ -71,6 +71,7 @@ void TreeHost::InstallAllAcceptors(void) {
     InstallAcceptor(AST_TAG_TRUE, LAMBDA(AcceptTrue));
     InstallAcceptor(AST_TAG_FALSE, LAMBDA(AcceptFalse));
     InstallAcceptor(AST_TAG_ID_LIST, LAMBDA(AcceptIdList));
+    InstallAcceptor(AST_TAG_FORMAL, LAMBDA(AcceptFormal));
     InstallAcceptor(AST_TAG_IF, LAMBDA(AcceptIf));
     InstallAcceptor(AST_TAG_WHILE, LAMBDA(AcceptWhile));
     InstallAcceptor(AST_TAG_FOR, LAMBDA(AcceptFor));
@@ -522,6 +523,13 @@ void TreeHost::AcceptIdList(const Object &node) {
     for (unsigned i = 0; i < node.GetNumericSize(); ++i)
         Accept(*node[i]->ToObject());
     visitor->VisitIdList(node);
+}
+
+void TreeHost::AcceptFormal(const Object &node){
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL);
+    assert(node.ElementExists(AST_TAG_ID));
+
+    visitor->VisitFormal(node);
 }
 
 void TreeHost::AcceptIf(const Object &node) {

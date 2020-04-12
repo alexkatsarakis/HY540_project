@@ -68,6 +68,7 @@ private:
     const std::string UnparseTrue();
     const std::string UnparseFalse();
     const std::string UnparseIdList(const std::vector<std::string> &ids);
+    const std::string UnparseFormal(const std::string &value);
     const std::string UnparseIf(const std::string &cond, const std::string &stmt, const std::string &elseStmt = "");
     const std::string UnparseWhile(const std::string &expr, const std::string &stmt);
     const std::string UnparseFor(const std::string &elist1, const std::string &expr, const std::string &elist2, const std::string &stmt);
@@ -131,6 +132,7 @@ public:
     void VisitTrue(const Object &node) override;
     void VisitFalse(const Object &node) override;
     void VisitIdList(const Object &node) override;
+    void VisitFormal(const Object &node) override;
     void VisitIf(const Object &node) override;
     void VisitWhile(const Object &node) override;
     void VisitFor(const Object &node) override;

@@ -72,6 +72,7 @@ public:
     void AcceptTrue(const Object &node);
     void AcceptFalse(const Object &node);
     void AcceptIdList(const Object &node);
+    void AcceptFormal(const Object &node);
     void AcceptIf(const Object &node);
     void AcceptWhile(const Object &node);
     void AcceptFor(const Object &node);

@@ -286,12 +286,14 @@ const : NUMBER { $$ = ParseConst(ParseNumber($1)); }
       | FALSE  { $$ = ParseConst(ParseFalse()); }
       ;
 
-idlist : ID comma_ids { $$ = ParseIdList(ParseSimpleID($1), $2); }
-       | /* Empty */  { $$ = ParseEmptyIdlist(); }
+idlist : ID comma_ids               { $$ = ParseIdList(ParseFormal($1), $2); }
+       | ID ASSIGN expr comma_ids   { $$ = ParseIdList(ParseAssign(ParseFormal($1), $3), $4); }
+       | /* Empty */                { $$ = ParseEmptyIdlist(); }
        ;
 
-comma_ids : comma_ids COMMA ID { $$ = ParseCommaIds($1, ParseSimpleID($3)); }
-          | /* Empty */        { $$ = ParseEmptyIdlist(); }
+comma_ids : comma_ids COMMA ID              { $$ = ParseCommaIds($1, ParseFormal($3)); }
+          | comma_ids COMMA ID ASSIGN expr  { $$ = ParseCommaIds($1, ParseAssign(ParseFormal($3), $5)); }
+          | /* Empty */                     { $$ = ParseEmptyIdlist(); }
           ;
 
 ifstmt : IF LEFT_PAR expr RIGHT_PAR stmt %prec NO_ELSE { $$ = ParseIfStmt($3, $5); }

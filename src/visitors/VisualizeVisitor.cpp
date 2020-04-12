@@ -491,6 +491,12 @@ void VisualizeVisitor::VisitIdList(const Object &node) {
         VisitNormalIdlist(node);
 }
 
+void VisualizeVisitor::VisitFormal(const Object &node) {
+    eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL);
+    SaveOrphan();
+    CreateNewNode(node[AST_TAG_ID]->ToString());
+}
+
 void VisualizeVisitor::VisitIf(const Object &node) {
     CreateNewNode(AST_TAG_IF);
     LinkToPreviousNode();    // Stmt (either normal or else stmt)
