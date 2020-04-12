@@ -64,6 +64,7 @@ void Interpreter::InstallEvaluators(void) {
     INSTALL(AST_TAG_MEMBER, EvalMember);
     INSTALL(AST_TAG_DOT, EvalDot);
     INSTALL(AST_TAG_BRACKET, EvalBracket);
+    INSTALL(AST_TAG_FORMAL, EvalFormal);
     /* Evaluators used for write access */
     INSTALL_WRITE_FUNC(AST_TAG_LVALUE, EvalLvalueWrite);
     INSTALL_WRITE_FUNC(AST_TAG_MEMBER, EvalMemberWrite);
@@ -518,34 +519,40 @@ Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClos
     //Current scope is now the function environment
     currentScope = PushNested();
 
-    Value formalInfoTableVal = dispatcher.Eval(*((*functionAst)[AST_TAG_FUNCTION_FORMALS]->ToObject_NoConst()));
-    const Object &formalInfoTable = *(formalInfoTableVal.ToObject_NoConst());
-    //formals - actuals mapping
-    if (formalInfoTable.GetNumericSize() != arguments->GetNumericSize())
-        RuntimeError("Number of actuals(" + std::to_string(arguments->GetNumericSize()) + ") differs from number of formals(" + std::to_string(formalInfoTable.GetNumericSize()) + ")");
-    for (register unsigned i = 0; i < formalInfoTable.GetNumericSize(); ++i) {
-        // Object &formal = *(*formals)[i]->ToObject_NoConst();
-        // std::string id;
-        // if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN)
-        //     id = (*formal[AST_TAG_LVALUE]->ToObject())[AST_TAG_ID]->ToString();
-        // else
-        //     id = formal[AST_TAG_ID]->ToString();
+    const Object &functionFormals = *((*functionAst)[AST_TAG_FUNCTION_FORMALS]->ToObject());
+    for (register unsigned i = 0; i < functionFormals.GetNumericSize(); ++i) {
+        Object &child = *(functionFormals[i]->ToObject_NoConst());
+        assert((child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) || (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN));
+        std::string formalName;    //Name of formal, i is index of formal/actual
+        Value actualValue;         //Value of actual
+        if (i < arguments->GetNumericSize()) actualValue = (*(*arguments)[i]);
 
-        // if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN && i >= arguments->GetNumericSize()) {
-        //     EvalAssign(formal);
-        // } else {
-        std::string formalName = formalInfoTable[i]->ToString();
-        const Value &actualValue = ((*arguments)[i]);
+        if (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
+            assert(child.ElementExists(AST_TAG_ID));
+            formalName = child[AST_TAG_ID]->ToString();
+
+            assert(i < arguments->GetNumericSize());
+            assert(!actualValue.IsUndef());
+            dispatcher.Eval(child);
+        }
+        if (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
+            assert(child.ElementExists(AST_TAG_LVALUE));
+            const Object &formalNode = *(child[AST_TAG_LVALUE]->ToObject_NoConst());
+            assert(formalNode[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL);
+            assert(formalNode.ElementExists(AST_TAG_ID));
+            formalName = formalNode[AST_TAG_ID]->ToString();
+
+            if (actualValue.IsUndef()) actualValue = dispatcher.Eval(child);    //Get Value of optional expression
+            assert(!actualValue.IsUndef());
+        }
         currentScope->Set(formalName, actualValue);
-
-        // }
     }
 
     //function body evaluation
     dispatcher.Eval(*((*functionAst)[AST_TAG_STMT]->ToObject_NoConst()));
 
     //RETURN_VAL
-    Value result = Value(retvalRegister);
+    Value result = retvalRegister;
 
     //FUNC_EXIT
     //Pop function environment

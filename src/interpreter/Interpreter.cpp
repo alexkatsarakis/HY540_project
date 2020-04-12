@@ -420,30 +420,8 @@ const Value Interpreter::EvalFalse(Object &node) {
 
 const Value Interpreter::EvalIdList(Object &node) {
     ASSERT_TYPE(AST_TAG_ID_LIST);
-    Object *formalInfoTable = new Object();
-    for (register unsigned i = 0; i < node.GetNumericSize(); ++i) {
-        Object &child = *(node[i]->ToObject_NoConst());
-        assert(child.ElementExists(AST_TAG_FORMAL) || child.ElementExists(AST_TAG_ASSIGN));
-        Value childEvalValue;
-        std::string formalName;
-        if (child.ElementExists(AST_TAG_FORMAL)) {
-            childEvalValue = dispatcher.Eval(*(child[AST_TAG_FORMAL]->ToObject_NoConst()));
-            const Object &idNode = *(child[AST_TAG_FORMAL]->ToObject_NoConst());
-            assert(idNode.ElementExists(AST_TAG_ID));
-            formalName = idNode[AST_TAG_ID]->ToString();
-        }
-        if (child.ElementExists(AST_TAG_ASSIGN)) {
-            childEvalValue = dispatcher.Eval(*(child[AST_TAG_ASSIGN]->ToObject_NoConst()));
-            const Object &assignNode = *(child[AST_TAG_ASSIGN]->ToObject_NoConst());
-            assert(assignNode.ElementExists(AST_TAG_FORMAL));
-            const Object &idNode = *(assignNode[AST_TAG_FORMAL]->ToObject_NoConst());
-            assert(idNode.ElementExists(AST_TAG_ID));
-            formalName = idNode[AST_TAG_ID]->ToString();
-        }
-        formalInfoTable->Set(i, formalName);                 //map arithmetic ordering index -> formal Name
-        formalInfoTable->Set(formalName, childEvalValue);    //map formal Name -> optional expression Value
-    }
-    return Value(formalInfoTable);
+    assert(false);
+    return NIL_VAL
 }
 
 const Value Interpreter::EvalFormal(Object &node) {
@@ -451,8 +429,9 @@ const Value Interpreter::EvalFormal(Object &node) {
     std::string formalName = node[AST_TAG_ID]->ToString();
     if (IsLibFunc(formalName)) RuntimeError("Formal argument \"" + formalName + "\" shadows library function");
     if (LookupCurrentScope(formalName)) RuntimeError("Formal argument \"" + formalName + "\" already defined as a formal");
-    currentScope->Set(formalName, Value());
-    return Value();
+    const Value val = Value();
+    currentScope->Set(formalName, val);
+    return val;
 }
 
 const Value Interpreter::EvalIf(Object &node) {
