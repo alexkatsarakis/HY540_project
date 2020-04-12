@@ -50,12 +50,14 @@ void Interpreter::InstallEvaluators(void) {
     INSTALL(AST_TAG_CALL_SUFFIX, EvalCallSuffix);
     INSTALL(AST_TAG_CALL, EvalCall);
     INSTALL(AST_TAG_NORMAL_CALL, EvalNormalCall);
+    INSTALL(AST_TAG_METHOD_CALL, EvalMethodCall);
     INSTALL(AST_TAG_BLOCK, EvalBlock);
     INSTALL(AST_TAG_IF, EvalIf);
     INSTALL(AST_TAG_WHILE, EvalWhile);
     INSTALL(AST_TAG_FOR, EvalFor);
     INSTALL(AST_TAG_BREAK, EvalBreak);
     INSTALL(AST_TAG_CONTINUE, EvalContinue);
+    INSTALL(AST_TAG_RETURN, EvalReturn);
     INSTALL(AST_TAG_INDEXED_ELEM, EvalIndexedElem);
     INSTALL(AST_TAG_INDEXED, EvalIndexed);
     INSTALL(AST_TAG_OBJECT_DEF, EvalObjectDef);
@@ -78,7 +80,7 @@ void Interpreter::RuntimeError(const std::string &msg) {
     exit(EXIT_FAILURE);
 }
 
-bool Interpreter::IsReservedField(const std::string & index) const {
+bool Interpreter::IsReservedField(const std::string &index) const {
     return (index == OUTER_RESERVED_FIELD ||
             index == PREVIOUS_RESERVED_FIELD ||
             index == RETVAL_RESERVED_FIELD ||
@@ -110,9 +112,9 @@ const Value *Interpreter::LookupCurrentScope(const std::string &symbol) const {
 const Value *Interpreter::LookupGlobalScope(const std::string &symbol) const {
     assert(!symbol.empty());
 
-    Object * scope = currentScope;
-    const Value * value = LookupScope(scope, OUTER_RESERVED_FIELD);
-    while(value) {
+    Object *scope = currentScope;
+    const Value *value = LookupScope(scope, OUTER_RESERVED_FIELD);
+    while (value) {
         scope = value->ToObject_NoConst();
         value = LookupScope(scope, OUTER_RESERVED_FIELD);
     }
@@ -141,6 +143,36 @@ Object *Interpreter::FindScope(const std::string &symbol) const {
     }
 
     assert(false);
+}
+
+void Interpreter::PushScopeSpace(Object *scope) {
+    scope->IncreaseRefCounter();
+    scopeStack.push_front(scope);
+    scope->IncreaseRefCounter();
+    currentScope = scope;
+}
+void Interpreter::PopScopeSpace() {
+    Object *scope = scopeStack.front();
+    scopeStack.pop_front();
+    scope->DecreaseRefCounter();
+}
+void Interpreter::PushSlice() {
+    Object *scope = new Object();
+    scope->Set(PREVIOUS_RESERVED_FIELD, Value(currentScope));
+    scope->IncreaseRefCounter();
+    currentScope = scope;
+}
+void Interpreter::PushNested() {
+    Object *scope = new Object();
+    scope->Set(OUTER_RESERVED_FIELD, Value(currentScope));
+    scope->IncreaseRefCounter();
+    currentScope = scope;
+}
+
+void Interpreter::PopScope() {
+    Object *scope = currentScope;
+    currentScope = (*scope)[OUTER_RESERVED_FIELD]->ToObject_NoConst();
+    scope->DecreaseRefCounter();
 }
 
 bool Interpreter::IsLibFunc(const std::string &symbol) const {
@@ -206,25 +238,31 @@ bool Interpreter::ValuesAreEqual(const Value &v1, const Value &v2) {
         assert(false);
 }
 
-void Interpreter::AssignToContext(const Symbol & lvalue, const Value & rvalue) {
+void Interpreter::AssignToContext(const Symbol &lvalue, const Value &rvalue) {
     assert(lvalue.IsValid());
     assert(rvalue.IsValid());
 
-    if (lvalue.IsIndexString()) lvalue.GetContext()->Set(lvalue.ToString(), rvalue);
-    else if (lvalue.IsIndexNumber()) lvalue.GetContext()->Set(lvalue.ToNumber(), rvalue);
-    else assert(false);
+    if (lvalue.IsIndexString())
+        lvalue.GetContext()->Set(lvalue.ToString(), rvalue);
+    else if (lvalue.IsIndexNumber())
+        lvalue.GetContext()->Set(lvalue.ToNumber(), rvalue);
+    else
+        assert(false);
 
     if (rvalue.IsObject()) rvalue.ToObject_NoConst()->IncreaseRefCounter();
 }
 
-void Interpreter::RemoveFromContext(const Symbol & lvalue, const Value & rvalue) {
+void Interpreter::RemoveFromContext(const Symbol &lvalue, const Value &rvalue) {
     assert(lvalue.IsValid());
     assert(rvalue.IsValid());
 
-    const Value * old = nullptr;
-    if (lvalue.IsIndexString()) old = lvalue.GetContext()->GetAndRemove(lvalue.ToString());
-    else if (lvalue.IsIndexNumber()) old = lvalue.GetContext()->GetAndRemove(lvalue.ToNumber());
-    else assert(false);
+    const Value *old = nullptr;
+    if (lvalue.IsIndexString())
+        old = lvalue.GetContext()->GetAndRemove(lvalue.ToString());
+    else if (lvalue.IsIndexNumber())
+        old = lvalue.GetContext()->GetAndRemove(lvalue.ToNumber());
+    else
+        assert(false);
 
     if (old->IsObject()) old->ToObject_NoConst()->DecreaseRefCounter();
 }
@@ -235,10 +273,13 @@ const Value Interpreter::HandleAggregators(Object &node, MathOp op, bool returnC
     Symbol lvalue = EVAL_WRITE(AST_TAG_CHILD);
     assert(lvalue.IsValid());
 
-    const Value * value = nullptr;
-    if (lvalue.IsIndexString()) value = (*lvalue.GetContext())[lvalue.ToString()];
-    else if (lvalue.IsIndexNumber()) value = (*lvalue.GetContext())[lvalue.ToNumber()];
-    else assert(false);
+    const Value *value = nullptr;
+    if (lvalue.IsIndexString())
+        value = (*lvalue.GetContext())[lvalue.ToString()];
+    else if (lvalue.IsIndexNumber())
+        value = (*lvalue.GetContext())[lvalue.ToNumber()];
+    else
+        assert(false);
 
     if (!value->IsNumber()) RuntimeError("Increment/decrement operators can only be applied to numbers not to " + value->GetTypeToString());
 
@@ -252,9 +293,12 @@ const Value Interpreter::HandleAggregators(Object &node, MathOp op, bool returnC
     else
         assert(false);
 
-    if (lvalue.IsIndexString()) lvalue.GetContext()->Set(lvalue.ToString(), result);
-    else if(lvalue.IsIndexNumber()) lvalue.GetContext()->Set(lvalue.ToNumber(), result);
-    else assert(false);
+    if (lvalue.IsIndexString())
+        lvalue.GetContext()->Set(lvalue.ToString(), result);
+    else if (lvalue.IsIndexNumber())
+        lvalue.GetContext()->Set(lvalue.ToNumber(), result);
+    else
+        assert(false);
 
     if (returnChanged)
         return result;
@@ -262,14 +306,14 @@ const Value Interpreter::HandleAggregators(Object &node, MathOp op, bool returnC
         return number;
 }
 
-const Value Interpreter::GetIdName(const Object & node) {
+const Value Interpreter::GetIdName(const Object &node) {
     assert(node.ElementExists(AST_TAG_ID));
     auto name = node[AST_TAG_ID];
     assert(name->IsString());
     return *name;
 }
 
-const Value Interpreter::GetStringFromContext(Object * table, const Value & index, bool lookupFail) {
+const Value Interpreter::GetStringFromContext(Object *table, const Value &index, bool lookupFail) {
     assert(table);
     assert(index.IsString());
 
@@ -277,14 +321,17 @@ const Value Interpreter::GetStringFromContext(Object * table, const Value & inde
 
     bool elementExists = table->ElementExists(str);
 
-    if (!elementExists && lookupFail) RuntimeError("Field \"" + str + "\" does not exist");
-    else if(!elementExists) return Value(NilTypeValue::Nil);
-    else return *(*table)[str];
+    if (!elementExists && lookupFail)
+        RuntimeError("Field \"" + str + "\" does not exist");
+    else if (!elementExists)
+        return Value(NilTypeValue::Nil);
+    else
+        return *(*table)[str];
 
-    assert(false);  /* Keep this to suppress -Wreturn-type warning */
+    assert(false); /* Keep this to suppress -Wreturn-type warning */
 }
 
-const Value Interpreter::GetNumberFromContext(Object * table, const Value & index, bool lookupFail) {
+const Value Interpreter::GetNumberFromContext(Object *table, const Value &index, bool lookupFail) {
     assert(table);
     assert(index.IsNumber());
 
@@ -292,15 +339,17 @@ const Value Interpreter::GetNumberFromContext(Object * table, const Value & inde
 
     bool elementExists = table->ElementExists(num);
 
-    if (!elementExists && lookupFail) RuntimeError("Field " + std::to_string(num) + " does not exist");
-    else if(!elementExists) return Value(NilTypeValue::Nil);
-    else return *(*table)[num];
+    if (!elementExists && lookupFail)
+        RuntimeError("Field " + std::to_string(num) + " does not exist");
+    else if (!elementExists)
+        return Value(NilTypeValue::Nil);
+    else
+        return *(*table)[num];
 
-    assert(false);  /* Keep this to suppress -Wreturn-type warning */
+    assert(false); /* Keep this to suppress -Wreturn-type warning */
 }
 
-const Value Interpreter::TableGetElem(const Value & lvalue, const Value & index) {
-
+const Value Interpreter::TableGetElem(const Value &lvalue, const Value &index) {
     if (!lvalue.IsObject() && !lvalue.IsProgramFunction()) RuntimeError("Cannot get field \"" + (index.IsString() ? index.ToString() : std::to_string(index.ToNumber())) + "\" of something that is not an object");
     if (!index.IsString() && !index.IsNumber()) RuntimeError("Keys of objects can only be strings or numbers");
 
@@ -310,47 +359,61 @@ const Value Interpreter::TableGetElem(const Value & lvalue, const Value & index)
         index.ToString() == CLOSURE_RESERVED_FIELD)
         return lvalue;
 
-    Object * table = nullptr;
-    if (lvalue.IsObject())table = lvalue.ToObject_NoConst();
-    else table = lvalue.ToProgramFunctionClosure_NoConst();
+    Object *table = nullptr;
+    if (lvalue.IsObject())
+        table = lvalue.ToObject_NoConst();
+    else
+        table = lvalue.ToProgramFunctionClosure_NoConst();
 
-    if (index.IsString()) return GetStringFromContext(table, index, lvalue.IsProgramFunction());
-    else return GetNumberFromContext(table, index, lvalue.IsProgramFunction());
+    if (index.IsString())
+        return GetStringFromContext(table, index, lvalue.IsProgramFunction());
+    else
+        return GetNumberFromContext(table, index, lvalue.IsProgramFunction());
 }
 
-Symbol Interpreter::ClosureSetElem(const Value & lvalue, const Value & index) {
+Symbol Interpreter::ClosureSetElem(const Value &lvalue, const Value &index) {
     assert(lvalue.IsProgramFunction());
 
-    Object * table = nullptr;
+    Object *table = nullptr;
     table = lvalue.ToProgramFunctionClosure_NoConst();
 
-    if (index.IsNumber() && !table->ElementExists(index.ToNumber())) RuntimeError("Cannot set field. Field " + std::to_string(index.ToNumber()) + " does not exist");
-    else if (index.IsString() && !table->ElementExists(index.ToString())) RuntimeError("Cannot set field. Field " + index.ToString() + " does not exist");
+    if (index.IsNumber() && !table->ElementExists(index.ToNumber()))
+        RuntimeError("Cannot set field. Field " + std::to_string(index.ToNumber()) + " does not exist");
+    else if (index.IsString() && !table->ElementExists(index.ToString()))
+        RuntimeError("Cannot set field. Field " + index.ToString() + " does not exist");
 
-    if (index.IsNumber()) return Symbol(table, index.ToNumber());
-    else if (index.IsString()) return Symbol(table, index.ToString());
-    else assert(false);
+    if (index.IsNumber())
+        return Symbol(table, index.ToNumber());
+    else if (index.IsString())
+        return Symbol(table, index.ToString());
+    else
+        assert(false);
 }
 
-Symbol Interpreter::ObjectSetElem(const Value & lvalue, const Value & index) {
+Symbol Interpreter::ObjectSetElem(const Value &lvalue, const Value &index) {
     assert(lvalue.IsObject());
 
-    Object * table = lvalue.ToObject_NoConst();
+    Object *table = lvalue.ToObject_NoConst();
 
-    if (index.IsNumber()) return Symbol(table, index.ToNumber());
-    else if (index.IsString()) return Symbol(table, index.ToString());
-    else assert(false);
+    if (index.IsNumber())
+        return Symbol(table, index.ToNumber());
+    else if (index.IsString())
+        return Symbol(table, index.ToString());
+    else
+        assert(false);
 }
 
-Symbol Interpreter::TableSetElem(const Value & lvalue, const Value & index) {
+Symbol Interpreter::TableSetElem(const Value &lvalue, const Value &index) {
     if (!lvalue.IsObject() && !lvalue.IsProgramFunction())
         RuntimeError("Cannot set field \"" + (index.IsString() ? index.ToString() : std::to_string(index.ToNumber())) + "\" of something that is not an object");
 
     if (!index.IsString() && !index.IsNumber())
         RuntimeError("Keys of objects can only be strings or numbers");
 
-    if (lvalue.IsProgramFunction()) return ClosureSetElem(lvalue, index);
-    else return ObjectSetElem(lvalue, index);
+    if (lvalue.IsProgramFunction())
+        return ClosureSetElem(lvalue, index);
+    else
+        return ObjectSetElem(lvalue, index);
 }
 
 Symbol Interpreter::EvalMemberWrite(Object &node) {
@@ -358,7 +421,7 @@ Symbol Interpreter::EvalMemberWrite(Object &node) {
     return EVAL_WRITE(AST_TAG_CHILD);
 }
 
-Symbol Interpreter::EvalDotWrite(Object & node) {
+Symbol Interpreter::EvalDotWrite(Object &node) {
     ASSERT_TYPE(AST_TAG_DOT);
 
     auto lvalue = EVAL(AST_TAG_LVALUE);
@@ -366,24 +429,24 @@ Symbol Interpreter::EvalDotWrite(Object & node) {
     return TableSetElem(lvalue, index);
 }
 
-Symbol Interpreter::EvalBracketWrite(Object & node) {
+Symbol Interpreter::EvalBracketWrite(Object &node) {
     ASSERT_TYPE(AST_TAG_BRACKET);
     const Value lvalue = EVAL(AST_TAG_LVALUE);
     const Value index = EVAL(AST_TAG_EXPR);
     return TableSetElem(lvalue, index);
 }
 
-Symbol Interpreter::EvalIdWrite(Object & node) {
+Symbol Interpreter::EvalIdWrite(Object &node) {
     ASSERT_TYPE(AST_TAG_ID);
 
     std::string name = node[AST_TAG_ID]->ToString();
-    Object * scope = FindScope(name);
-    if(!scope) scope = currentScope;
+    Object *scope = FindScope(name);
+    if (!scope) scope = currentScope;
 
     return Symbol(scope, name);
 }
 
-Symbol Interpreter::EvalGlobalIdWrite(Object & node){
+Symbol Interpreter::EvalGlobalIdWrite(Object &node) {
     ASSERT_TYPE(AST_TAG_DOUBLECOLON_ID);
 
     std::string symbol = node[AST_TAG_ID]->ToString();
@@ -392,7 +455,7 @@ Symbol Interpreter::EvalGlobalIdWrite(Object & node){
     return Symbol(globalScope, symbol);
 }
 
-Symbol Interpreter::EvalLocalIdWrite(Object & node){
+Symbol Interpreter::EvalLocalIdWrite(Object &node) {
     ASSERT_TYPE(AST_TAG_LOCAL_ID);
     std::string symbol = node[AST_TAG_ID]->ToString();
     return Symbol(currentScope, symbol);
@@ -432,6 +495,48 @@ void Interpreter::BlockExit(void) {
         scope->IncreaseRefCounter();
         currentScope = scope;
     }
+}
+
+Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClosure, Object *arguments) {
+    //CALL
+    //new function scope list
+    PushScopeSpace(functionClosure);
+
+    //new function scope
+    PushNested();
+
+    //formals - actuals mapping
+    Object *formals = (*functionAst)[AST_TAG_FUNCTION_FORMALS]->ToObject_NoConst();
+    for (register unsigned i = 0; i < formals->GetNumericSize(); ++i) {
+        std::string namedFormal = (*(*formals)[i]->ToObject())[AST_TAG_ID]->ToString();
+        const Value *actualValue = (*arguments)[i];
+        currentScope->Set(namedFormal, *actualValue);
+    }
+
+    //function body evaluation
+    dispatcher.Eval(*((*functionAst)[AST_TAG_STMT]->ToObject_NoConst()));
+
+    //RETURN_VAL
+    Value result = Value(retvalRegister);
+
+    //FUNC_EXIT
+    //remove function scope
+    PopScope();
+
+    //remove function scope list
+    PopScopeSpace();
+    currentScope = functionClosure;
+
+    return result;
+}
+
+Value Interpreter::CallLibraryFunction(const std::string &functionId, LibraryFunc functionLib, Object *arguments) {
+    arguments->Set(RETVAL_RESERVED_FIELD, Value(NilTypeValue::Nil));
+    assert(functionLib);
+    functionLib(*arguments);
+    retvalRegister = (*arguments)[RETVAL_RESERVED_FIELD];    //do we need to modify retval?
+    return retvalRegister;
+    // if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter(); //need to know why
 }
 
 Interpreter::Interpreter(void) {
