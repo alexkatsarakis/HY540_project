@@ -30,6 +30,7 @@ private:
 
     EvalDispatcher dispatcher;
     Value retvalRegister;
+    bool inFunctionScope;    // Do not  recreate scope on function body enter. We do not allow shadowing. See EvalCall, EvalBlock.
 
     Object *currentScope;
     Object *globalScope;
@@ -75,9 +76,9 @@ private:
     /****** Environment Actions ******/
     void PushScopeSpace(Object *scope);
     void PopScopeSpace();
-    void PushSlice();
-    void PushNested();
-    void PopScope();
+    Object *PushSlice();
+    Object *PushNested();
+    Object *PopScope();
 
     /****** Start-up ******/
 

@@ -361,7 +361,8 @@ const Value Interpreter::EvalIndexedElem(Object &node) {
 const Value Interpreter::EvalBlock(Object &node) {
     ASSERT_TYPE(AST_TAG_BLOCK);
 
-    BlockEnter();
+    if (!inFunctionScope) BlockEnter();
+    inFunctionScope = false;
     EVAL_CHILD();
     BlockExit();
 
@@ -420,12 +421,18 @@ const Value Interpreter::EvalFalse(Object &node) {
 
 const Value Interpreter::EvalIdList(Object &node) {
     ASSERT_TYPE(AST_TAG_ID_LIST);
-    return NIL_VAL;
+    assert(false);
+    return NIL_VAL
 }
 
-const Value Interpreter::EvalFormal(Object &node){
-    assert(false);
-    return Value();
+const Value Interpreter::EvalFormal(Object &node) {
+    // assert(false);
+    std::string formalName = node[AST_TAG_ID]->ToString();
+    if (IsLibFunc(formalName)) RuntimeError("Formal argument \"" + formalName + "\" shadows library function");
+    if (LookupCurrentScope(formalName)) RuntimeError("Formal argument \"" + formalName + "\" already defined as a formal");
+    const Value val = Value();
+    currentScope->Set(formalName, val);
+    return val;
 }
 
 const Value Interpreter::EvalIf(Object &node) {
