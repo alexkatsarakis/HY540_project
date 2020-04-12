@@ -77,7 +77,8 @@ void Interpreter::InstallEvaluators(void) {
 
 void Interpreter::RuntimeError(const std::string &msg) {
     std::cerr << "\033[31;1m"
-              << "Runtime Error: " << "\033[0m" << msg  << std::endl;
+              << "Runtime Error: "
+              << "\033[0m" << msg << std::endl;
     exit(EXIT_FAILURE);
 }
 
@@ -150,30 +151,30 @@ void Interpreter::PushScopeSpace(Object *scope) {
     scope->IncreaseRefCounter();
     scopeStack.push_front(scope);
     scope->IncreaseRefCounter();
-    currentScope = scope;
 }
 void Interpreter::PopScopeSpace() {
     Object *scope = scopeStack.front();
     scopeStack.pop_front();
     scope->DecreaseRefCounter();
 }
-void Interpreter::PushSlice() {
+Object *Interpreter::PushSlice() {
     Object *scope = new Object();
     scope->Set(PREVIOUS_RESERVED_FIELD, Value(currentScope));
     scope->IncreaseRefCounter();
-    currentScope = scope;
+    return scope;
 }
-void Interpreter::PushNested() {
+Object *Interpreter::PushNested() {
     Object *scope = new Object();
     scope->Set(OUTER_RESERVED_FIELD, Value(currentScope));
     scope->IncreaseRefCounter();
-    currentScope = scope;
+    return scope;
 }
 
-void Interpreter::PopScope() {
+Object *Interpreter::PopScope() {
     Object *scope = currentScope;
     currentScope = (*scope)[OUTER_RESERVED_FIELD]->ToObject_NoConst();
     scope->DecreaseRefCounter();
+    return scope;
 }
 
 bool Interpreter::IsLibFunc(const std::string &symbol) const {
@@ -233,9 +234,9 @@ bool Interpreter::ValuesAreEqual(const Value &v1, const Value &v2) {
         return v1.ToLibraryFunction() == v2.ToLibraryFunction();
     else if (v1.IsNativePtr())
         return v1.ToNativePtr() == v2.ToNativePtr();
-    else if (v1.IsObject()){
+    else if (v1.IsObject()) {
         return v1.ToObject() == v2.ToObject();
-    }else
+    } else
         assert(false);
 }
 
@@ -465,15 +466,13 @@ Symbol Interpreter::EvalLocalIdWrite(Object &node) {
 Symbol Interpreter::EvalFormalWrite(Object &node) {
     ASSERT_TYPE(AST_TAG_FORMAL);
 
-    std::string name = node[AST_TAG_ID]->ToString();
+    std::string formalName = node[AST_TAG_ID]->ToString();
 
-    if (IsLibFunc(name)) 
-        RuntimeError("Formal argument \"" + name + "\" shadows library function");
-    
-    if (LookupCurrentScope(name)) 
-        RuntimeError("Formal argument \"" + name + "\" already defined as a formal");
-    
-    return Symbol(currentScope, name);
+    if (IsLibFunc(formalName)) RuntimeError("Formal argument \"" + formalName + "\" shadows library function");
+
+    if (LookupCurrentScope(formalName)) RuntimeError("Formal argument \"" + formalName + "\" already defined as a formal");
+
+    return Symbol(currentScope, formalName);
 }
 
 Symbol Interpreter::EvalLvalueWrite(Object &node) {
@@ -513,29 +512,33 @@ void Interpreter::BlockExit(void) {
 }
 
 Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClosure, Object *arguments) {
-    //CALL
-    //new function scope list
+    //Push scope space pointing to function closure
     PushScopeSpace(functionClosure);
+    //Push function environment (TODO: Forbid shadowing, see EvalBlock)
+    //Current scope is now the function environment
+    currentScope = PushNested();
 
-    //new function scope
-    PushNested();
-
+    Value formalInfoTableVal = dispatcher.Eval(*((*functionAst)[AST_TAG_FUNCTION_FORMALS]->ToObject_NoConst()));
+    const Object &formalInfoTable = *(formalInfoTableVal.ToObject_NoConst());
     //formals - actuals mapping
-    Object *formals = (*functionAst)[AST_TAG_FUNCTION_FORMALS]->ToObject_NoConst();
-    for (register unsigned i = 0; i < formals->GetNumericSize(); ++i) {
-        Object& formal = *(*formals)[i]->ToObject_NoConst();
-        std::string id;
-        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN)
-            id = (*formal[AST_TAG_LVALUE]->ToObject())[AST_TAG_ID]->ToString();
-        else
-            id = formal[AST_TAG_ID]->ToString();
-        
-        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN && i >= arguments->GetNumericSize()){
-            EvalAssign(formal);
-        }else{
-            const Value *actualValue = (*arguments)[i];
-            currentScope->Set(id, *actualValue);
-        }
+    if (formalInfoTable.GetNumericSize() != arguments->GetNumericSize())
+        RuntimeError("Number of actuals(" + std::to_string(arguments->GetNumericSize()) + ") differs from number of formals(" + std::to_string(formalInfoTable.GetNumericSize()) + ")");
+    for (register unsigned i = 0; i < formalInfoTable.GetNumericSize(); ++i) {
+        // Object &formal = *(*formals)[i]->ToObject_NoConst();
+        // std::string id;
+        // if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN)
+        //     id = (*formal[AST_TAG_LVALUE]->ToObject())[AST_TAG_ID]->ToString();
+        // else
+        //     id = formal[AST_TAG_ID]->ToString();
+
+        // if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN && i >= arguments->GetNumericSize()) {
+        //     EvalAssign(formal);
+        // } else {
+        std::string formalName = formalInfoTable[i]->ToString();
+        const Value &actualValue = ((*arguments)[i]);
+        currentScope->Set(formalName, actualValue);
+
+        // }
     }
 
     //function body evaluation
@@ -545,11 +548,12 @@ Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClos
     Value result = Value(retvalRegister);
 
     //FUNC_EXIT
-    //remove function scope
+    //Pop function environment
     PopScope();
 
-    //remove function scope list
+    //Push scope space pointing to function closure
     PopScopeSpace();
+    //Current scope is now the function closure
     currentScope = functionClosure;
 
     return result;

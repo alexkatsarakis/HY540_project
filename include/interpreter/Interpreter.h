@@ -75,9 +75,9 @@ private:
     /****** Environment Actions ******/
     void PushScopeSpace(Object *scope);
     void PopScopeSpace();
-    void PushSlice();
-    void PushNested();
-    void PopScope();
+    Object *PushSlice();
+    Object *PushNested();
+    Object *PopScope();
 
     /****** Start-up ******/
 
