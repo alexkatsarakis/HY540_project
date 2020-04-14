@@ -9,7 +9,7 @@ Value::Data::Data() { this->Clear(); }
 
 void Value::Data::Clear(void) {
     std::memset(this, 0, sizeof(Data));
-    assert(this->objectVal == nullptr);
+    assert(this->stringVal == nullptr);
 }
 
 Value::Data::~Data() { this->Clear(); }
@@ -68,7 +68,7 @@ Value::Value(const char *str) : Value() { FromString(str); }
 
 Value::Value(const std::string &str) : Value() { FromString(str); }
 
-Value::Value(Object *obj) : Value() { FromObject(obj); }
+Value::Value(Object *obj, bool closure) : Value() { FromObject(obj, closure); }
 
 Value::Value(Object *ast, Object *closure) : Value() { FromProgramFunction(ast, closure); }
 
@@ -114,7 +114,7 @@ bool Value::IsValid(void) const {
         type == Type::NumberType ||
         type == Type::BooleanType ||
         (type == Type::StringType && data.stringVal) ||
-        (type == Type::ObjectType && data.objectVal) ||
+        (type == Type::ObjectType && data.objectVal.object) ||
         (type == Type::ProgramFunctionType && data.programFunctionVal.ast && data.programFunctionVal.closure) ||
         (type == Type::LibraryFunctionType && data.libraryFunctionVal.function && data.libraryFunctionVal.id) ||
         (type == Type::NativePtrType && data.nativePtrVal.ptr && data.nativePtrVal.typeId) ||
@@ -178,7 +178,7 @@ void Value::FromUndef(void) {
     data.Clear();
 
     assert(IsUndef());
-    assert(data.objectVal == nullptr);
+    assert(data.stringVal == nullptr);
     assert(IsValid());
 }
 
@@ -215,13 +215,14 @@ void Value::FromString(const std::string &str) {
     assert(IsValid());
 }
 
-void Value::FromObject(Object *obj) {
+void Value::FromObject(Object *obj, bool closure) {
     assert(obj);
     assert(IsValid());
     FreeMemory();
 
     type = Type::ObjectType;
-    data.objectVal = obj;
+    data.objectVal.object = obj;
+    data.objectVal.isClosure = closure;
 
     assert(IsObject());
     assert(IsValid());
@@ -277,7 +278,7 @@ void Value::FromNil(void) {
     data.Clear();
 
     assert(IsNil());
-    assert(data.objectVal == nullptr);
+    assert(data.stringVal == nullptr);
     assert(IsValid());
 }
 
@@ -319,7 +320,7 @@ std::string Value::ToString(void) const {
 
 const Object *Value::ToObject(void) const {
     assert(IsObject());
-    return data.objectVal;
+    return data.objectVal.object;
 }
 
 const Object *Value::ToProgramFunctionAST(void) const {
@@ -362,6 +363,11 @@ void *Value::ToNativePtr(void) const {
 std::string Value::ToNativeTypeId(void) const {
     assert(IsNativePtr());
     return std::string(data.nativePtrVal.typeId);
+}
+
+bool Value::IsObjectClosure(void) const {
+    assert(IsObject());
+    return data.objectVal.isClosure;
 }
 
 /****** Replicator ******/

@@ -103,7 +103,7 @@ $(PARSER_O): $(PARSER_CPP)
 	@$(CC) -Wno-write-strings $^ -o $@ -c ${LINKER}
 
 $(EXECUTABLE): $(PARSER_O) $(LEXXER_O) $(OBJ)
-	@echo 'Creating interpreter'
+	@echo 'Building interpreter'
 	@$(CC) $(CFLAGS) $^ -o $@
 	@echo ''
 

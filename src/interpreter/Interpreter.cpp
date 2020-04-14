@@ -41,6 +41,11 @@ const Value Interpreter::EvalAssign(Object &node) {
     assert(lvalue.IsValid());
     assert(rvalue.IsValid());
 
+    if ( lvalue.IsIndexString() &&
+         IsLibFunc(lvalue.ToString()) &&
+         IsGlobalScope(lvalue.GetContext()))
+         RuntimeError("Cannot modify library function \"" + lvalue.ToString() + "\".");
+
     if (rvalue.IsNil())
         RemoveFromContext(lvalue, rvalue);
     else
@@ -259,6 +264,10 @@ const Value Interpreter::EvalCall(Object &node) {
     //FUNC_ENTER
     const Value functionVal = EVAL(AST_TAG_FUNCTION);
     Value argumentsVal = EVAL(AST_TAG_SUFFIX);    //actuals table
+
+    if (!functionVal.IsLibraryFunction() && !functionVal.IsProgramFunction())
+        RuntimeError("Cannot call something that is not a function");
+
     assert(functionVal.IsLibraryFunction() || functionVal.IsProgramFunction());
     assert(argumentsVal.IsObject());
     Object *arguments = argumentsVal.ToObject_NoConst();

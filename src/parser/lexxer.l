@@ -194,7 +194,10 @@ dollar_id       $[a-zA-Z][a-zA-Z_0-9]*
   return EOF;
 }
 
-. { std::cerr << "Undefined symbol [" << yytext << "] at line " << yylineno << std::endl; }
+. {
+  std::cerr << "\033[31;1mSyntax Error:\033[0m " << "Undefined symbol [" << yytext << "] at line " << yylineno << std::endl;
+  exit(EXIT_FAILURE);
+}
 
 <<EOF>> {
   /* If the stack is not empty there is a block comment that was opened but not

@@ -72,6 +72,8 @@ private:
     const Value *LookupCurrentScope(const std::string &symbol) const;
     const Value *LookupGlobalScope(const std::string &symbol) const;
     Object *FindScope(const std::string &symbol) const;
+    Object *GetGlobalScope(void) const;
+    bool IsGlobalScope(Object *scope) const;
 
     /****** Environment Actions ******/
     void PushScopeSpace(Object *scope);
@@ -161,7 +163,7 @@ public:
 
     void Execute(Object &program);
 
-    void RuntimeError(const std::string &msg);
+    static void RuntimeError(const std::string &msg);
 
     virtual ~Interpreter();
 };

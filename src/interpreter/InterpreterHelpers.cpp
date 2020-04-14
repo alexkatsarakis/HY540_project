@@ -112,16 +112,37 @@ const Value *Interpreter::LookupCurrentScope(const std::string &symbol) const {
     return LookupScope(currentScope, symbol);
 }
 
-const Value *Interpreter::LookupGlobalScope(const std::string &symbol) const {
-    assert(!symbol.empty());
+bool Interpreter::IsGlobalScope(Object * scope) const {
+    assert(scope);
 
-    Object *scope = currentScope;
+    /* Move backwards towards the first slice of the scope */
+    while (scope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
+        scope = (*scope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
+    }
+
+    /* The first slice of the global scope should contain library functions */
+    return (!scope->ElementExists(OUTER_RESERVED_FIELD) &&
+            scope->ElementExists("print") &&
+            (*scope)["print"]->IsLibraryFunction());
+}
+
+Object * Interpreter::GetGlobalScope(void) const {
+    assert(currentScope);
+
+    Object * scope = currentScope;
     const Value *value = LookupScope(scope, OUTER_RESERVED_FIELD);
     while (value) {
         scope = value->ToObject_NoConst();
         value = LookupScope(scope, OUTER_RESERVED_FIELD);
     }
 
+    return scope;
+}
+
+const Value *Interpreter::LookupGlobalScope(const std::string &symbol) const {
+    assert(!symbol.empty());
+
+    Object *scope = GetGlobalScope();
     return LookupScope(scope, symbol);
 }
 
@@ -189,6 +210,10 @@ const Value Interpreter::EvalMath(Object &node, MathOp op) {
     auto op1 = EVAL(AST_TAG_FIRST_EXPR);
     auto op2 = EVAL(AST_TAG_SECOND_EXPR);
 
+    /* Special case for string concatenation */
+    if (op1.IsString() && op2.IsString() && op == MathOp::Plus)
+        return (op1.ToString() + op2.ToString());
+
     if (!op1.IsNumber()) RuntimeError("First operand is not a number in an arithmetic operation");
     if (!op2.IsNumber()) RuntimeError("Second operand is not a number in an arithmetic operation");
 
@@ -245,10 +270,19 @@ void Interpreter::AssignToContext(const Symbol &lvalue, const Value &rvalue) {
     assert(lvalue.IsValid());
     assert(rvalue.IsValid());
 
-    if (lvalue.IsIndexString())
-        lvalue.GetContext()->Set(lvalue.ToString(), rvalue);
-    else if (lvalue.IsIndexNumber())
+    /* TODO: Please refactor this mess */
+    if (lvalue.IsIndexString()) {
+        Object * context = lvalue.GetContext();
+        const Value * v = (*context)[lvalue.ToString()];
+        if (v && v->IsObject()) v->ToObject_NoConst()->DecreaseRefCounter();
+        context->Set(lvalue.ToString(), rvalue);
+    }
+    else if (lvalue.IsIndexNumber()) {
+        Object * context = lvalue.GetContext();
+        const Value * v = (*context)[lvalue.ToNumber()];
+        if (v && v->IsObject()) v->ToObject_NoConst()->DecreaseRefCounter();
         lvalue.GetContext()->Set(lvalue.ToNumber(), rvalue);
+    }
     else
         assert(false);
 
@@ -267,7 +301,7 @@ void Interpreter::RemoveFromContext(const Symbol &lvalue, const Value &rvalue) {
     else
         assert(false);
 
-    if (old->IsObject()) old->ToObject_NoConst()->DecreaseRefCounter();
+    if (old && old->IsObject()) old->ToObject_NoConst()->DecreaseRefCounter();
 }
 
 const Value Interpreter::HandleAggregators(Object &node, MathOp op, bool returnChanged) {
@@ -327,7 +361,7 @@ const Value Interpreter::GetStringFromContext(Object *table, const Value &index,
     if (!elementExists && lookupFail)
         RuntimeError("Field \"" + str + "\" does not exist");
     else if (!elementExists)
-        return Value(NilTypeValue::Nil);
+        return Value();
     else
         return *(*table)[str];
 
@@ -345,7 +379,7 @@ const Value Interpreter::GetNumberFromContext(Object *table, const Value &index,
     if (!elementExists && lookupFail)
         RuntimeError("Field " + std::to_string(num) + " does not exist");
     else if (!elementExists)
-        return Value(NilTypeValue::Nil);
+        return Value();
     else
         return *(*table)[num];
 
@@ -356,11 +390,9 @@ const Value Interpreter::TableGetElem(const Value &lvalue, const Value &index) {
     if (!lvalue.IsObject() && !lvalue.IsProgramFunction()) RuntimeError("Cannot get field \"" + (index.IsString() ? index.ToString() : std::to_string(index.ToNumber())) + "\" of something that is not an object");
     if (!index.IsString() && !index.IsNumber()) RuntimeError("Keys of objects can only be strings or numbers");
 
-    /* f.$closure.x is the same as f.x so that means that f.$closure is the same
-     * as f */
     if (lvalue.IsProgramFunction() &&
         index.ToString() == CLOSURE_RESERVED_FIELD)
-        return lvalue;
+            return Value(lvalue.ToProgramFunctionClosure_NoConst(), true);
 
     Object *table = nullptr;
     if (lvalue.IsObject())
@@ -368,22 +400,25 @@ const Value Interpreter::TableGetElem(const Value &lvalue, const Value &index) {
     else
         table = lvalue.ToProgramFunctionClosure_NoConst();
 
+    bool shouldFail = false;
+    if (lvalue.IsProgramFunction()) shouldFail = true;
+    else if (lvalue.IsObject() && lvalue.IsObjectClosure()) shouldFail = true;
+
     if (index.IsString())
-        return GetStringFromContext(table, index, lvalue.IsProgramFunction());
+        return GetStringFromContext(table, index, shouldFail);
     else
-        return GetNumberFromContext(table, index, lvalue.IsProgramFunction());
+        return GetNumberFromContext(table, index, shouldFail);
 }
 
 Symbol Interpreter::ClosureSetElem(const Value &lvalue, const Value &index) {
-    assert(lvalue.IsProgramFunction());
+    assert(lvalue.IsObject());
 
-    Object *table = nullptr;
-    table = lvalue.ToProgramFunctionClosure_NoConst();
+    Object *table = lvalue.ToObject_NoConst();
 
     if (index.IsNumber() && !table->ElementExists(index.ToNumber()))
-        RuntimeError("Cannot set field. Field " + std::to_string(index.ToNumber()) + " does not exist");
+        RuntimeError("Cannot set field. Field \"" + std::to_string(index.ToNumber()) + "\" does not exist in closure.");
     else if (index.IsString() && !table->ElementExists(index.ToString()))
-        RuntimeError("Cannot set field. Field " + index.ToString() + " does not exist");
+        RuntimeError("Cannot set field. Field \"" + index.ToString() + "\" does not exist in closure.");
 
     if (index.IsNumber())
         return Symbol(table, index.ToNumber());
@@ -413,7 +448,15 @@ Symbol Interpreter::TableSetElem(const Value &lvalue, const Value &index) {
     if (!index.IsString() && !index.IsNumber())
         RuntimeError("Keys of objects can only be strings or numbers");
 
+    /* The 3 cases of a TABLESETELEM instruction are:
+     *
+     * func.x = 0;
+     * func.$closure.x = 0;
+     * table.x = ;
+     */
     if (lvalue.IsProgramFunction())
+        return ClosureSetElem(lvalue.ToProgramFunctionClosure_NoConst(), index);
+    else if (lvalue.IsObjectClosure())
         return ClosureSetElem(lvalue, index);
     else
         return ObjectSetElem(lvalue, index);
@@ -455,7 +498,7 @@ Symbol Interpreter::EvalGlobalIdWrite(Object &node) {
     std::string symbol = node[AST_TAG_ID]->ToString();
     if (!LookupGlobalScope(symbol)) RuntimeError("Global symbol \"" + symbol + "\" does not exist (Undefined Symbol)");
 
-    return Symbol(globalScope, symbol);
+    return Symbol(GetGlobalScope(), symbol);
 }
 
 Symbol Interpreter::EvalLocalIdWrite(Object &node) {
@@ -573,7 +616,7 @@ Value Interpreter::CallLibraryFunction(const std::string &functionId, LibraryFun
     arguments->Set(RETVAL_RESERVED_FIELD, Value(NilTypeValue::Nil));
     assert(functionLib);
     functionLib(*arguments);
-    retvalRegister = (*arguments)[RETVAL_RESERVED_FIELD];    //do we need to modify retval?
+    retvalRegister = *(*arguments)[RETVAL_RESERVED_FIELD];    //do we need to modify retval?
     return retvalRegister;
     // if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter(); //need to know why
 }

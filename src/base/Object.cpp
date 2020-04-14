@@ -79,7 +79,10 @@ void Object::IncreaseRefCounter(void) { refCounter += 1; }
 void Object::DecreaseRefCounter(void) {
     assert(refCounter > 0);
     refCounter -= 1;
-    if (refCounter == 0) Clear();
+    if (refCounter == 0) {
+        Clear();
+        delete this;
+    }
 }
 
 const Value *Object::GetAndRemove(double key) {

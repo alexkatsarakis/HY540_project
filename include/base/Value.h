@@ -43,7 +43,7 @@ public:
 
     Value(const std::string &str);
 
-    Value(Object *obj);
+    Value(Object *obj, bool closure = false);
 
     Value(Object *ast, Object *closure);    // 2 Object ptrs mean program func
 
@@ -93,7 +93,7 @@ public:
 
     void FromString(const std::string &str);
 
-    void FromObject(Object *obj);
+    void FromObject(Object *obj, bool closure = false);
 
     void FromProgramFunction(Object *ast, Object *closure);
 
@@ -135,6 +135,8 @@ public:
 
     std::string ToNativeTypeId(void) const;
 
+    bool IsObjectClosure(void) const;
+
     /****** Replicator ******/
 
     Value *Clone(void) const;
@@ -148,7 +150,11 @@ private:
         double numVal;
         bool boolVal;
         char *stringVal;
-        Object *objectVal;
+
+        struct {
+            Object * object;
+            bool isClosure;
+        } objectVal;
 
         struct {
             Object *ast;
