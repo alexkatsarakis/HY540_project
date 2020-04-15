@@ -448,6 +448,11 @@ Symbol Interpreter::TableSetElem(const Value &lvalue, const Value &index) {
     if (!index.IsString() && !index.IsNumber())
         RuntimeError("Keys of objects can only be strings or numbers");
 
+    if (index.IsString() &&
+        index.ToString()[0] == '$' &&
+        !IsReservedField(index.ToString()))
+        RuntimeError("Cannot write to field \"" + index.ToString() + "\". No write access to user-defined $ indices");
+
     /* The 3 cases of a TABLESETELEM instruction are:
      *
      * func.x = 0;

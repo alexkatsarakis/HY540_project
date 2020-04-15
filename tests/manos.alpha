@@ -140,3 +140,8 @@ print(a);
 //print(f.y2);
 //f.$closure.y3 = 25;
 //f.y4 = 26;
+
+a = [];
+b = "$foo";
+function foo() { return "$foog"; }
+a[foo()] = 10;
