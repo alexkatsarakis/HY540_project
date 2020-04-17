@@ -644,11 +644,13 @@ void Interpreter::InstallLibFuncs(void) {
     globalScope->Set("typeof", Value(LibFunc::Typeof, "typeof"));
     globalScope->Set("object_keys", Value(LibFunc::ObjectKeys, "object_keys"));
     globalScope->Set("object_size", Value(LibFunc::ObjectSize, "object_size"));
+    globalScope->Set("sleep", Value(LibFunc::Sleep, "sleep"));
 
     libraryFuncs.push_front("print");
     libraryFuncs.push_front("typeof");
     libraryFuncs.push_front("object_keys");
     libraryFuncs.push_front("object_size");
+    libraryFuncs.push_front("sleep");
 }
 
 void Interpreter::Execute(Object &program) {

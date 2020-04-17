@@ -15,6 +15,8 @@ namespace LibFunc {
     void ObjectKeys(Object & env);
 
     void ObjectSize(Object & env);
+
+    void Sleep(Object & env);
 }
 
 #endif
