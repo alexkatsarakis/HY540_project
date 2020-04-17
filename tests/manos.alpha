@@ -143,5 +143,10 @@ print(a);
 
 a = [];
 b = "$foo";
-function foo() { return "$foog"; }
-a[foo()] = 10;
+//function foo() { return "$foog"; }
+//a[foo()] = 10;
+
+for(i = 0; i < 100; ++i) {
+    print(i);
+    sleep(1000);
+}

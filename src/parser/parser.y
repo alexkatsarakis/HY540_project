@@ -289,11 +289,11 @@ const : NUMBER { $$ = ParseConst(ParseNumber($1)); }
 
 idlist : ID comma_ids                                   { $$ = ParseIdList(ParseFormal($1), $2); }
        | ID ASSIGN expr optionals                       { $$ = ParseIdList(ParseAssign(ParseFormal($1), $3), $4); }
-       | ID comma_ids COMMA ID ASSIGN expr optionals    { 
+       | ID comma_ids COMMA ID ASSIGN expr optionals    {
                                                           $$ = ParseMixedIdList(
-                                                                ParseIdList(ParseFormal($1), $2), 
+                                                                ParseIdList(ParseFormal($1), $2),
                                                                 ParseIdList(ParseAssign(ParseFormal($4), $6), $7)
-                                                          ); 
+                                                          );
                                                         }
        | /* empty */                                    { $$ = ParseEmptyIdlist(); }
        ;
@@ -329,12 +329,12 @@ continuestmt : CONTINUE SEMICOLON { $$ = ParseContinueStmt(); }
 %%
 
 int yyerror (char * yaccProvidedMessage) {
-    std::cerr << "Invalid syntax at line " << yylineno << " before " << yytext << std::endl;
+    std::cerr << "\033[31;1mSyntax Error:\033[0m Invalid syntax at line " << yylineno << " before " << yytext << std::endl;
     exit(EXIT_FAILURE);
 }
 
 void Usage(const std::string & str) {
-    std::cout << "Usage: " << (str.empty() ? "interpreter.out" : str) << "[input_file]" << std::endl
+    std::cout << "Usage: " << (str.empty() ? "interpreter.out" : str) << " [input_file]\n" << std::endl
               << "Options:" << std::endl
               << "    input_file:  The file containing the source code to be compiled" << std::endl;
 }

@@ -7,6 +7,8 @@
 #include <cassert>
 #include <ostream>
 #include <iomanip>
+#include <thread>
+#include <chrono>
 
 unsigned whitespace = 0;
 
@@ -179,4 +181,18 @@ void LibFunc::ObjectSize(Object & env) {
 
     const Object * obj = value->ToObject();
     env.Set(RETVAL_RESERVED_FIELD, static_cast<double>(obj->GetTotal()));
+}
+
+void LibFunc::Sleep(Object & env) {
+    assert(env.IsValid());
+
+    const Value * value = GetArgument(env, 0);
+    if (!value->IsNumber()) return Interpreter::RuntimeError("Library function \"sleep\" did not receive a number.");
+    if (!Utilities::IsInt(value->ToNumber())) return Interpreter::RuntimeError("Library function \"sleep\" did not receive an integer.");
+
+    int number = static_cast<int>(value->ToNumber());
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(number));
+
+    env.Set(RETVAL_RESERVED_FIELD, Value());
 }

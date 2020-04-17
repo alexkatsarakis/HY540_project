@@ -479,7 +479,9 @@ const Value Interpreter::EvalWhile(Object &node) {
 const Value Interpreter::EvalFor(Object &node) {
     ASSERT_TYPE(AST_TAG_FOR);
 
-    for (EVAL(AST_TAG_FOR_PRE_ELIST); EVAL(AST_TAG_CONDITION); EVAL(AST_TAG_FOR_POST_ELIST)) {
+    Value elist1, elist2;
+
+    for (elist1 = EVAL(AST_TAG_FOR_PRE_ELIST); EVAL(AST_TAG_CONDITION); elist2 = EVAL(AST_TAG_FOR_POST_ELIST)) {
         try {
             EVAL(AST_TAG_STMT);
         } catch (const BreakException &e) {
@@ -487,7 +489,18 @@ const Value Interpreter::EvalFor(Object &node) {
         } catch (const ContinueException &e) {
             continue;
         }
+        catch (const BreakException &e) { break; }
+        catch (const ContinueException &e) { continue; }
     }
+
+    assert(elist1.IsObject());
+    assert(elist2.IsObject());
+
+    elist1.ToObject_NoConst()->Clear();
+    elist2.ToObject_NoConst()->Clear();
+
+    delete elist1.ToObject_NoConst();
+    delete elist2.ToObject_NoConst();
 
     return NIL_VAL;
 }
