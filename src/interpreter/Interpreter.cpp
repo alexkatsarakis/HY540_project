@@ -41,10 +41,10 @@ const Value Interpreter::EvalAssign(Object &node) {
     assert(lvalue.IsValid());
     assert(rvalue.IsValid());
 
-    if ( lvalue.IsIndexString() &&
-         IsLibFunc(lvalue.ToString()) &&
-         IsGlobalScope(lvalue.GetContext()))
-         RuntimeError("Cannot modify library function \"" + lvalue.ToString() + "\".");
+    if (lvalue.IsIndexString() &&
+        IsLibFunc(lvalue.ToString()) &&
+        IsGlobalScope(lvalue.GetContext()))
+        RuntimeError("Cannot modify library function \"" + lvalue.ToString() + "\".");
 
     if (rvalue.IsNil())
         RemoveFromContext(lvalue, rvalue);
@@ -372,7 +372,12 @@ const Value Interpreter::EvalBlock(Object &node) {
 
     if (!inFunctionScope) BlockEnter();
     inFunctionScope = false;
-    EVAL_CHILD();
+    try {
+        EVAL_CHILD();
+    } catch (const ReturnException &e) {
+        BlockExit();
+        throw e;
+    }
     BlockExit();
 
     return NIL_VAL;
@@ -461,7 +466,9 @@ const Value Interpreter::EvalWhile(Object &node) {
     while (EVAL(AST_TAG_CONDITION)) {
         try {
             EVAL(AST_TAG_STMT);
-        } catch (const BreakException &e) { break; } catch (const ContinueException &e) {
+        } catch (const BreakException &e) {
+            break;
+        } catch (const ContinueException &e) {
             continue;
         }
     }
@@ -475,7 +482,9 @@ const Value Interpreter::EvalFor(Object &node) {
     for (EVAL(AST_TAG_FOR_PRE_ELIST); EVAL(AST_TAG_CONDITION); EVAL(AST_TAG_FOR_POST_ELIST)) {
         try {
             EVAL(AST_TAG_STMT);
-        } catch (const BreakException &e) { break; } catch (const ContinueException &e) {
+        } catch (const BreakException &e) {
+            break;
+        } catch (const ContinueException &e) {
             continue;
         }
     }
@@ -485,8 +494,8 @@ const Value Interpreter::EvalFor(Object &node) {
 
 const Value Interpreter::EvalReturn(Object &node) {
     ASSERT_TYPE(AST_TAG_RETURN);
-    if (node.ElementExists(AST_TAG_CHILD)) retvalRegister = EVAL_CHILD();
-    return NIL_VAL;
+    if (node.ElementExists(AST_TAG_CHILD)) throw ReturnException(EVAL_CHILD());
+    throw ReturnException();
 }
 
 const Value Interpreter::EvalBreak(Object &node) {

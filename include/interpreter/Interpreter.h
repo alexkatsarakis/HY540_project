@@ -13,8 +13,13 @@ class Interpreter {
 private:
     /****** Defines ******/
 
-    class BreakException {};
-    class ContinueException {};
+    struct BreakException {};
+    struct ContinueException {};
+    struct ReturnException {
+        const Value retVal;
+        ReturnException() : retVal(Value()) {}
+        ReturnException(const Value &_retVal) : retVal(_retVal) {}
+    };
 
     enum MathOp { Plus,
                   Minus,
@@ -30,7 +35,7 @@ private:
 
     EvalDispatcher dispatcher;
     Value retvalRegister;
-    bool inFunctionScope;    // Do not  recreate scope on function body enter. We do not allow shadowing. See EvalCall, EvalBlock.
+    bool inFunctionScope;    // Do not recreate scope on function body enter. We do not allow shadowing. See EvalCall, EvalBlock.
 
     Object *currentScope;
     Object *globalScope;

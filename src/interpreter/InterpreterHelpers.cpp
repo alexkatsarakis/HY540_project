@@ -112,7 +112,7 @@ const Value *Interpreter::LookupCurrentScope(const std::string &symbol) const {
     return LookupScope(currentScope, symbol);
 }
 
-bool Interpreter::IsGlobalScope(Object * scope) const {
+bool Interpreter::IsGlobalScope(Object *scope) const {
     assert(scope);
 
     /* Move backwards towards the first slice of the scope */
@@ -126,10 +126,10 @@ bool Interpreter::IsGlobalScope(Object * scope) const {
             (*scope)["print"]->IsLibraryFunction());
 }
 
-Object * Interpreter::GetGlobalScope(void) const {
+Object *Interpreter::GetGlobalScope(void) const {
     assert(currentScope);
 
-    Object * scope = currentScope;
+    Object *scope = currentScope;
     const Value *value = LookupScope(scope, OUTER_RESERVED_FIELD);
     while (value) {
         scope = value->ToObject_NoConst();
@@ -272,18 +272,16 @@ void Interpreter::AssignToContext(const Symbol &lvalue, const Value &rvalue) {
 
     /* TODO: Please refactor this mess */
     if (lvalue.IsIndexString()) {
-        Object * context = lvalue.GetContext();
-        const Value * v = (*context)[lvalue.ToString()];
+        Object *context = lvalue.GetContext();
+        const Value *v = (*context)[lvalue.ToString()];
         if (v && v->IsObject()) v->ToObject_NoConst()->DecreaseRefCounter();
         context->Set(lvalue.ToString(), rvalue);
-    }
-    else if (lvalue.IsIndexNumber()) {
-        Object * context = lvalue.GetContext();
-        const Value * v = (*context)[lvalue.ToNumber()];
+    } else if (lvalue.IsIndexNumber()) {
+        Object *context = lvalue.GetContext();
+        const Value *v = (*context)[lvalue.ToNumber()];
         if (v && v->IsObject()) v->ToObject_NoConst()->DecreaseRefCounter();
         lvalue.GetContext()->Set(lvalue.ToNumber(), rvalue);
-    }
-    else
+    } else
         assert(false);
 
     if (rvalue.IsObject()) rvalue.ToObject_NoConst()->IncreaseRefCounter();
@@ -392,7 +390,7 @@ const Value Interpreter::TableGetElem(const Value &lvalue, const Value &index) {
 
     if (lvalue.IsProgramFunction() &&
         index.ToString() == CLOSURE_RESERVED_FIELD)
-            return Value(lvalue.ToProgramFunctionClosure_NoConst(), true);
+        return Value(lvalue.ToProgramFunctionClosure_NoConst(), true);
 
     Object *table = nullptr;
     if (lvalue.IsObject())
@@ -401,8 +399,10 @@ const Value Interpreter::TableGetElem(const Value &lvalue, const Value &index) {
         table = lvalue.ToProgramFunctionClosure_NoConst();
 
     bool shouldFail = false;
-    if (lvalue.IsProgramFunction()) shouldFail = true;
-    else if (lvalue.IsObject() && lvalue.IsObjectClosure()) shouldFail = true;
+    if (lvalue.IsProgramFunction())
+        shouldFail = true;
+    else if (lvalue.IsObject() && lvalue.IsObjectClosure())
+        shouldFail = true;
 
     if (index.IsString())
         return GetStringFromContext(table, index, shouldFail);
@@ -565,25 +565,29 @@ void Interpreter::BlockExit(void) {
 Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClosure, Object *arguments) {
     //Push scope space pointing to function closure
     PushScopeSpace(functionClosure);
-    //Push function environment (TODO: Forbid shadowing, see EvalBlock)
+    //Push function environment
     //Current scope is now the function environment
     currentScope = PushNested();
     inFunctionScope = true;
 
     const Object &functionFormals = *((*functionAst)[AST_TAG_FUNCTION_FORMALS]->ToObject());
+    const Object &functionActuals = *arguments;
     for (register unsigned i = 0; i < functionFormals.GetNumericSize(); ++i) {
         Object &child = *(functionFormals[i]->ToObject_NoConst());
         assert((child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) || (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN));
-        std::string formalName;    //Name of formal, i is index of formal/actual
-        Value actualValue;         //Value of actual
-        if (i < arguments->GetNumericSize()) actualValue = (*(*arguments)[i]);
+        std::string formalName;       //Name of formal, i is index of formal/actual
+        Value actualValue;            //Value of actual
+        bool actualExists = false;    //actual/formal match exists
+        if (i < functionActuals.GetNumericSize()) {
+            actualExists = true;
+            actualValue = *(functionActuals[i]);
+        }
 
         if (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
             assert(child.ElementExists(AST_TAG_ID));
             formalName = child[AST_TAG_ID]->ToString();
 
-            assert(i < arguments->GetNumericSize());
-            assert(!actualValue.IsUndef());
+            assert(actualExists);
             dispatcher.Eval(child);
         }
         if (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
@@ -593,17 +597,19 @@ Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClos
             assert(formalNode.ElementExists(AST_TAG_ID));
             formalName = formalNode[AST_TAG_ID]->ToString();
 
-            if (actualValue.IsUndef()) actualValue = dispatcher.Eval(child);    //Get Value of optional expression
-            assert(!actualValue.IsUndef());
+            if (!actualExists) actualValue = dispatcher.Eval(child);    //Get Value of optional expression
         }
         currentScope->Set(formalName, actualValue);
     }
 
     //function body evaluation
-    dispatcher.Eval(*((*functionAst)[AST_TAG_STMT]->ToObject_NoConst()));
-
-    //RETURN_VAL
-    Value result = retvalRegister;
+    Value retVal;    // initialized to undef, in case function never returns a value
+    try {
+        dispatcher.Eval(*((*functionAst)[AST_TAG_STMT]->ToObject_NoConst()));
+    } catch (const ReturnException &e) {
+        //RETURN_VAL
+        retVal = e.retVal;
+    }
 
     //FUNC_EXIT
     //Pop function environment
@@ -614,14 +620,14 @@ Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClos
     //Current scope is now the function closure
     currentScope = functionClosure;
 
-    return result;
+    return retVal;
 }
 
 Value Interpreter::CallLibraryFunction(const std::string &functionId, LibraryFunc functionLib, Object *arguments) {
     arguments->Set(RETVAL_RESERVED_FIELD, Value(NilTypeValue::Nil));
     assert(functionLib);
     functionLib(*arguments);
-    retvalRegister = *(*arguments)[RETVAL_RESERVED_FIELD];    //do we need to modify retval?
+    retvalRegister = *((*arguments)[RETVAL_RESERVED_FIELD]);    //do we need to modify retval?
     return retvalRegister;
     // if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter(); //need to know why
 }
