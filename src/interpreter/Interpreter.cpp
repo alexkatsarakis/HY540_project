@@ -489,8 +489,6 @@ const Value Interpreter::EvalFor(Object &node) {
         } catch (const ContinueException &e) {
             continue;
         }
-        catch (const BreakException &e) { break; }
-        catch (const ContinueException &e) { continue; }
     }
 
     assert(elist1.IsObject());
