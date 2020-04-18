@@ -6,6 +6,7 @@
 #include <functional>
 #include <map>
 #include <string>
+#include <vector>
 
 typedef Value *ValuePtr; /* Use typedef so we can use shared_ptr in the future */
 typedef std::map<double, ValuePtr> NumbericValueMap;
@@ -42,6 +43,8 @@ public:
     unsigned GetNumericSize(void) const;
 
     unsigned GetStringSize(void) const;
+
+    const std::vector<std::string> GetStringKeys(void) const;    //TODO: return const reference fix
 
     unsigned GetReferences(void) const;
 

@@ -67,6 +67,14 @@ unsigned Object::GetStringSize(void) const {
     return strMap.size();
 }
 
+const std::vector<std::string> Object::GetStringKeys(void) const {
+    assert(IsValid());
+    std::vector<std::string> keys;
+    for (const auto &pair : strMap)
+        keys.push_back(pair.first);
+    return keys;
+}
+
 unsigned Object::GetReferences(void) const {
     assert(IsValid());
     return refCounter;
@@ -115,10 +123,10 @@ const Value *Object::GetAndRemove(const std::string &key) {
 void Object::Clear(void) {
     assert(IsValid());
 
-    for (auto & pair : numMap) delete pair.second;
+    for (auto &pair : numMap) delete pair.second;
     numMap.clear();
 
-    for (auto & pair : strMap) delete pair.second;
+    for (auto &pair : strMap) delete pair.second;
     strMap.clear();
 
     assert(IsValid());

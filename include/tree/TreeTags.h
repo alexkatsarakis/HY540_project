@@ -121,4 +121,6 @@
 #define AST_TAG_COMMA_IDS "comma_ids"
 #define AST_TAG_FORMAL "formal"
 
+#define AST_TAG_ARGLIST "arg_list"
+
 #endif
