@@ -262,34 +262,56 @@ const Value Interpreter::EvalBracket(Object &node) {
 const Value Interpreter::EvalCall(Object &node) {
     ASSERT_TYPE(AST_TAG_CALL);
     //FUNC_ENTER
-    const Value functionVal = EVAL(AST_TAG_FUNCTION);
+    const Value lvalue = EVAL(AST_TAG_FUNCTION);   //not always the function: in the case of obj..f() it holds obj
     Value argumentsVal = EVAL(AST_TAG_SUFFIX);    //actuals table
 
-    if (!functionVal.IsLibraryFunction() && !functionVal.IsProgramFunction())
-        RuntimeError("Cannot call something that is not a function");
-
-    assert(functionVal.IsLibraryFunction() || functionVal.IsProgramFunction());
     assert(argumentsVal.IsObject());
-    Object *arguments = argumentsVal.ToObject_NoConst();
-    retvalRegister.FromUndef();    //reset retVal register
-    Value result;
 
-    if (functionVal.IsProgramFunction()) {
-        Object *functionAst = functionVal.ToProgramFunctionAST_NoConst();
-        Object *functionClosure = functionVal.ToProgramFunctionClosure_NoConst();
-        result = CallProgramFunction(functionAst, functionClosure, arguments);
-    } else if (functionVal.IsLibraryFunction()) {
-        std::string functionId = functionVal.ToLibraryFunctionId();
-        LibraryFunc functionLib = functionVal.ToLibraryFunction();
-        result = CallLibraryFunction(functionId, functionLib, arguments);
-    } else {
-        assert(false);
+    if (lvalue.IsLibraryFunction() || lvalue.IsProgramFunction()){
+        const Value functionVal = lvalue;
+        Object *arguments = argumentsVal.ToObject_NoConst();
+        retvalRegister.FromUndef();    //reset retVal register
+        Value result;
+        if (functionVal.IsProgramFunction()) {
+            Object *functionAst = functionVal.ToProgramFunctionAST_NoConst();
+            Object *functionClosure = functionVal.ToProgramFunctionClosure_NoConst();
+            result = CallProgramFunction(functionAst, functionClosure, arguments);
+        } else if (functionVal.IsLibraryFunction()) {
+            std::string functionId = functionVal.ToLibraryFunctionId();
+            LibraryFunc functionLib = functionVal.ToLibraryFunction();
+            result = CallLibraryFunction(functionId, functionLib, arguments);
+        }
+
+        arguments->Clear();
+        delete arguments;
+        argumentsVal.FromUndef();
+        return result;
+    }else{
+        const Value index = (*argumentsVal.ToObject())[AST_TAG_FUNCTION]->ToString();   // name of the method
+        const Value method = TableGetElem(lvalue, index);
+        if (!method.IsProgramFunction())
+            RuntimeError("Cannot call something that is not a function");
+
+        Object *functionAst = method.ToProgramFunctionAST_NoConst();
+        Object *functionClosure = method.ToProgramFunctionClosure_NoConst();
+        Object *arguments = argumentsVal.ToObject_NoConst();
+        retvalRegister.FromUndef();
+
+        for (int i  = arguments->GetNumericSize(); i > 0; i--)
+            arguments->Set(i, *(*arguments)[i - 1]);
+
+        arguments->Set(0, lvalue);  /* set "this" as the first actual */
+
+        auto result = CallProgramFunction(functionAst, functionClosure, arguments);
+        
+        arguments->Clear();
+        arguments->Clear();
+        delete arguments;
+        argumentsVal.FromUndef();
+        
+        return result;
     }
 
-    arguments->Clear();
-    delete arguments;
-    argumentsVal.FromUndef();
-    return result;
 }
 
 const Value Interpreter::EvalCallSuffix(Object &node) {
@@ -304,7 +326,16 @@ const Value Interpreter::EvalNormalCall(Object &node) {
 
 const Value Interpreter::EvalMethodCall(Object &node) {
     ASSERT_TYPE(AST_TAG_METHOD_CALL);
-    return EVAL_CHILD();
+    
+    /* get the id of the function to be called */
+    const Object* idNode = node[AST_TAG_FUNCTION]->ToObject();
+    std::string id = (*idNode)[AST_TAG_ID]->ToString();
+    auto actuals = EVAL(AST_TAG_ARGUMENTS); // evaluate the actuals
+    
+    /* add fname as in obj..fname() so that it can be indexed later (no knowledge of obj here) */
+    actuals.ToObject_NoConst()->Set(AST_TAG_FUNCTION, id);
+
+    return actuals;
 }
 
 const Value Interpreter::EvalExpressionList(Object &node) {
