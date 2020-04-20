@@ -564,6 +564,29 @@ void Interpreter::BlockExit(void) {
     }
 }
 
+std::vector<std::string> GetFormalNames(const Object &functionFormals) {
+    std::vector<std::string> formalNames;
+    for (register unsigned i = 0; i < functionFormals.GetNumericSize(); ++i) {
+        Object &formal = *(functionFormals[i]->ToObject_NoConst());
+        assert((formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) || (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN));
+        std::string formalName;
+        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
+            assert(formal.ElementExists(AST_TAG_ID));
+            formalName = formal[AST_TAG_ID]->ToString();
+        } else if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
+            assert(formal.ElementExists(AST_TAG_LVALUE));
+            const Object &formalNode = *(formal[AST_TAG_LVALUE]->ToObject_NoConst());
+            assert(formalNode[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL);
+            assert(formalNode.ElementExists(AST_TAG_ID));
+            formalName = formalNode[AST_TAG_ID]->ToString();
+        } else {
+            assert(0);
+        }
+        formalNames.push_back(formalName);
+    }
+    return formalNames;
+}
+
 Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClosure, Object *arguments) {
     //Push scope space pointing to function closure
     PushScopeSpace(functionClosure);
@@ -576,24 +599,30 @@ Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClos
     const Object &functionActuals = *arguments;
     std::set<std::string> mappedFormals;
 
-    //debug
-    std::cout << "named: ";
-    for (const auto &key : functionActuals.GetStringKeys()) {
-        std::cout << key << ", ";
-    }
-    std::cout << std::endl;
-    //
-    if (functionActuals.GetNumericSize() > functionFormals.GetNumericSize())
-        RuntimeError("Number of Actual Positional Arguments(" + std::to_string(functionActuals.GetNumericSize()) + ") exceeds number of Formal Parameters(" + std::to_string(functionFormals.GetNumericSize()) + ")\n");
+    //Number of args error
+    unsigned functionFormalSize = functionFormals.GetNumericSize();
+    unsigned functionActualPositionalSize = functionActuals.GetNumericSize();
+    if (functionActualPositionalSize > functionFormalSize)
+        RuntimeError("Number of Actual Positional Arguments(" + std::to_string(functionActualPositionalSize) + ") exceeds number of Formal Parameters(" + std::to_string(functionFormalSize) + ")\n");
+    //Unexpected name error
+    auto formalNames = GetFormalNames(functionFormals);
+    auto actualNames = functionActuals.GetUserKeys();
+    std::vector<std::string> actualMinusFormals;
+    std::set_difference(actualNames.begin(), actualNames.end(),
+                        formalNames.begin(), formalNames.end(),
+                        std::inserter(actualMinusFormals, actualMinusFormals.begin()));
+    if (!actualMinusFormals.empty())
+        RuntimeError("Unexpected Named\n");    //TODO Add Info
+
     for (register unsigned i = 0; i < functionFormals.GetNumericSize(); ++i) {
         Object &formal = *(functionFormals[i]->ToObject_NoConst());
         assert((formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) || (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN));
 
-        std::string formalName;       //Name of formal, i is index of formal/actual
-        Value actualValue;            //Value of actual
-        bool actualExists = false;    //actual/formal map exists
+        std::string formalName = formalNames.at(i);    //Name of formal, i is index of formal/actual
+        Value actualValue;                             //Value of actual
+        bool actualExists = false;                     //actual/formal map exists
 
-        //Resolve formal Name
+        /*  //Resolve formal Name
         if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
             assert(formal.ElementExists(AST_TAG_ID));
             formalName = formal[AST_TAG_ID]->ToString();
@@ -604,21 +633,27 @@ Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClos
             assert(formalNode[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL);
             assert(formalNode.ElementExists(AST_TAG_ID));
             formalName = formalNode[AST_TAG_ID]->ToString();
-        }
+        } */
 
         if (i < functionActuals.GetNumericSize()) {
+            if (functionActuals.ElementExists(formalName))
+                RuntimeError("Both positional and named\n");    //TODO Add info
             actualExists = true;
             actualValue = *(functionActuals[i]);
+            assert(mappedFormals.count(formalName) == 0);
+            mappedFormals.insert(formalName);
         } else if (functionActuals.ElementExists(formalName)) {
-            if (mappedFormals.count(formalName) == 1)
-                RuntimeError("Named Override\n");    //TODO Add info
+            // if (mappedFormals.count(formalName) == 1)
+            // RuntimeError("Named Override\n");    //TODO Add info
             actualExists = true;
             actualValue = *(functionActuals[formalName]);
+            assert(mappedFormals.count(formalName) == 0);
+            mappedFormals.insert(formalName);
         }
 
         if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
             if (!actualExists)
-                RuntimeError("No actual match to formal\n");    //TODO Add info
+                RuntimeError("Formal does not match actual\n");    //TODO Add info
             dispatcher.Eval(formal);
         }
         if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
@@ -640,10 +675,10 @@ Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClos
     //Pop function environment
     // PopScope(); //Done in BlockExit
 
-    //Push scope space pointing to function closure
+    //Pop scope space pointing to function closure
     PopScopeSpace();
     //Current scope is now the function closure
-    currentScope = functionClosure;
+    // currentScope = functionClosure; //It is handled in BlockExit()... I think (?)
 
     return retVal;
 }

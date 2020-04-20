@@ -364,7 +364,7 @@ void VisualizeVisitor::VisitNormalArgumentList(const Object &node) {
         LinkToNode(orphans.top());
         orphans.pop();
     }
-    for (const auto &key : node.GetStringKeys()) {
+    for (const auto &key : node.GetUserKeys()) {
         //TODO use key as Link name
         assert(!orphans.empty());
         LinkToNode(orphans.top());

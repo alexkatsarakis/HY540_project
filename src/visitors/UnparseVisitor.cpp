@@ -165,14 +165,20 @@ const std::string UnparseVisitor::UnparseArgumentList(const std::vector<std::str
         argumentListStr.append(namedArguments.at(i)).append(" : ");
         argumentListStr.append(namedArguments.at(i + 1)).append(", ");
     }
-    if (argumentListStr.at(argumentListStr.size() - 2) == ',') argumentListStr.erase(argumentListStr.size() - 2);
+    if (!argumentListStr.empty()) {
+        assert(argumentListStr.at(argumentListStr.size() - 2) == ',');
+        argumentListStr.erase(argumentListStr.size() - 2);
+    }
     return argumentListStr;
 }
 const std::string UnparseVisitor::UnparseExpressionList(const std::vector<std::string> &expressions) {
     string expressionListStr;
     for (auto expression : expressions)
         expressionListStr.append(expression).append(", ");
-    if (expressionListStr.at(expressionListStr.size() - 2) == ',') expressionListStr.erase(expressionListStr.size() - 2);
+    if (!expressionListStr.empty()) {
+        assert(expressionListStr.at(expressionListStr.size() - 2) == ',');
+        expressionListStr.erase(expressionListStr.size() - 2);
+    }
     return expressionListStr;
 }
 const std::string UnparseVisitor::UnparseObjectDef(const std::string &child) {
@@ -182,7 +188,10 @@ const std::string UnparseVisitor::UnparseIndexed(const std::vector<std::string> 
     string indexedListStr;
     for (auto indexedElement : indexedElements)
         indexedListStr.append(indexedElement).append(", ");
-    if (indexedListStr.at(indexedListStr.size() - 2) == ',') indexedListStr.erase(indexedListStr.size() - 2);
+    if (!indexedListStr.empty()) {
+        assert(indexedListStr.at(indexedListStr.size() - 2) == ',');
+        indexedListStr.erase(indexedListStr.size() - 2);
+    }
     return indexedListStr;
 }
 const std::string UnparseVisitor::UnparseIndexedElem(const std::string &key, const std::string &value) {
@@ -217,7 +226,10 @@ const std::string UnparseVisitor::UnparseIdList(const std::vector<std::string> &
     string idListStr;
     for (auto id : ids)
         idListStr.append(id).append(", ");
-    if (idListStr.at(idListStr.size() - 2) == ',') idListStr.erase(idListStr.size() - 2);
+    if (!idListStr.empty()) {
+        assert(idListStr.at(idListStr.size() - 2) == ',');
+        idListStr.erase(idListStr.size() - 2);
+    }
     return idListStr;
 }
 const std::string UnparseVisitor::UnparseIf(const std::string &cond, const std::string &stmt, const std::string &elseStmt) {
@@ -499,7 +511,7 @@ void UnparseVisitor::VisitArgumentList(const Object &node) {
     vector<string> namedArguments;
     for (unsigned i = 0; i < node.GetNumericSize(); ++i)
         posArguments.push_back(GetUnparsed(node[i]));
-    for (const auto &key : node.GetStringKeys()) {
+    for (const auto &key : node.GetUserKeys()) {
         namedArguments.push_back(key);
         namedArguments.push_back(GetUnparsed(node[key]));
     }

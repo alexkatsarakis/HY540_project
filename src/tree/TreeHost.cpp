@@ -424,8 +424,9 @@ void TreeHost::AcceptMethodCall(const Object &node) {
 void TreeHost::AcceptArgumentList(const Object &node) {
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ARGLIST);
 
-    for (const auto &key : node.GetStringKeys()) {
-        assert(key != AST_TAG_TYPE_KEY);
+    for (unsigned i = 0; i < node.GetNumericSize(); ++i)
+        Accept(*node[i]->ToObject());
+    for (const auto &key : node.GetUserKeys()) {
         Accept(*node[key]->ToObject());
     }
     visitor->VisitArgumentList(node);

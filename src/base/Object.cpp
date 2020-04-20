@@ -69,7 +69,12 @@ unsigned Object::GetStringSize(void) const {
     return strMap.size();
 }
 
-const std::vector<std::string> Object::GetStringKeys(void) const {
+unsigned Object::GetUserKeySize(void) const {
+    assert(IsValid());
+    return GetUserKeys().size();
+}
+
+const std::vector<std::string> Object::GetUserKeys(void) const {
     assert(IsValid());
     std::vector<std::string> keys;
     for (const auto &pair : strMap) {

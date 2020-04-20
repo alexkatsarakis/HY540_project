@@ -115,7 +115,7 @@ Object *ParseCompleteRecursion(const char *type, const char *formalName, Object 
 
     table->Set(formalName, Value(current));
 
-    for (const std::string &key : rest->GetStringKeys()) {
+    for (const std::string &key : rest->GetUserKeys()) {
         Value v = *((*rest)[key]);
         table->Set(key, v);
     }
@@ -163,7 +163,7 @@ Object *MergeArgLists(const char *type, Object *table1, Object *table2) {
         Value v = *(*table1)[i];
         table->Set(i, v);
     }
-    for (const std::string key : table2->GetStringKeys()) {
+    for (const std::string key : table2->GetUserKeys()) {
         Value v = *(*table2)[key];
         table->Set(key, v);
     }

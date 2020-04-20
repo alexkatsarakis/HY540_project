@@ -315,7 +315,7 @@ const Value Interpreter::EvalArgumentList(Object &node) {
         const Value v = dispatcher.Eval(*node[i]->ToObject_NoConst());
         table->Set(i, v);
     }
-    for (const auto &key : node.GetStringKeys()) {
+    for (const auto &key : node.GetUserKeys()) {
         const Value v = dispatcher.Eval(*node[key]->ToObject_NoConst());
         table->Set(key, v);
     }
@@ -392,7 +392,7 @@ const Value Interpreter::EvalBlock(Object &node) {
         EVAL_CHILD();
     } catch (const ReturnException &e) {
         BlockExit();
-        throw e;
+        throw e;    //Will be caught by EvalCall()->CallProgramFunction()
     }
     BlockExit();
 
