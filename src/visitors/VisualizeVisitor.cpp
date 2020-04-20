@@ -374,7 +374,7 @@ void VisualizeVisitor::VisitNormalArgumentList(const Object &node) {
 
 void VisualizeVisitor::VisitArgumentList(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ARGLIST);
-    if (node.GetTotal() == 1)
+    if (node.GetNumericSize() + node.GetUserKeySize() == 0)    //change from GetTotal
         VisitEmptyArgumentList(node);
     else
         VisitNormalArgumentList(node);
