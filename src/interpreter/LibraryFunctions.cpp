@@ -3,6 +3,8 @@
 #include "TreeTags.h"
 #include "Utilities.h"
 
+#include <cmath>
+
 #include <iostream>
 #include <cassert>
 #include <ostream>
@@ -196,3 +198,70 @@ void LibFunc::Sleep(Object & env) {
 
     env.Set(RETVAL_RESERVED_FIELD, Value());
 }
+
+
+
+
+/*
+* args of Alpha's assert: only check for assert if boolean or for undef,nill
+*/
+void LibFunc::Assert(Object & env) {
+    assert(env.IsValid());
+
+    for(register unsigned i = 0; i < env.GetNumericSize(); ++i) {
+        const Value * value = GetArgument(env, i);
+        if(value->GetType() == Value::Type::BooleanType){
+            if(!value->ToBoolean())Interpreter::Assert("Boolean Not True");
+        }
+        if(value->GetType() == Value::Type::NilType ||
+           value->GetType() == Value::Type::UndefType){
+            Interpreter::Assert("Undefined Value");
+        }
+    }
+}
+
+void LibFunc::Sqrt(Object & env) {
+    assert(env.IsValid());
+    const Value * value = GetArgument(env, 0);
+    if(value->GetType() != Value::Type::NumberType)Interpreter::RuntimeError("You can only square a number");
+    env.Set(RETVAL_RESERVED_FIELD, sqrt(value->ToNumber()));
+}
+
+void LibFunc::Pow(Object & env) {
+    assert(env.IsValid());
+    const Value * value1 = GetArgument(env, 0);
+    const Value * value2 = GetArgument(env, 1);
+    if(value1->GetType() != Value::Type::NumberType || value2->GetType() != Value::Type::NumberType)Interpreter::RuntimeError("You can only power a number");
+    env.Set(RETVAL_RESERVED_FIELD, pow(value1->ToNumber(),value2->ToNumber()));
+}
+
+void LibFunc::GetTime(Object & env) {
+    assert(env.IsValid());
+    std::time_t t = std::time(0);
+    std::tm* now = std::localtime(&t);
+    std::string conv = std::to_string(now->tm_mday) + "/" + std::to_string(now->tm_mon) + "/" + std::to_string(1900+now->tm_year);
+    conv += " " + std::to_string(now->tm_hour) +":"+ std::to_string(now->tm_min) +":"+ std::to_string(now->tm_sec);
+    env.Set(RETVAL_RESERVED_FIELD, conv);
+}
+
+bool isNumber(std::string str){
+    register unsigned i = 0;
+    if(str[0] == '-')i++;
+    while(i < str.length()){
+        if(isdigit(str[i]) == false && str[i] != '.')return false;
+        i++;
+    }
+    return true;
+}
+
+void LibFunc::Input(Object & env) {
+    assert(env.IsValid());
+    std::string input;
+    std::cin >> input;
+    if(!input.empty() && isNumber(input)){ 
+        env.Set(RETVAL_RESERVED_FIELD, Value(std::stod(input)));
+    }else{
+        env.Set(RETVAL_RESERVED_FIELD, Value(input));
+    }
+}
+

@@ -12,6 +12,16 @@ namespace LibFunc {
 
     void Typeof(Object & env);
 
+    void Assert(Object & env);
+
+    void Sqrt(Object & env);
+
+    void Pow(Object & env);
+
+    void GetTime(Object & env);
+
+    void Input(Object & env);
+
     void ObjectKeys(Object & env);
 
     void ObjectSize(Object & env);

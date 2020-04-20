@@ -170,6 +170,8 @@ public:
 
     static void RuntimeError(const std::string &msg);
 
+    static void Assert(const std::string &msg);
+
     virtual ~Interpreter();
 };
 
