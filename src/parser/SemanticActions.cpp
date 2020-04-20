@@ -87,7 +87,7 @@ Object *ParseCompleteRecursion(const char *type, Object *current, Object *rest) 
     assert(current && current->IsValid());
     assert(rest && rest->IsValid());
 
-    auto table = new Object();
+    Object *table = new Object();
     table->Set(AST_TAG_TYPE_KEY, type);
 
     table->Set(double(0), Value(current));
@@ -110,7 +110,7 @@ Object *ParseCompleteRecursion(const char *type, const char *formalName, Object 
     assert(current && current->IsValid());
     assert(rest && rest->IsValid());
 
-    auto table = new Object();
+    Object *table = new Object();
     table->Set(AST_TAG_TYPE_KEY, type);
 
     table->Set(formalName, Value(current));

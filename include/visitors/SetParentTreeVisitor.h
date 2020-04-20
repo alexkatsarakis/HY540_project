@@ -58,6 +58,7 @@ public:
     IMPL_VISIT(CallSuffix)
     IMPL_VISIT(NormalCall)
     IMPL_VISIT(MethodCall)
+    IMPL_VISIT(ArgumentList)
     IMPL_VISIT(ExpressionList)
     IMPL_VISIT(ObjectDef)
     IMPL_VISIT(Indexed)

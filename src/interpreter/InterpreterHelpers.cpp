@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <set>
 
 void Interpreter::InstallEvaluators(void) {
     /* Evaluators used for read-only access */
@@ -47,6 +48,7 @@ void Interpreter::InstallEvaluators(void) {
     INSTALL(AST_TAG_BMINUSMINUS, EvalMinusMinusBefore);
     INSTALL(AST_TAG_AMINUSMINUS, EvalMinusMinusAfter);
     INSTALL(AST_TAG_ELIST, EvalExpressionList);
+    INSTALL(AST_TAG_ARGLIST, EvalArgumentList);
     INSTALL(AST_TAG_CALL_SUFFIX, EvalCallSuffix);
     INSTALL(AST_TAG_CALL, EvalCall);
     INSTALL(AST_TAG_NORMAL_CALL, EvalNormalCall);
@@ -572,32 +574,55 @@ Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClos
 
     const Object &functionFormals = *((*functionAst)[AST_TAG_FUNCTION_FORMALS]->ToObject());
     const Object &functionActuals = *arguments;
+    std::set<std::string> mappedFormals;
+
+    //debug
+    std::cout << "named: ";
+    for (const auto &key : functionActuals.GetStringKeys()) {
+        std::cout << key << ", ";
+    }
+    std::cout << std::endl;
+    //
+    if (functionActuals.GetNumericSize() > functionFormals.GetNumericSize())
+        RuntimeError("Number of Actual Positional Arguments(" + std::to_string(functionActuals.GetNumericSize()) + ") exceeds number of Formal Parameters(" + std::to_string(functionFormals.GetNumericSize()) + ")\n");
     for (register unsigned i = 0; i < functionFormals.GetNumericSize(); ++i) {
-        Object &child = *(functionFormals[i]->ToObject_NoConst());
-        assert((child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) || (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN));
+        Object &formal = *(functionFormals[i]->ToObject_NoConst());
+        assert((formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) || (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN));
+
         std::string formalName;       //Name of formal, i is index of formal/actual
         Value actualValue;            //Value of actual
-        bool actualExists = false;    //actual/formal match exists
-        if (i < functionActuals.GetNumericSize()) {
-            actualExists = true;
-            actualValue = *(functionActuals[i]);
-        }
+        bool actualExists = false;    //actual/formal map exists
 
-        if (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
-            assert(child.ElementExists(AST_TAG_ID));
-            formalName = child[AST_TAG_ID]->ToString();
-
-            assert(actualExists);
-            dispatcher.Eval(child);
+        //Resolve formal Name
+        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
+            assert(formal.ElementExists(AST_TAG_ID));
+            formalName = formal[AST_TAG_ID]->ToString();
         }
-        if (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
-            assert(child.ElementExists(AST_TAG_LVALUE));
-            const Object &formalNode = *(child[AST_TAG_LVALUE]->ToObject_NoConst());
+        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
+            assert(formal.ElementExists(AST_TAG_LVALUE));
+            const Object &formalNode = *(formal[AST_TAG_LVALUE]->ToObject_NoConst());
             assert(formalNode[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL);
             assert(formalNode.ElementExists(AST_TAG_ID));
             formalName = formalNode[AST_TAG_ID]->ToString();
+        }
 
-            if (!actualExists) actualValue = dispatcher.Eval(child);    //Get Value of optional expression
+        if (i < functionActuals.GetNumericSize()) {
+            actualExists = true;
+            actualValue = *(functionActuals[i]);
+        } else if (functionActuals.ElementExists(formalName)) {
+            if (mappedFormals.count(formalName) == 1)
+                RuntimeError("Named Override\n");    //TODO Add info
+            actualExists = true;
+            actualValue = *(functionActuals[formalName]);
+        }
+
+        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
+            if (!actualExists)
+                RuntimeError("No actual match to formal\n");    //TODO Add info
+            dispatcher.Eval(formal);
+        }
+        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
+            if (!actualExists) actualValue = dispatcher.Eval(formal);    //Evaluate optional expression
         }
         currentScope->Set(formalName, actualValue);
     }

@@ -71,6 +71,8 @@
 
 #define AST_TAG_PRIMARY "primary"
 
+#define AST_TAG_ARGLIST "arglist"
+
 #define AST_TAG_ELIST "elist"
 
 #define AST_TAG_OBJECTDEFLIST "object_def_list"
@@ -120,7 +122,5 @@
 #define AST_TAG_ID_LIST "id_list"
 #define AST_TAG_COMMA_IDS "comma_ids"
 #define AST_TAG_FORMAL "formal"
-
-#define AST_TAG_ARGLIST "arg_list"
 
 #endif

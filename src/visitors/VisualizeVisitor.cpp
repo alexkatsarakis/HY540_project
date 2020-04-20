@@ -340,14 +340,44 @@ void VisualizeVisitor::VisitCallSuffix(const Object &node) {
 void VisualizeVisitor::VisitNormalCall(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NORMAL_CALL);
     CreateNewNode(AST_TAG_NORMAL_CALL);
-    LinkToPreviousNode();    // Elist
+    LinkToPreviousNode();    // Arglist
 }
 
 void VisualizeVisitor::VisitMethodCall(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_METHOD_CALL);
     CreateNewNode(AST_TAG_METHOD_CALL);
-    LinkToPreviousNode();    // Elist
+    LinkToPreviousNode();    // Arglist
     LinkToOrphan();          // Id
+}
+
+void VisualizeVisitor::VisitEmptyArgumentList(const Object &node) {
+    SaveOrphan();
+    CreateNewNode(AST_TAG_ARGLIST);
+}
+
+void VisualizeVisitor::VisitNormalArgumentList(const Object &node) {
+    CreateNewNode(AST_TAG_ARGLIST);
+    LinkToPreviousNode();
+
+    for (register unsigned i = 1; i < node.GetNumericSize(); ++i) {
+        assert(!orphans.empty());
+        LinkToNode(orphans.top());
+        orphans.pop();
+    }
+    for (const auto &key : node.GetStringKeys()) {
+        //TODO use key as Link name
+        assert(!orphans.empty());
+        LinkToNode(orphans.top());
+        orphans.pop();
+    }
+}
+
+void VisualizeVisitor::VisitArgumentList(const Object &node) {
+    eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ARGLIST);
+    if (node.GetTotal() == 1)
+        VisitEmptyArgumentList(node);
+    else
+        VisitNormalArgumentList(node);
 }
 
 void VisualizeVisitor::VisitEmptyExpressionList(const Object &node) {

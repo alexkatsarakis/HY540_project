@@ -1,5 +1,7 @@
 #include "Object.h"
 
+#include "TreeTags.h"
+
 #include <cassert>
 #include <map>
 #include <string>
@@ -70,8 +72,11 @@ unsigned Object::GetStringSize(void) const {
 const std::vector<std::string> Object::GetStringKeys(void) const {
     assert(IsValid());
     std::vector<std::string> keys;
-    for (const auto &pair : strMap)
+    for (const auto &pair : strMap) {
+        if (pair.first == AST_TAG_TYPE_KEY) continue;
+        if (pair.first.at(0) == '$') continue;
         keys.push_back(pair.first);
+    }
     return keys;
 }
 

@@ -356,11 +356,11 @@ void Usage(const std::string & str) {
 void ProcessAST(Object * ast) {
     assert(ast && ast->IsValid());
 
-    // unparseHost->Accept(*ast);
+    unparseHost->Accept(*ast);
     // visualizeHost->Accept(*ast);
-    // setParentTreeHost->Accept(*ast);
-    // validityVisitor->Accept(*ast);
-    // interpreter->Execute(*ast);
+    setParentTreeHost->Accept(*ast);
+    validityVisitor->Accept(*ast);
+    interpreter->Execute(*ast);
 
 #define AST_MEM_CLEANUP
 #ifdef AST_MEM_CLEANUP
