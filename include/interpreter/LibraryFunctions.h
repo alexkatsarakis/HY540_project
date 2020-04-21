@@ -20,6 +20,10 @@ namespace LibFunc {
 
     void GetTime(Object & env);
 
+    void ToNumber(Object & env);
+
+    void Random(Object & env);
+
     void Input(Object & env);
 
     void ObjectKeys(Object & env);

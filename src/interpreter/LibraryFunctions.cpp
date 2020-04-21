@@ -245,7 +245,7 @@ void LibFunc::GetTime(Object & env) {
 }
 
 bool isNumber(std::string str){
-    register unsigned i = 0;
+    unsigned int i = 0;
     if(str[0] == '-')i++;
     while(i < str.length()){
         if(isdigit(str[i]) == false && str[i] != '.')return false;
@@ -265,3 +265,19 @@ void LibFunc::Input(Object & env) {
     }
 }
 
+void LibFunc::Random(Object & env) {
+    assert(env.IsValid());
+    env.Set(RETVAL_RESERVED_FIELD, static_cast<double>(std::rand())/ RAND_MAX);
+}
+
+void LibFunc::ToNumber(Object & env) {
+    assert(env.IsValid());
+    const Value * value = GetArgument(env, 0);
+    if(value->GetType() != Value::Type::StringType)Interpreter::RuntimeError("YOU SUCK");
+    if(!value->ToString().empty() && isNumber(value->ToString())){ 
+        env.Set(RETVAL_RESERVED_FIELD, Value(std::stod(value->ToString())));
+    }else{
+        Interpreter::RuntimeError("THIS STRING IS NOT A FCKING NUMBER");
+    }
+    
+}

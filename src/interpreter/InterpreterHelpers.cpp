@@ -652,28 +652,21 @@ Interpreter::Interpreter(void) {
     InstallEvaluators();
 }
 
-void Interpreter::InstallLibFuncs(void) {
-    globalScope->Set("print", Value(LibFunc::Print, "print"));
-    globalScope->Set("typeof", Value(LibFunc::Typeof, "typeof"));
-    globalScope->Set("object_keys", Value(LibFunc::ObjectKeys, "object_keys"));
-    globalScope->Set("object_size", Value(LibFunc::ObjectSize, "object_size"));
-    globalScope->Set("sleep", Value(LibFunc::Sleep, "sleep"));
-    globalScope->Set("assert",Value(LibFunc::Assert, "assert"));
-    globalScope->Set("sqrt",Value(LibFunc::Sqrt, "sqrt"));
-    globalScope->Set("pow",Value(LibFunc::Pow, "pow"));
-    globalScope->Set("get_time",Value(LibFunc::GetTime, "get_time"));
-    globalScope->Set("input",Value(LibFunc::Input, "input"));
+#define INSTALL_LIB_FUNC(x,y) globalScope->Set(x,Value(LibFunc::y, x));libraryFuncs.push_front(x);
 
-    libraryFuncs.push_front("print");
-    libraryFuncs.push_front("typeof");
-    libraryFuncs.push_front("object_keys");
-    libraryFuncs.push_front("object_size");
-    libraryFuncs.push_front("sleep");
-    libraryFuncs.push_front("assert");
-    libraryFuncs.push_front("sqrt");
-    libraryFuncs.push_front("pow");
-    libraryFuncs.push_front("get_time");
-    libraryFuncs.push_front("input");
+void Interpreter::InstallLibFuncs(void) {
+    INSTALL_LIB_FUNC("print",Print);
+    INSTALL_LIB_FUNC("typeof",Typeof);
+    INSTALL_LIB_FUNC("object_keys",ObjectKeys);
+    INSTALL_LIB_FUNC("object_size",ObjectSize);
+    INSTALL_LIB_FUNC("sleep",Sleep);
+    INSTALL_LIB_FUNC("assert",Assert);
+    INSTALL_LIB_FUNC("sqrt",Sqrt);
+    INSTALL_LIB_FUNC("pow",Pow);
+    INSTALL_LIB_FUNC("get_time",GetTime);
+    INSTALL_LIB_FUNC("input",Input);
+    INSTALL_LIB_FUNC("to_number",ToNumber);
+    INSTALL_LIB_FUNC("rand",Random);
 }
 
 void Interpreter::Execute(Object &program) {

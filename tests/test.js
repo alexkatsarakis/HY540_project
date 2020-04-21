@@ -1,4 +1,5 @@
-
-print(get_time());
-print(input());
-print(get_time());
+print(rand());
+print(rand());
+print(rand());
+print(rand());
+print(rand());
