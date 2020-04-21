@@ -357,7 +357,7 @@ void ProcessAST(Object * ast) {
     assert(ast && ast->IsValid());
 
     unparseHost->Accept(*ast);
-    // visualizeHost->Accept(*ast);
+    visualizeHost->Accept(*ast);
     setParentTreeHost->Accept(*ast);
     validityVisitor->Accept(*ast);
     interpreter->Execute(*ast);

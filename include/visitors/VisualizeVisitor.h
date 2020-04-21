@@ -22,6 +22,8 @@ private:
 
     void LinkToNode(unsigned node);
 
+    void LinkToNodeEdgeLabel(unsigned node, const std::string & str);
+
     void SaveOrphan(void);
 
     void DumpToFile(void);

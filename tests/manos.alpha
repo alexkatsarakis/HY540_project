@@ -125,7 +125,7 @@ t.d = [];
 t.e = [ { "key" : "val" }];
 print(t);
 */
-
+/*
 a = 25;
 function f() { }
 print(f.$closure);
@@ -150,3 +150,10 @@ for(i = 0; i < 100; ++i) {
     print(i);
     sleep(1000);
 }
+*/
+
+function f(a, b, c) {}
+
+f(1,2,3);                 // Only positional arguments
+f(c : 3, a : 1, b : 2);   // Only named arguments
+f(1, c : 3, b : 2);       // Combination of the two

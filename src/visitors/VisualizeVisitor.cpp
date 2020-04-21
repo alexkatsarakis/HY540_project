@@ -54,6 +54,11 @@ void VisualizeVisitor::LinkToNode(unsigned node) {
     output << NODE_PREFIX << lastNode << TO_NODE_PREFIX << node << std::endl;
 }
 
+void VisualizeVisitor::LinkToNodeEdgeLabel(unsigned node, const std::string & str) {
+    assert(!str.empty());
+    output << NODE_PREFIX << lastNode << TO_NODE_PREFIX << node << "[ label = \"" << str << "\"]" << std::endl;
+}
+
 void VisualizeVisitor::SaveOrphan(void) {
     if (lastNode != 0) orphans.push(lastNode);
 }
@@ -89,11 +94,7 @@ void VisualizeVisitor::VisitNormalStatements(const Object &node) {
     CreateNewNode(AST_TAG_STMTS);
     LinkToPreviousNode();
 
-    for (register unsigned i = 1; i < node.GetNumericSize(); ++i) {
-        assert(!orphans.empty());
-        LinkToNode(orphans.top());
-        orphans.pop();
-    }
+    for (register unsigned i = 1; i < node.GetNumericSize(); ++i) LinkToOrphan();
 }
 
 void VisualizeVisitor::VisitStatements(const Object &node) {
@@ -357,19 +358,24 @@ void VisualizeVisitor::VisitEmptyArgumentList(const Object &node) {
 
 void VisualizeVisitor::VisitNormalArgumentList(const Object &node) {
     CreateNewNode(AST_TAG_ARGLIST);
-    LinkToPreviousNode();
 
-    for (register unsigned i = 1; i < node.GetNumericSize(); ++i) {
+    auto named = node.GetUserKeys();
+    auto it = named.rbegin();
+    unsigned i = 0;
+
+    if (named.empty()) {
+        LinkToPreviousNode();
+        i = 1;
+    }
+    else LinkToNodeEdgeLabel(lastNode - 1, *(it++));
+
+    for(; it != named.rend(); ++it) {
         assert(!orphans.empty());
-        LinkToNode(orphans.top());
+        LinkToNodeEdgeLabel(orphans.top(), *it);
         orphans.pop();
     }
-    for (const auto &key : node.GetUserKeys()) {
-        //TODO use key as Link name
-        assert(!orphans.empty());
-        LinkToNode(orphans.top());
-        orphans.pop();
-    }
+
+    for (; i < node.GetNumericSize(); ++i) LinkToOrphan();
 }
 
 void VisualizeVisitor::VisitArgumentList(const Object &node) {
@@ -389,11 +395,7 @@ void VisualizeVisitor::VisitNormalExpressionList(const Object &node) {
     CreateNewNode(AST_TAG_ELIST);
     LinkToPreviousNode();
 
-    for (register unsigned i = 1; i < node.GetNumericSize(); ++i) {
-        assert(!orphans.empty());
-        LinkToNode(orphans.top());
-        orphans.pop();
-    }
+    for (register unsigned i = 1; i < node.GetNumericSize(); ++i) LinkToOrphan();
 }
 
 void VisualizeVisitor::VisitExpressionList(const Object &node) {
@@ -419,11 +421,7 @@ void VisualizeVisitor::VisitNormalIndexed(const Object &node) {
     CreateNewNode(AST_TAG_INDEXED);
     LinkToPreviousNode();
 
-    for (register unsigned i = 1; i < node.GetNumericSize(); ++i) {
-        assert(!orphans.empty());
-        LinkToNode(orphans.top());
-        orphans.pop();
-    }
+    for (register unsigned i = 1; i < node.GetNumericSize(); ++i) LinkToOrphan();
 }
 
 void VisualizeVisitor::VisitIndexed(const Object &node) {
@@ -506,11 +504,7 @@ void VisualizeVisitor::VisitNormalIdlist(const Object &node) {
     CreateNewNode(AST_TAG_ID_LIST);
     LinkToPreviousNode();
 
-    for (register unsigned i = 1; i < node.GetNumericSize(); ++i) {
-        assert(!orphans.empty());
-        LinkToNode(orphans.top());
-        orphans.pop();
-    }
+    for (register unsigned i = 1; i < node.GetNumericSize(); ++i) LinkToOrphan();
 }
 
 void VisualizeVisitor::VisitIdList(const Object &node) {
