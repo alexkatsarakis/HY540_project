@@ -30,7 +30,10 @@ void PrintValue(std::ostream & stream, const Value * value);
 const Value * GetArgument(Object & env, unsigned argNo, const std::string & optArgName = "") {
     assert(env.IsValid());
 
-    if (optArgName.empty()) return env[argNo];
+    if (optArgName.empty()){
+        if(env[argNo] == NULL)Interpreter::RuntimeError("Wrong Arguments");
+        return env[argNo];
+    }
 
     auto arg = env[optArgName];
     if (!arg) arg = env[argNo];
@@ -202,9 +205,7 @@ void LibFunc::Sleep(Object & env) {
 
 
 
-/*
-* args of Alpha's assert: only check for assert if boolean or for undef,nill
-*/
+
 void LibFunc::Assert(Object & env) {
     assert(env.IsValid());
 
@@ -218,6 +219,7 @@ void LibFunc::Assert(Object & env) {
             Interpreter::Assert("Undefined Value");
         }
     }
+    env.Set(RETVAL_RESERVED_FIELD, true);
 }
 
 void LibFunc::Sqrt(Object & env) {
@@ -233,6 +235,20 @@ void LibFunc::Pow(Object & env) {
     const Value * value2 = GetArgument(env, 1);
     if(value1->GetType() != Value::Type::NumberType || value2->GetType() != Value::Type::NumberType)Interpreter::RuntimeError("You can only power a number");
     env.Set(RETVAL_RESERVED_FIELD, pow(value1->ToNumber(),value2->ToNumber()));
+}
+
+void LibFunc::Sin(Object & env) {
+    assert(env.IsValid());
+    const Value * value = GetArgument(env, 0);
+    if(value->GetType() != Value::Type::NumberType)Interpreter::RuntimeError("You can only use sin of a number");
+    env.Set(RETVAL_RESERVED_FIELD, sin(value->ToNumber()));
+}
+
+void LibFunc::Cos(Object & env) {
+    assert(env.IsValid());
+    const Value * value = GetArgument(env, 0);
+    if(value->GetType() != Value::Type::NumberType)Interpreter::RuntimeError("You can only use cos of a number");
+    env.Set(RETVAL_RESERVED_FIELD, cos(value->ToNumber()));
 }
 
 void LibFunc::GetTime(Object & env) {
@@ -259,9 +275,9 @@ void LibFunc::Input(Object & env) {
     std::string input;
     std::cin >> input;
     if(!input.empty() && isNumber(input)){ 
-        env.Set(RETVAL_RESERVED_FIELD, Value(std::stod(input)));
+        env.Set(RETVAL_RESERVED_FIELD, std::stod(input));
     }else{
-        env.Set(RETVAL_RESERVED_FIELD, Value(input));
+        env.Set(RETVAL_RESERVED_FIELD, input);
     }
 }
 
@@ -273,11 +289,15 @@ void LibFunc::Random(Object & env) {
 void LibFunc::ToNumber(Object & env) {
     assert(env.IsValid());
     const Value * value = GetArgument(env, 0);
-    if(value->GetType() != Value::Type::StringType)Interpreter::RuntimeError("YOU SUCK");
+    if(value->GetType() == Value::Type::NumberType){
+        env.Set(RETVAL_RESERVED_FIELD, value->ToNumber());
+        return;
+    }
+    if(value->GetType() != Value::Type::StringType)Interpreter::RuntimeError("You can only use to_number with a string or a number");
     if(!value->ToString().empty() && isNumber(value->ToString())){ 
-        env.Set(RETVAL_RESERVED_FIELD, Value(std::stod(value->ToString())));
+        env.Set(RETVAL_RESERVED_FIELD, std::stod(value->ToString()));
     }else{
-        Interpreter::RuntimeError("THIS STRING IS NOT A FCKING NUMBER");
+        Interpreter::RuntimeError("The given string isn't a number");
     }
     
 }

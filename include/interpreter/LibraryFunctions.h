@@ -18,6 +18,10 @@ namespace LibFunc {
 
     void Pow(Object & env);
 
+    void Sin(Object & env);
+
+    void Cos(Object & env);
+
     void GetTime(Object & env);
 
     void ToNumber(Object & env);

@@ -663,6 +663,8 @@ void Interpreter::InstallLibFuncs(void) {
     INSTALL_LIB_FUNC("assert",Assert);
     INSTALL_LIB_FUNC("sqrt",Sqrt);
     INSTALL_LIB_FUNC("pow",Pow);
+    INSTALL_LIB_FUNC("sin",Sin);
+    INSTALL_LIB_FUNC("cos",Cos);
     INSTALL_LIB_FUNC("get_time",GetTime);
     INSTALL_LIB_FUNC("input",Input);
     INSTALL_LIB_FUNC("to_number",ToNumber);

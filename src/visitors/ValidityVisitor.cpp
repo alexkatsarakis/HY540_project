@@ -85,7 +85,7 @@ void ValidityVisitor::VisitReturn(const Object &node) {
         current = *current[PARENT_FIELD]->ToObject();
         assert(current.IsValid());
     }
-    std::cerr << "DONT USE FCKING RETURN LIKE THAT MORON" << std::endl;
+    std::cerr << "Return isn't on a function" << std::endl;
     exit(0);
 }
 
@@ -97,7 +97,7 @@ void ValidityVisitor::VisitBreak(const Object &node) {
         current = *current[PARENT_FIELD]->ToObject();
         assert(current.IsValid());
     }
-    std::cerr << "DONT USE FCKING BREAK LIKE THAT MORON" << std::endl;
+    std::cerr << "Break isn't on a loop" << std::endl;
     exit(0);
 }
 
@@ -109,6 +109,6 @@ void ValidityVisitor::VisitContinue(const Object &node) {
         current = *current[PARENT_FIELD]->ToObject();
         assert(current.IsValid());
     }
-    std::cerr << "DONT USE FCKING CONTINUE LIKE THAT MORON" << std::endl;
+    std::cerr << "Continue isn't on a loop" << std::endl;
     exit(0);
 }
