@@ -81,11 +81,12 @@ private:
     bool IsGlobalScope(Object *scope) const;
 
     /****** Environment Actions ******/
-    void PushScopeSpace(Object *scope);
-    void PopScopeSpace();
-    Object *PushSlice();
-    Object *PushNested();
-    Object *PopScope();
+    Object *PushScopeSpace(Object *outerScope);
+    void PopScopeSpace(void);
+    Object *PushSlice(void);
+    Object *PushNested(void);
+    Object *PopScope(void);
+    Object *PushScope(const std::string & tag);
 
     /****** Start-up ******/
 
