@@ -125,7 +125,7 @@ t.d = [];
 t.e = [ { "key" : "val" }];
 print(t);
 */
-
+/*
 a = 25;
 function f() { }
 print(f.$closure);
@@ -150,3 +150,123 @@ for(i = 0; i < 100; ++i) {
     print(i);
     sleep(1000);
 }
+*/
+
+print("Closures:");
+function f(x) { return (function() { return x; }); }
+f1 = f(1);
+print(f1());
+f1.x = 2;
+print(f1());
+f1.$closure.x = 3;
+print(f1());
+f1["x"] = 4;
+print(f1());
+f1["$closure"].x = 5;
+print(f1());
+f1["$closure"]["x"] = 6;
+print(f1());
+
+print("\n\n");
+
+print("Blocks:");
+a = "variable";
+{
+    {
+        print(a);
+        local a = "inner";
+        print(a);
+    }
+}
+print(a);
+
+print("\n\n");
+
+print("Simple calls:");
+
+function foo(a, b) {
+    local a = 2;
+    print(a, b);
+}
+
+foo(10,20);
+
+table = [
+    { "a" : 1 },
+    { "b" : 2 }
+];
+
+print(object_keys(table));
+
+xx = 1;
+function ff() { print(xx); }
+yy = 2;
+function gg() { print(xx + yy); }
+zz = 3;
+function hh() { print(xx + yy + zz); }
+
+ff();
+gg();
+hh();
+
+print("\n\n");
+
+print("Big closure:");
+print(hh.$closure);
+print("\n\n");
+
+print("Inner functions:");
+
+function f_extensive(x) {
+    print(x);
+    function g(x) {
+        print(x);
+        function h(x) {
+            print(x);
+            return x + 1;
+        }
+        y = h(x + 1);
+        print(y);
+        return x + 1;
+    }
+    y = g(x + 1);
+    print(y);
+    print(x + 1);
+    print(x);
+}
+f_extensive(1);
+
+print("\n\n");
+
+
+print("Recursion:");
+
+function fib(x) {
+    if (x == 0) return 0;
+    if (x == 1) return 1;
+
+    return fib(x-1) + fib(x-2);
+}
+print(fib(14));
+
+print("\n\n");
+
+
+print("Functor:");
+
+functor1 = [];
+functor1["()"] = (function() { print("I am a functor"); });
+
+functor2 = [
+    { "()" : (function (x) {
+        print("Functor's argument is", x);
+    }) }
+];
+
+functor3 = [];
+functor4 = [ { "()" : 1234 } ];
+
+functor1();
+functor2(42);
+//functor3();
+//functor4();

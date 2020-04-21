@@ -262,8 +262,14 @@ const Value Interpreter::EvalBracket(Object &node) {
 const Value Interpreter::EvalCall(Object &node) {
     ASSERT_TYPE(AST_TAG_CALL);
     //FUNC_ENTER
-    const Value functionVal = EVAL(AST_TAG_FUNCTION);
+    Value functionVal = EVAL(AST_TAG_FUNCTION);
     Value argumentsVal = EVAL(AST_TAG_SUFFIX);    //actuals table
+
+    if (functionVal.IsObject()) {
+        const Value * element = (*functionVal.ToObject())["()"];
+        if (!element) RuntimeError("Cannot call an object if it is not a functor");
+        else functionVal = (*element);
+    }
 
     if (!functionVal.IsLibraryFunction() && !functionVal.IsProgramFunction())
         RuntimeError("Cannot call something that is not a function");
@@ -392,15 +398,13 @@ const Value Interpreter::EvalFunctionDef(Object &node) {
     if (IsLibFunc(name)) RuntimeError("Cannot define function \"" + name + "\". It shadows the library function.");
     if (LookupCurrentScope(name)) RuntimeError("Cannot define function \"" + name + "\". Symbol name already exists.");
 
+    Object * functionScope = currentScope;
     currentScope->Set(name, Value(&node, currentScope));
     currentScope->IncreaseRefCounter();
 
-    Object *slice = new Object();
-    slice->Set(PREVIOUS_RESERVED_FIELD, currentScope);
-    currentScope = slice;
-    currentScope->IncreaseRefCounter();
+    currentScope = PushSlice();
 
-    return Value(&node, currentScope);
+    return Value(&node, functionScope);
 }
 
 const Value Interpreter::EvalConst(Object &node) {
