@@ -236,6 +236,9 @@ const Value Interpreter::EvalMath(Object &node, MathOp op) {
     if (!op1.IsNumber()) RuntimeError("First operand is not a number in an arithmetic operation");
     if (!op2.IsNumber()) RuntimeError("Second operand is not a number in an arithmetic operation");
 
+    if ( (op == MathOp::Div || op == MathOp::Mod) &&
+         Utilities::IsZero(op2.ToNumber())) RuntimeError("Cannot divide by zero");
+
     switch (op) {
         case MathOp::Plus: return op1.ToNumber() + op2.ToNumber();
         case MathOp::Minus: return op1.ToNumber() - op2.ToNumber();
@@ -434,7 +437,9 @@ Symbol Interpreter::ClosureSetElem(const Value &lvalue, const Value &index) {
 
     Object *table = lvalue.ToObject_NoConst();
 
-    if (index.IsNumber() && !table->ElementExists(index.ToNumber()))
+    if (index.IsString() && index.ToString() == CLOSURE_RESERVED_FIELD)
+        RuntimeError("Cannot change the closure object of a function");
+    else if (index.IsNumber() && !table->ElementExists(index.ToNumber()))
         RuntimeError("Cannot set field. Field \"" + std::to_string(index.ToNumber()) + "\" does not exist in closure.");
     else if (index.IsString() && !table->ElementExists(index.ToString()))
         RuntimeError("Cannot set field. Field \"" + index.ToString() + "\" does not exist in closure.");
@@ -453,9 +458,9 @@ Symbol Interpreter::ObjectSetElem(const Value &lvalue, const Value &index) {
     Object *table = lvalue.ToObject_NoConst();
 
     if (index.IsNumber())
-        return Symbol(table, index.ToNumber());
+        return Symbol(table, index.ToNumber(), true);
     else if (index.IsString())
-        return Symbol(table, index.ToString());
+        return Symbol(table, index.ToString(), true);
     else
         assert(false);
 }

@@ -262,8 +262,14 @@ const Value Interpreter::EvalBracket(Object &node) {
 const Value Interpreter::EvalCall(Object &node) {
     ASSERT_TYPE(AST_TAG_CALL);
     //FUNC_ENTER
-    const Value functionVal = EVAL(AST_TAG_FUNCTION);
+    Value functionVal = EVAL(AST_TAG_FUNCTION);
     Value argumentsVal = EVAL(AST_TAG_SUFFIX);    //actuals table
+
+    if (functionVal.IsObject()) {
+        const Value * element = (*functionVal.ToObject())["()"];
+        if (!element) RuntimeError("Cannot call an object if it is not a functor");
+        else functionVal = (*element);
+    }
 
     if (!functionVal.IsLibraryFunction() && !functionVal.IsProgramFunction())
         RuntimeError("Cannot call something that is not a function");

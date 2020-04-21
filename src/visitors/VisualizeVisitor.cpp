@@ -301,7 +301,7 @@ void VisualizeVisitor::VisitDoubleColon(const Object &node) {
 void VisualizeVisitor::VisitDollar(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_DOLLAR_ID);
     SaveOrphan();
-    CreateNewNode("$" + node[AST_TAG_ID]->ToString());
+    CreateNewNode(node[AST_TAG_ID]->ToString());
 }
 
 void VisualizeVisitor::VisitMember(const Object &node) {

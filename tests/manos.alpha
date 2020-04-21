@@ -160,6 +160,12 @@ f1.x = 2;
 print(f1());
 f1.$closure.x = 3;
 print(f1());
+f1["x"] = 4;
+print(f1());
+f1["$closure"].x = 5;
+print(f1());
+f1["$closure"]["x"] = 6;
+print(f1());
 
 print("\n\n");
 
@@ -242,3 +248,25 @@ function fib(x) {
     return fib(x-1) + fib(x-2);
 }
 print(fib(14));
+
+print("\n\n");
+
+
+print("Functor:");
+
+functor1 = [];
+functor1["()"] = (function() { print("I am a functor"); });
+
+functor2 = [
+    { "()" : (function (x) {
+        print("Functor's argument is", x);
+    }) }
+];
+
+functor3 = [];
+functor4 = [ { "()" : 1234 } ];
+
+functor1();
+functor2(42);
+//functor3();
+//functor4();

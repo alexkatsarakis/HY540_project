@@ -126,7 +126,7 @@ const std::string UnparseVisitor::UnparseDoubleColon(const std::string &value) {
     return string("::" + value);
 }
 const std::string UnparseVisitor::UnparseDollar(const std::string &value) {
-    return string("$" + value);
+    return string(value);
 }
 const std::string UnparseVisitor::UnparseMember(const std::string &member) {
     return member;
