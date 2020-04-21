@@ -169,30 +169,49 @@ Object *Interpreter::FindScope(const std::string &symbol) const {
     assert(false);
 }
 
-void Interpreter::PushScopeSpace(Object *scope) {
-    scope->IncreaseRefCounter();
-    scopeStack.push_front(scope);
-    scope->IncreaseRefCounter();
+Object *Interpreter::PushScopeSpace(Object * outerScope) {
+    Object * newScopeSpace = new Object();
+    newScopeSpace->Set(OUTER_RESERVED_FIELD, outerScope);
+    newScopeSpace->IncreaseRefCounter();
+    scopeStack.push_front(newScopeSpace);
+    return newScopeSpace;
 }
-void Interpreter::PopScopeSpace() {
-    Object *scope = scopeStack.front();
+
+void Interpreter::PopScopeSpace(void) {
     scopeStack.pop_front();
-    scope->DecreaseRefCounter();
 }
-Object *Interpreter::PushSlice() {
-    Object *scope = new Object();
-    scope->Set(PREVIOUS_RESERVED_FIELD, Value(currentScope));
+
+Object * Interpreter::PushScope(const std::string & tag) {
+    assert(!tag.empty());
+    assert(tag == PREVIOUS_RESERVED_FIELD ||
+           tag == OUTER_RESERVED_FIELD);
+    assert(currentScope);
+
+    Object * scope = new Object();
+    scope->Set(tag, Value(currentScope));
+
+    currentScope->IncreaseRefCounter();
     scope->IncreaseRefCounter();
-    return scope;
-}
-Object *Interpreter::PushNested() {
-    Object *scope = new Object();
-    scope->Set(OUTER_RESERVED_FIELD, Value(currentScope));
-    scope->IncreaseRefCounter();
+
+    assert(!scopeStack.empty());
+    scopeStack.pop_front();
+    scopeStack.push_front(scope);
+
     return scope;
 }
 
-Object *Interpreter::PopScope() {
+Object *Interpreter::PushSlice(void) {
+    return PushScope(PREVIOUS_RESERVED_FIELD);
+}
+
+Object *Interpreter::PushNested(void) {
+    return PushScope(OUTER_RESERVED_FIELD);
+}
+
+Object *Interpreter::PopScope(void) {
+    assert(currentScope && currentScope->IsValid());
+    assert(currentScope->ElementExists(OUTER_RESERVED_FIELD));
+
     Object *scope = currentScope;
     currentScope = (*scope)[OUTER_RESERVED_FIELD]->ToObject_NoConst();
     scope->DecreaseRefCounter();
@@ -530,15 +549,12 @@ Symbol Interpreter::EvalLvalueWrite(Object &node) {
 }
 
 void Interpreter::BlockEnter(void) {
-    /*  Object *scope = new Object();
-    scope->Set(OUTER_RESERVED_FIELD, currentScope);
-    scope->IncreaseRefCounter(); */
-    Object *scope = PushNested();
-    currentScope = scope;
+    currentScope = PushNested();
 }
 
 void Interpreter::BlockExit(void) {
-    Object *scope = nullptr;
+    assert(currentScope);
+
     Object *tmp = nullptr;
 
     bool shouldSlice = currentScope->ElementExists(PREVIOUS_RESERVED_FIELD);
@@ -549,25 +565,13 @@ void Interpreter::BlockExit(void) {
     }
 
     assert(currentScope->ElementExists(OUTER_RESERVED_FIELD));
-    /* tmp = currentScope;
-    currentScope = (*currentScope)[OUTER_RESERVED_FIELD]->ToObject_NoConst();
-    tmp->DecreaseRefCounter(); */
     PopScope();
 
-    if (shouldSlice) {
-        scope = new Object();
-        scope->Set(PREVIOUS_RESERVED_FIELD, currentScope);
-        scope->IncreaseRefCounter();
-        currentScope = scope;
-    }
+    if (shouldSlice) currentScope = PushSlice();
 }
 
 Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClosure, Object *arguments) {
-    //Push scope space pointing to function closure
-    PushScopeSpace(functionClosure);
-    //Push function environment
-    //Current scope is now the function environment
-    currentScope = PushNested();
+    currentScope = PushScopeSpace(functionClosure);
     inFunctionScope = true;
 
     const Object &functionFormals = *((*functionAst)[AST_TAG_FUNCTION_FORMALS]->ToObject());
@@ -615,10 +619,8 @@ Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClos
     //Pop function environment
     // PopScope(); //Done in BlockExit
 
-    //Push scope space pointing to function closure
     PopScopeSpace();
-    //Current scope is now the function closure
-    currentScope = functionClosure;
+    currentScope = scopeStack.front();
 
     return retVal;
 }
@@ -627,7 +629,9 @@ Value Interpreter::CallLibraryFunction(const std::string &functionId, LibraryFun
     arguments->Set(RETVAL_RESERVED_FIELD, Value(NilTypeValue::Nil));
     assert(functionLib);
     functionLib(*arguments);
-    retvalRegister = *((*arguments)[RETVAL_RESERVED_FIELD]);    //do we need to modify retval?
+    Value result = *((*arguments)[RETVAL_RESERVED_FIELD]);    //do we need to modify retval?
+    if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter(); //need to know why
+    retvalRegister = result;
     return retvalRegister;
     // if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter(); //need to know why
 }

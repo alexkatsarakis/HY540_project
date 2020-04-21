@@ -392,15 +392,13 @@ const Value Interpreter::EvalFunctionDef(Object &node) {
     if (IsLibFunc(name)) RuntimeError("Cannot define function \"" + name + "\". It shadows the library function.");
     if (LookupCurrentScope(name)) RuntimeError("Cannot define function \"" + name + "\". Symbol name already exists.");
 
+    Object * functionScope = currentScope;
     currentScope->Set(name, Value(&node, currentScope));
     currentScope->IncreaseRefCounter();
 
-    Object *slice = new Object();
-    slice->Set(PREVIOUS_RESERVED_FIELD, currentScope);
-    currentScope = slice;
-    currentScope->IncreaseRefCounter();
+    currentScope = PushSlice();
 
-    return Value(&node, currentScope);
+    return Value(&node, functionScope);
 }
 
 const Value Interpreter::EvalConst(Object &node) {
