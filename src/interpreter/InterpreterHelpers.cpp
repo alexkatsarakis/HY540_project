@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <set>
 
 void Interpreter::InstallEvaluators(void) {
     /* Evaluators used for read-only access */
@@ -47,6 +48,7 @@ void Interpreter::InstallEvaluators(void) {
     INSTALL(AST_TAG_BMINUSMINUS, EvalMinusMinusBefore);
     INSTALL(AST_TAG_AMINUSMINUS, EvalMinusMinusAfter);
     INSTALL(AST_TAG_ELIST, EvalExpressionList);
+    INSTALL(AST_TAG_ARGLIST, EvalArgumentList);
     INSTALL(AST_TAG_CALL_SUFFIX, EvalCallSuffix);
     INSTALL(AST_TAG_CALL, EvalCall);
     INSTALL(AST_TAG_NORMAL_CALL, EvalNormalCall);
@@ -79,6 +81,13 @@ void Interpreter::InstallEvaluators(void) {
 void Interpreter::RuntimeError(const std::string &msg) {
     std::cerr << "\033[31;1m"
               << "Runtime Error: "
+              << "\033[0m" << msg << std::endl;
+    exit(EXIT_FAILURE);
+}
+
+void Interpreter::Assert(const std::string &msg) {
+    std::cerr << "\033[31;1m"     //34;1m"
+              << "Assertion: "
               << "\033[0m" << msg << std::endl;
     exit(EXIT_FAILURE);
 }
@@ -169,30 +178,49 @@ Object *Interpreter::FindScope(const std::string &symbol) const {
     assert(false);
 }
 
-void Interpreter::PushScopeSpace(Object *scope) {
-    scope->IncreaseRefCounter();
-    scopeStack.push_front(scope);
-    scope->IncreaseRefCounter();
+Object *Interpreter::PushScopeSpace(Object * outerScope) {
+    Object * newScopeSpace = new Object();
+    newScopeSpace->Set(OUTER_RESERVED_FIELD, outerScope);
+    newScopeSpace->IncreaseRefCounter();
+    scopeStack.push_front(newScopeSpace);
+    return newScopeSpace;
 }
-void Interpreter::PopScopeSpace() {
-    Object *scope = scopeStack.front();
+
+void Interpreter::PopScopeSpace(void) {
     scopeStack.pop_front();
-    scope->DecreaseRefCounter();
 }
-Object *Interpreter::PushSlice() {
-    Object *scope = new Object();
-    scope->Set(PREVIOUS_RESERVED_FIELD, Value(currentScope));
+
+Object * Interpreter::PushScope(const std::string & tag) {
+    assert(!tag.empty());
+    assert(tag == PREVIOUS_RESERVED_FIELD ||
+           tag == OUTER_RESERVED_FIELD);
+    assert(currentScope);
+
+    Object * scope = new Object();
+    scope->Set(tag, Value(currentScope));
+
+    currentScope->IncreaseRefCounter();
     scope->IncreaseRefCounter();
-    return scope;
-}
-Object *Interpreter::PushNested() {
-    Object *scope = new Object();
-    scope->Set(OUTER_RESERVED_FIELD, Value(currentScope));
-    scope->IncreaseRefCounter();
+
+    assert(!scopeStack.empty());
+    scopeStack.pop_front();
+    scopeStack.push_front(scope);
+
     return scope;
 }
 
-Object *Interpreter::PopScope() {
+Object *Interpreter::PushSlice(void) {
+    return PushScope(PREVIOUS_RESERVED_FIELD);
+}
+
+Object *Interpreter::PushNested(void) {
+    return PushScope(OUTER_RESERVED_FIELD);
+}
+
+Object *Interpreter::PopScope(void) {
+    assert(currentScope && currentScope->IsValid());
+    assert(currentScope->ElementExists(OUTER_RESERVED_FIELD));
+
     Object *scope = currentScope;
     currentScope = (*scope)[OUTER_RESERVED_FIELD]->ToObject_NoConst();
     scope->DecreaseRefCounter();
@@ -216,6 +244,9 @@ const Value Interpreter::EvalMath(Object &node, MathOp op) {
 
     if (!op1.IsNumber()) RuntimeError("First operand is not a number in an arithmetic operation");
     if (!op2.IsNumber()) RuntimeError("Second operand is not a number in an arithmetic operation");
+
+    if ( (op == MathOp::Div || op == MathOp::Mod) &&
+         Utilities::IsZero(op2.ToNumber())) RuntimeError("Cannot divide by zero");
 
     switch (op) {
         case MathOp::Plus: return op1.ToNumber() + op2.ToNumber();
@@ -415,7 +446,9 @@ Symbol Interpreter::ClosureSetElem(const Value &lvalue, const Value &index) {
 
     Object *table = lvalue.ToObject_NoConst();
 
-    if (index.IsNumber() && !table->ElementExists(index.ToNumber()))
+    if (index.IsString() && index.ToString() == CLOSURE_RESERVED_FIELD)
+        RuntimeError("Cannot change the closure object of a function");
+    else if (index.IsNumber() && !table->ElementExists(index.ToNumber()))
         RuntimeError("Cannot set field. Field \"" + std::to_string(index.ToNumber()) + "\" does not exist in closure.");
     else if (index.IsString() && !table->ElementExists(index.ToString()))
         RuntimeError("Cannot set field. Field \"" + index.ToString() + "\" does not exist in closure.");
@@ -434,9 +467,9 @@ Symbol Interpreter::ObjectSetElem(const Value &lvalue, const Value &index) {
     Object *table = lvalue.ToObject_NoConst();
 
     if (index.IsNumber())
-        return Symbol(table, index.ToNumber());
+        return Symbol(table, index.ToNumber(), true);
     else if (index.IsString())
-        return Symbol(table, index.ToString());
+        return Symbol(table, index.ToString(), true);
     else
         assert(false);
 }
@@ -530,15 +563,12 @@ Symbol Interpreter::EvalLvalueWrite(Object &node) {
 }
 
 void Interpreter::BlockEnter(void) {
-    /*  Object *scope = new Object();
-    scope->Set(OUTER_RESERVED_FIELD, currentScope);
-    scope->IncreaseRefCounter(); */
-    Object *scope = PushNested();
-    currentScope = scope;
+    currentScope = PushNested();
 }
 
 void Interpreter::BlockExit(void) {
-    Object *scope = nullptr;
+    assert(currentScope);
+
     Object *tmp = nullptr;
 
     bool shouldSlice = currentScope->ElementExists(PREVIOUS_RESERVED_FIELD);
@@ -549,55 +579,101 @@ void Interpreter::BlockExit(void) {
     }
 
     assert(currentScope->ElementExists(OUTER_RESERVED_FIELD));
-    /* tmp = currentScope;
-    currentScope = (*currentScope)[OUTER_RESERVED_FIELD]->ToObject_NoConst();
-    tmp->DecreaseRefCounter(); */
     PopScope();
 
-    if (shouldSlice) {
-        scope = new Object();
-        scope->Set(PREVIOUS_RESERVED_FIELD, currentScope);
-        scope->IncreaseRefCounter();
-        currentScope = scope;
+    if (shouldSlice) currentScope = PushSlice();
+}
+
+std::vector<std::string> GetFormalNames(const Object &functionFormals) {
+    std::vector<std::string> formalNames;
+    for (register unsigned i = 0; i < functionFormals.GetNumericSize(); ++i) {
+        Object &formal = *(functionFormals[i]->ToObject_NoConst());
+        assert((formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) || (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN));
+        std::string formalName;
+        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
+            assert(formal.ElementExists(AST_TAG_ID));
+            formalName = formal[AST_TAG_ID]->ToString();
+        } else if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
+            assert(formal.ElementExists(AST_TAG_LVALUE));
+            const Object &formalNode = *(formal[AST_TAG_LVALUE]->ToObject_NoConst());
+            assert(formalNode[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL);
+            assert(formalNode.ElementExists(AST_TAG_ID));
+            formalName = formalNode[AST_TAG_ID]->ToString();
+        } else {
+            assert(0);
+        }
+        formalNames.push_back(formalName);
     }
+    return formalNames;
 }
 
 Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClosure, Object *arguments) {
-    //Push scope space pointing to function closure
-    PushScopeSpace(functionClosure);
-    //Push function environment
-    //Current scope is now the function environment
-    currentScope = PushNested();
+    currentScope = PushScopeSpace(functionClosure);
     inFunctionScope = true;
 
     const Object &functionFormals = *((*functionAst)[AST_TAG_FUNCTION_FORMALS]->ToObject());
     const Object &functionActuals = *arguments;
+    std::set<std::string> mappedFormals;
+
+    //Number of args error
+    unsigned functionFormalSize = functionFormals.GetNumericSize();
+    unsigned functionActualPositionalSize = functionActuals.GetNumericSize();
+    if (functionActualPositionalSize > functionFormalSize)
+        RuntimeError("Number of Actual Positional Arguments(" + std::to_string(functionActualPositionalSize) + ") exceeds number of Formal Parameters(" + std::to_string(functionFormalSize) + ")\n");
+    //Unexpected name error
+    auto formalNames = GetFormalNames(functionFormals);
+    auto actualNames = functionActuals.GetUserKeys();
+    std::vector<std::string> actualMinusFormals;
+    std::set_difference(actualNames.begin(), actualNames.end(),
+                        formalNames.begin(), formalNames.end(),
+                        std::inserter(actualMinusFormals, actualMinusFormals.begin()));
+    if (!actualMinusFormals.empty())
+        RuntimeError("Unexpected Named\n");    //TODO Add Info
+
     for (register unsigned i = 0; i < functionFormals.GetNumericSize(); ++i) {
-        Object &child = *(functionFormals[i]->ToObject_NoConst());
-        assert((child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) || (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN));
-        std::string formalName;       //Name of formal, i is index of formal/actual
-        Value actualValue;            //Value of actual
-        bool actualExists = false;    //actual/formal match exists
-        if (i < functionActuals.GetNumericSize()) {
-            actualExists = true;
-            actualValue = *(functionActuals[i]);
-        }
+        Object &formal = *(functionFormals[i]->ToObject_NoConst());
+        assert((formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) || (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN));
 
-        if (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
-            assert(child.ElementExists(AST_TAG_ID));
-            formalName = child[AST_TAG_ID]->ToString();
+        std::string formalName = formalNames.at(i);    //Name of formal, i is index of formal/actual
+        Value actualValue;                             //Value of actual
+        bool actualExists = false;                     //actual/formal map exists
 
-            assert(actualExists);
-            dispatcher.Eval(child);
+        /*  //Resolve formal Name
+        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
+            assert(formal.ElementExists(AST_TAG_ID));
+            formalName = formal[AST_TAG_ID]->ToString();
         }
-        if (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
-            assert(child.ElementExists(AST_TAG_LVALUE));
-            const Object &formalNode = *(child[AST_TAG_LVALUE]->ToObject_NoConst());
+        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
+            assert(formal.ElementExists(AST_TAG_LVALUE));
+            const Object &formalNode = *(formal[AST_TAG_LVALUE]->ToObject_NoConst());
             assert(formalNode[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL);
             assert(formalNode.ElementExists(AST_TAG_ID));
             formalName = formalNode[AST_TAG_ID]->ToString();
+        } */
 
-            if (!actualExists) actualValue = dispatcher.Eval(child);    //Get Value of optional expression
+        if (i < functionActuals.GetNumericSize()) {
+            if (functionActuals.ElementExists(formalName))
+                RuntimeError("Both positional and named\n");    //TODO Add info
+            actualExists = true;
+            actualValue = *(functionActuals[i]);
+            assert(mappedFormals.count(formalName) == 0);
+            mappedFormals.insert(formalName);
+        } else if (functionActuals.ElementExists(formalName)) {
+            // if (mappedFormals.count(formalName) == 1)
+            // RuntimeError("Named Override\n");    //TODO Add info
+            actualExists = true;
+            actualValue = *(functionActuals[formalName]);
+            assert(mappedFormals.count(formalName) == 0);
+            mappedFormals.insert(formalName);
+        }
+
+        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
+            if (!actualExists)
+                RuntimeError("Formal does not match actual\n");    //TODO Add info
+            dispatcher.Eval(formal);
+        }
+        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
+            if (!actualExists) actualValue = dispatcher.Eval(formal);    //Evaluate optional expression
         }
         currentScope->Set(formalName, actualValue);
     }
@@ -615,10 +691,8 @@ Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClos
     //Pop function environment
     // PopScope(); //Done in BlockExit
 
-    //Push scope space pointing to function closure
     PopScopeSpace();
-    //Current scope is now the function closure
-    currentScope = functionClosure;
+    currentScope = scopeStack.front();
 
     return retVal;
 }
@@ -627,7 +701,9 @@ Value Interpreter::CallLibraryFunction(const std::string &functionId, LibraryFun
     arguments->Set(RETVAL_RESERVED_FIELD, Value(NilTypeValue::Nil));
     assert(functionLib);
     functionLib(*arguments);
-    retvalRegister = *((*arguments)[RETVAL_RESERVED_FIELD]);    //do we need to modify retval?
+    Value result = *((*arguments)[RETVAL_RESERVED_FIELD]);    //do we need to modify retval?
+    if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter(); //need to know why
+    retvalRegister = result;
     return retvalRegister;
     // if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter(); //need to know why
 }
@@ -645,18 +721,23 @@ Interpreter::Interpreter(void) {
     InstallEvaluators();
 }
 
-void Interpreter::InstallLibFuncs(void) {
-    globalScope->Set("print", Value(LibFunc::Print, "print"));
-    globalScope->Set("typeof", Value(LibFunc::Typeof, "typeof"));
-    globalScope->Set("object_keys", Value(LibFunc::ObjectKeys, "object_keys"));
-    globalScope->Set("object_size", Value(LibFunc::ObjectSize, "object_size"));
-    globalScope->Set("sleep", Value(LibFunc::Sleep, "sleep"));
+#define INSTALL_LIB_FUNC(x,y) globalScope->Set(x,Value(LibFunc::y, x));libraryFuncs.push_front(x);
 
-    libraryFuncs.push_front("print");
-    libraryFuncs.push_front("typeof");
-    libraryFuncs.push_front("object_keys");
-    libraryFuncs.push_front("object_size");
-    libraryFuncs.push_front("sleep");
+void Interpreter::InstallLibFuncs(void) {
+    INSTALL_LIB_FUNC("print",Print);
+    INSTALL_LIB_FUNC("typeof",Typeof);
+    INSTALL_LIB_FUNC("object_keys",ObjectKeys);
+    INSTALL_LIB_FUNC("object_size",ObjectSize);
+    INSTALL_LIB_FUNC("sleep",Sleep);
+    INSTALL_LIB_FUNC("assert",Assert);
+    INSTALL_LIB_FUNC("sqrt",Sqrt);
+    INSTALL_LIB_FUNC("pow",Pow);
+    INSTALL_LIB_FUNC("sin",Sin);
+    INSTALL_LIB_FUNC("cos",Cos);
+    INSTALL_LIB_FUNC("get_time",GetTime);
+    INSTALL_LIB_FUNC("input",Input);
+    INSTALL_LIB_FUNC("to_number",ToNumber);
+    INSTALL_LIB_FUNC("rand",Random);
 }
 
 void Interpreter::Execute(Object &program) {

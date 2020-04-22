@@ -60,15 +60,26 @@ Object *ParseID(const char *type, char *value) {
     return node;
 }
 
-Object *ParseRecursion(Object *rest, Object *current) {
-    assert(rest && rest->IsValid());
+Object *ParseRecursion(Object *parsed, Object *current) {
+    assert(parsed && parsed->IsValid());
     assert(current && current->IsValid());
-    assert(rest->GetTotal() >= 1);
+    assert(parsed->GetTotal() >= 1);
 
-    rest->Set(rest->GetTotal() - 1, Value(current));
+    parsed->Set(parsed->GetTotal() - 1, Value(current));    //TODO: Convert GetTotal to GetNumeric ?
 
-    assert(rest->IsValid());
-    return rest;
+    assert(parsed->IsValid());
+    return parsed;
+}
+
+Object *ParseRecursion(Object *parsed, const char *formalName, Object *current) {
+    assert(parsed && parsed->IsValid());
+    assert(current && current->IsValid());
+    assert(parsed->GetStringSize() >= 1);
+
+    parsed->Set(formalName, Value(current));
+
+    assert(parsed->IsValid());
+    return parsed;
 }
 
 Object *ParseCompleteRecursion(const char *type, Object *current, Object *rest) {
@@ -76,7 +87,7 @@ Object *ParseCompleteRecursion(const char *type, Object *current, Object *rest) 
     assert(current && current->IsValid());
     assert(rest && rest->IsValid());
 
-    auto table = new Object();
+    Object *table = new Object();
     table->Set(AST_TAG_TYPE_KEY, type);
 
     table->Set(double(0), Value(current));
@@ -86,7 +97,7 @@ Object *ParseCompleteRecursion(const char *type, Object *current, Object *rest) 
         table->Set(double(i + 1), v);
     }
 
-    /* TODO: Shoul we delete rest? */
+    /* TODO: Should we delete rest? */
     rest->Clear();
     delete rest;
 
@@ -94,25 +105,70 @@ Object *ParseCompleteRecursion(const char *type, Object *current, Object *rest) 
     return table;
 }
 
-Object *MergeNumerics(const char *newType, Object *table1, Object *table2) {
-    assert(newType);
+Object *ParseCompleteRecursion(const char *type, const char *formalName, Object *current, Object *rest) {
+    assert(type);
+    assert(current && current->IsValid());
+    assert(rest && rest->IsValid());
+
+    Object *table = new Object();
+    table->Set(AST_TAG_TYPE_KEY, type);
+
+    table->Set(formalName, Value(current));
+
+    for (const std::string &key : rest->GetUserKeys()) {
+        Value v = *((*rest)[key]);
+        table->Set(key, v);
+    }
+
+    /* TODO: Should we delete rest? */
+    rest->Clear();
+    delete rest;
+
+    assert(table->IsValid());
+    return table;
+}
+
+Object *MergeIdLists(const char *type, Object *table1, Object *table2) {
+    assert(type);
     assert(table1 && table1->IsValid());
     assert(table2 && table2->IsValid());
 
-    auto table = new Object();
-    table->Set(AST_TAG_TYPE_KEY, newType);
-
+    Object *table = new Object();
+    table->Set(AST_TAG_TYPE_KEY, type);
     for (register unsigned i = 0; i < table1->GetNumericSize(); ++i) {
         Value v = *(*table1)[double(i)];
         table->Set(double(i), v);
     }
-
     for (register unsigned i = 0; i < table2->GetNumericSize(); ++i) {
         Value v = *(*table2)[double(i)];
         table->Set(double(table1->GetNumericSize() + i), v);
     }
     assert(table->GetNumericSize() == table1->GetNumericSize() + table2->GetNumericSize());
-    /* TODO: Shoul we delete rest? */
+    /* TODO: Should we delete rest? */
+    table1->Clear(), delete table1;
+    table2->Clear(), delete table2;
+
+    assert(table->IsValid());
+    return table;
+}
+
+Object *MergeArgLists(const char *type, Object *table1, Object *table2) {
+    assert(type);
+    assert(table1 && table1->IsValid());
+    assert(table2 && table2->IsValid());
+
+    Object *table = new Object();
+    table->Set(AST_TAG_TYPE_KEY, type);
+    for (register unsigned i = 0; i < table1->GetNumericSize(); ++i) {
+        Value v = *(*table1)[i];
+        table->Set(i, v);
+    }
+    for (const std::string key : table2->GetUserKeys()) {
+        Value v = *(*table2)[key];
+        table->Set(key, v);
+    }
+    assert(table->GetTotal() == table1->GetNumericSize() + table2->GetStringSize());
+    /* TODO: Should we delete rest? */
     table1->Clear(), delete table1;
     table2->Clear(), delete table2;
 
@@ -300,12 +356,32 @@ Object *ParseMethodCall(Object *id, Object *elist) {
     return ParseTwoChildren(AST_TAG_METHOD_CALL, AST_TAG_FUNCTION, id, AST_TAG_ARGUMENTS, elist);
 }
 
+Object *ParseExprArgList(Object *expr, Object *rest) {
+    return ParseCompleteRecursion(AST_TAG_ARGLIST, expr, rest);
+}
+
+Object *ParseNamedArgList(const char *formalName, Object *named, Object *rest) {
+    return ParseCompleteRecursion(AST_TAG_ARGLIST, formalName, named, rest);
+}
+
+Object *ParseMixedArgList(Object *positional, Object *named) {
+    return MergeArgLists(AST_TAG_ARGLIST, positional, named);
+}
+
+Object *ParseEmptyArgList(void) {
+    return ParseEmptyNode(AST_TAG_ARGLIST);
+}
+
+Object *ParseCommaNamedArgs(Object *parsed, const char *formalName, Object *named) {
+    return ParseRecursion(parsed, formalName, named);
+}
+
 Object *ParseEmptyElist(void) {
     return ParseEmptyNode(AST_TAG_ELIST);
 }
 
-Object *ParseCommaExprs(Object *rest, Object *expr) {
-    return ParseRecursion(rest, expr);
+Object *ParseCommaExprs(Object *parsed, Object *expr) {
+    return ParseRecursion(parsed, expr);
 }
 
 Object *ParseElist(Object *expr, Object *rest) {
@@ -413,7 +489,7 @@ Object *ParseCommaIds(Object *rest, Object *id) {
     return ParseRecursion(rest, id);
 }
 
-Object *ParseOptionals(Object *rest, Object* assignment){
+Object *ParseOptionals(Object *rest, Object *assignment) {
     return ParseRecursion(rest, assignment);
 }
 
@@ -422,14 +498,14 @@ Object *ParseIdList(Object *id, Object *rest) {
 }
 
 Object *ParseMixedIdList(Object *required, Object *optionals) {
-    return MergeNumerics(AST_TAG_ID_LIST, required, optionals);
+    return MergeIdLists(AST_TAG_ID_LIST, required, optionals);
 }
 
-Object *ParseOptionalIdList(Object *assignment, Object *rest){
+Object *ParseOptionalIdList(Object *assignment, Object *rest) {
     return ParseCompleteRecursion(AST_TAG_ID_LIST, assignment, rest);
 }
 
-Object *ParseFormal(char *value){
+Object *ParseFormal(char *value) {
     return ParseID(AST_TAG_FORMAL, value);
 }
 

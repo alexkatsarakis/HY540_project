@@ -44,6 +44,7 @@ public:
     virtual void VisitCallSuffix(const Object &node) = 0;
     virtual void VisitNormalCall(const Object &node) = 0;
     virtual void VisitMethodCall(const Object &node) = 0;
+    virtual void VisitArgumentList(const Object &node) = 0;
     virtual void VisitExpressionList(const Object &node) = 0;
     virtual void VisitObjectDef(const Object &node) = 0;
     virtual void VisitIndexed(const Object &node) = 0;

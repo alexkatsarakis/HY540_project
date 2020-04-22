@@ -81,11 +81,12 @@ private:
     bool IsGlobalScope(Object *scope) const;
 
     /****** Environment Actions ******/
-    void PushScopeSpace(Object *scope);
-    void PopScopeSpace();
-    Object *PushSlice();
-    Object *PushNested();
-    Object *PopScope();
+    Object *PushScopeSpace(Object *outerScope);
+    void PopScopeSpace(void);
+    Object *PushSlice(void);
+    Object *PushNested(void);
+    Object *PopScope(void);
+    Object *PushScope(const std::string & tag);
 
     /****** Start-up ******/
 
@@ -142,6 +143,7 @@ private:
     const Value EvalCallSuffix(Object &node);
     const Value EvalNormalCall(Object &node);
     const Value EvalMethodCall(Object &node);
+    const Value EvalArgumentList(Object &node);
     const Value EvalExpressionList(Object &node);
     const Value EvalObjectDef(Object &node);
     const Value EvalIndexed(Object &node);
@@ -169,6 +171,8 @@ public:
     void Execute(Object &program);
 
     static void RuntimeError(const std::string &msg);
+
+    static void Assert(const std::string &msg);
 
     virtual ~Interpreter();
 };

@@ -262,56 +262,40 @@ const Value Interpreter::EvalBracket(Object &node) {
 const Value Interpreter::EvalCall(Object &node) {
     ASSERT_TYPE(AST_TAG_CALL);
     //FUNC_ENTER
-    const Value lvalue = EVAL(AST_TAG_FUNCTION);   //not always the function: in the case of obj..f() it holds obj
+    Value functionVal = EVAL(AST_TAG_FUNCTION);
     Value argumentsVal = EVAL(AST_TAG_SUFFIX);    //actuals table
 
-    assert(argumentsVal.IsObject());
-
-    if (lvalue.IsLibraryFunction() || lvalue.IsProgramFunction()){
-        const Value functionVal = lvalue;
-        Object *arguments = argumentsVal.ToObject_NoConst();
-        retvalRegister.FromUndef();    //reset retVal register
-        Value result;
-        if (functionVal.IsProgramFunction()) {
-            Object *functionAst = functionVal.ToProgramFunctionAST_NoConst();
-            Object *functionClosure = functionVal.ToProgramFunctionClosure_NoConst();
-            result = CallProgramFunction(functionAst, functionClosure, arguments);
-        } else if (functionVal.IsLibraryFunction()) {
-            std::string functionId = functionVal.ToLibraryFunctionId();
-            LibraryFunc functionLib = functionVal.ToLibraryFunction();
-            result = CallLibraryFunction(functionId, functionLib, arguments);
-        }
-
-        arguments->Clear();
-        delete arguments;
-        argumentsVal.FromUndef();
-        return result;
-    }else{
-        const Value index = (*argumentsVal.ToObject())[AST_TAG_FUNCTION]->ToString();   // name of the method
-        const Value method = TableGetElem(lvalue, index);
-        if (!method.IsProgramFunction())
-            RuntimeError("Cannot call something that is not a function");
-
-        Object *functionAst = method.ToProgramFunctionAST_NoConst();
-        Object *functionClosure = method.ToProgramFunctionClosure_NoConst();
-        Object *arguments = argumentsVal.ToObject_NoConst();
-        retvalRegister.FromUndef();
-
-        for (int i  = arguments->GetNumericSize(); i > 0; i--)
-            arguments->Set(i, *(*arguments)[i - 1]);
-
-        arguments->Set(0, lvalue);  /* set "this" as the first actual */
-
-        auto result = CallProgramFunction(functionAst, functionClosure, arguments);
-        
-        arguments->Clear();
-        arguments->Clear();
-        delete arguments;
-        argumentsVal.FromUndef();
-        
-        return result;
+    if (functionVal.IsObject()) {
+        const Value * element = (*functionVal.ToObject())["()"];
+        if (!element) RuntimeError("Cannot call an object if it is not a functor");
+        else functionVal = (*element);
     }
 
+    if (!functionVal.IsLibraryFunction() && !functionVal.IsProgramFunction())
+        RuntimeError("Cannot call something that is not a function");
+
+    assert(functionVal.IsLibraryFunction() || functionVal.IsProgramFunction());
+    assert(argumentsVal.IsObject());
+    Object *arguments = argumentsVal.ToObject_NoConst();
+    retvalRegister.FromUndef();    //reset retVal register
+    Value result;
+
+    if (functionVal.IsProgramFunction()) {
+        Object *functionAst = functionVal.ToProgramFunctionAST_NoConst();
+        Object *functionClosure = functionVal.ToProgramFunctionClosure_NoConst();
+        result = CallProgramFunction(functionAst, functionClosure, arguments);
+    } else if (functionVal.IsLibraryFunction()) {
+        std::string functionId = functionVal.ToLibraryFunctionId();
+        LibraryFunc functionLib = functionVal.ToLibraryFunction();
+        result = CallLibraryFunction(functionId, functionLib, arguments);
+    } else {
+        assert(false);
+    }
+
+    arguments->Clear();
+    delete arguments;
+    argumentsVal.FromUndef();
+    return result;
 }
 
 const Value Interpreter::EvalCallSuffix(Object &node) {
@@ -336,6 +320,22 @@ const Value Interpreter::EvalMethodCall(Object &node) {
     actuals.ToObject_NoConst()->Set(AST_TAG_FUNCTION, id);
 
     return actuals;
+}
+
+const Value Interpreter::EvalArgumentList(Object &node) {
+    ASSERT_TYPE(AST_TAG_ARGLIST);
+
+    Object *table = new Object();
+    for (register unsigned i = 0; i < node.GetNumericSize(); ++i) {
+        const Value v = dispatcher.Eval(*node[i]->ToObject_NoConst());
+        table->Set(i, v);
+    }
+    for (const auto &key : node.GetUserKeys()) {
+        const Value v = dispatcher.Eval(*node[key]->ToObject_NoConst());
+        table->Set(key, v);
+    }
+
+    return table;
 }
 
 const Value Interpreter::EvalExpressionList(Object &node) {
@@ -407,7 +407,7 @@ const Value Interpreter::EvalBlock(Object &node) {
         EVAL_CHILD();
     } catch (const ReturnException &e) {
         BlockExit();
-        throw e;
+        throw e;    //Will be caught by EvalCall()->CallProgramFunction()
     }
     BlockExit();
 
@@ -423,15 +423,13 @@ const Value Interpreter::EvalFunctionDef(Object &node) {
     if (IsLibFunc(name)) RuntimeError("Cannot define function \"" + name + "\". It shadows the library function.");
     if (LookupCurrentScope(name)) RuntimeError("Cannot define function \"" + name + "\". Symbol name already exists.");
 
+    Object * functionScope = currentScope;
     currentScope->Set(name, Value(&node, currentScope));
     currentScope->IncreaseRefCounter();
 
-    Object *slice = new Object();
-    slice->Set(PREVIOUS_RESERVED_FIELD, currentScope);
-    currentScope = slice;
-    currentScope->IncreaseRefCounter();
+    currentScope = PushSlice();
 
-    return Value(&node, currentScope);
+    return Value(&node, functionScope);
 }
 
 const Value Interpreter::EvalConst(Object &node) {

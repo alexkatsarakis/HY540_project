@@ -22,6 +22,8 @@ private:
 
     void LinkToNode(unsigned node);
 
+    void LinkToNodeEdgeLabel(unsigned node, const std::string & str);
+
     void SaveOrphan(void);
 
     void DumpToFile(void);
@@ -33,6 +35,10 @@ private:
     void VisitEmptyStatement(const Object &node);
 
     void VisitNormalStatement(const Object &node);
+
+    void VisitEmptyArgumentList(const Object &node);
+
+    void VisitNormalArgumentList(const Object &node);
 
     void VisitEmptyExpressionList(const Object &node);
 
@@ -85,6 +91,7 @@ public:
     virtual void VisitCallSuffix(const Object &node) override;
     virtual void VisitNormalCall(const Object &node) override;
     virtual void VisitMethodCall(const Object &node) override;
+    virtual void VisitArgumentList(const Object &node) override;
     virtual void VisitExpressionList(const Object &node) override;
     virtual void VisitObjectDef(const Object &node) override;
     virtual void VisitIndexed(const Object &node) override;

@@ -49,12 +49,13 @@ private:
     const std::string UnparseMember(const std::string &member);
     const std::string UnparseDot(const std::string &lvalue, const std::string &id);
     const std::string UnparseBracket(const std::string &lvalue, const std::string &id);
-    const std::string UnparseCallPARENTHESIS(const std::string &call, const std::string &elist);
-    const std::string UnparseCall(const std::string &call, const std::string &elist);
-    const std::string UnparseCallPARENTHESISTWIN(const std::string &funcdef, const std::string &elist);
+    const std::string UnparseCallPARENTHESIS(const std::string &call, const std::string &arglist);
+    const std::string UnparseCall(const std::string &call, const std::string &arglist);
+    const std::string UnparseCallPARENTHESISTWIN(const std::string &funcdef, const std::string &arglist);
     const std::string UnparseCallSuffix(const std::string &call);
-    const std::string UnparseNormalCall(const std::string &elist);
-    const std::string UnparseMethodCall(const std::string &id, const std::string &elist);
+    const std::string UnparseNormalCall(const std::string &arglist);
+    const std::string UnparseMethodCall(const std::string &id, const std::string &arglist);
+    const std::string UnparseArgumentList(const std::vector<std::string> &posArguments, const std::vector<std::string> &namedArguments);
     const std::string UnparseExpressionList(const std::vector<std::string> &expressions);
     const std::string UnparseObjectDef(const std::string &child);
     const std::string UnparseIndexed(const std::vector<std::string> &indexedElements);
@@ -119,6 +120,7 @@ public:
     void VisitCallSuffix(const Object &node) override;
     void VisitNormalCall(const Object &node) override;
     void VisitMethodCall(const Object &node) override;
+    void VisitArgumentList(const Object &node) override;
     void VisitExpressionList(const Object &node) override;
     void VisitObjectDef(const Object &node) override;
     void VisitIndexed(const Object &node) override;

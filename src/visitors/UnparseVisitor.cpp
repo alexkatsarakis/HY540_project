@@ -126,7 +126,7 @@ const std::string UnparseVisitor::UnparseDoubleColon(const std::string &value) {
     return string("::" + value);
 }
 const std::string UnparseVisitor::UnparseDollar(const std::string &value) {
-    return string("$" + value);
+    return string(value);
 }
 const std::string UnparseVisitor::UnparseMember(const std::string &member) {
     return member;
@@ -137,30 +137,48 @@ const std::string UnparseVisitor::UnparseDot(const std::string &lvalue, const st
 const std::string UnparseVisitor::UnparseBracket(const std::string &lvalue, const std::string &id) {
     return string(lvalue + "[" + id + "]");
 }
-const std::string UnparseVisitor::UnparseCallPARENTHESIS(const std::string &call, const std::string &elist) {
-    return string(call + "(" + elist + ")");
+const std::string UnparseVisitor::UnparseCallPARENTHESIS(const std::string &call, const std::string &arglist) {
+    return string(call + "(" + arglist + ")");
 }
 const std::string UnparseVisitor::UnparseCall(const std::string &lvalue, const std::string &callsuffix) {
     return string(lvalue + callsuffix);
 }
-const std::string UnparseVisitor::UnparseCallPARENTHESISTWIN(const std::string &funcdef, const std::string &elist) {
-    return string("(" + funcdef + ")" + "(" + elist + ")");
+const std::string UnparseVisitor::UnparseCallPARENTHESISTWIN(const std::string &funcdef, const std::string &arglist) {
+    return string("(" + funcdef + ")" + "(" + arglist + ")");
 }
 const std::string UnparseVisitor::UnparseCallSuffix(const std::string &call) {
     return call;
 }
-const std::string UnparseVisitor::UnparseNormalCall(const std::string &elist) {
-    return string("(" + elist + ")");
+const std::string UnparseVisitor::UnparseNormalCall(const std::string &arglist) {
+    return string("(" + arglist + ")");
 }
-const std::string UnparseVisitor::UnparseMethodCall(const std::string &id, const std::string &elist) {
-    return string(".." + id + "(" + elist + ")");
+const std::string UnparseVisitor::UnparseMethodCall(const std::string &id, const std::string &arglist) {
+    return string(".." + id + "(" + arglist + ")");
+}
+const std::string UnparseVisitor::UnparseArgumentList(const std::vector<std::string> &posArguments, const std::vector<std::string> &namedArguments) {
+    string argumentListStr;
+    //positional
+    for (auto argument : posArguments)
+        argumentListStr.append(argument).append(", ");
+    //named
+    for (unsigned i = 0; i < namedArguments.size(); i += 2) {
+        argumentListStr.append(namedArguments.at(i)).append(" : ");
+        argumentListStr.append(namedArguments.at(i + 1)).append(", ");
+    }
+    if (!argumentListStr.empty()) {
+        assert(argumentListStr.at(argumentListStr.size() - 2) == ',');
+        argumentListStr.erase(argumentListStr.size() - 2);
+    }
+    return argumentListStr;
 }
 const std::string UnparseVisitor::UnparseExpressionList(const std::vector<std::string> &expressions) {
     string expressionListStr;
     for (auto expression : expressions)
         expressionListStr.append(expression).append(", ");
-    assert(expressionListStr.size() > 2 || expressionListStr.size() == 0);
-    if (expressionListStr.size() > 2) expressionListStr.erase(expressionListStr.size() - 2);
+    if (!expressionListStr.empty()) {
+        assert(expressionListStr.at(expressionListStr.size() - 2) == ',');
+        expressionListStr.erase(expressionListStr.size() - 2);
+    }
     return expressionListStr;
 }
 const std::string UnparseVisitor::UnparseObjectDef(const std::string &child) {
@@ -170,8 +188,10 @@ const std::string UnparseVisitor::UnparseIndexed(const std::vector<std::string> 
     string indexedListStr;
     for (auto indexedElement : indexedElements)
         indexedListStr.append(indexedElement).append(", ");
-    assert(indexedListStr.size() > 2 || indexedListStr.size() == 0);
-    if (indexedListStr.size() > 2) indexedListStr.erase(indexedListStr.size() - 2);
+    if (!indexedListStr.empty()) {
+        assert(indexedListStr.at(indexedListStr.size() - 2) == ',');
+        indexedListStr.erase(indexedListStr.size() - 2);
+    }
     return indexedListStr;
 }
 const std::string UnparseVisitor::UnparseIndexedElem(const std::string &key, const std::string &value) {
@@ -206,8 +226,10 @@ const std::string UnparseVisitor::UnparseIdList(const std::vector<std::string> &
     string idListStr;
     for (auto id : ids)
         idListStr.append(id).append(", ");
-    assert(idListStr.size() > 2 || idListStr.size() == 0);
-    if (idListStr.size() > 2) idListStr.erase(idListStr.size() - 2);
+    if (!idListStr.empty()) {
+        assert(idListStr.at(idListStr.size() - 2) == ',');
+        idListStr.erase(idListStr.size() - 2);
+    }
     return idListStr;
 }
 const std::string UnparseVisitor::UnparseIf(const std::string &cond, const std::string &stmt, const std::string &elseStmt) {
@@ -483,6 +505,19 @@ void UnparseVisitor::VisitMethodCall(const Object &node) {
         UNPARSE_VALUE,
         Value(UnparseMethodCall(GetUnparsed(node[AST_TAG_FUNCTION]),
                                 GetUnparsed(node[AST_TAG_ARGUMENTS]))));
+}
+void UnparseVisitor::VisitArgumentList(const Object &node) {
+    vector<string> posArguments;
+    vector<string> namedArguments;
+    for (unsigned i = 0; i < node.GetNumericSize(); ++i)
+        posArguments.push_back(GetUnparsed(node[i]));
+    for (const auto &key : node.GetUserKeys()) {
+        namedArguments.push_back(key);
+        namedArguments.push_back(GetUnparsed(node[key]));
+    }
+    const_cast<Object &>(node).Set(
+        UNPARSE_VALUE,
+        Value(UnparseArgumentList(posArguments, namedArguments)));
 }
 void UnparseVisitor::VisitExpressionList(const Object &node) {
     vector<string> expressions;

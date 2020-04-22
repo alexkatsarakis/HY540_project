@@ -3,6 +3,8 @@
 #include "TreeTags.h"
 #include "Utilities.h"
 
+#include <cmath>
+
 #include <iostream>
 #include <cassert>
 #include <ostream>
@@ -28,7 +30,10 @@ void PrintValue(std::ostream & stream, const Value * value);
 const Value * GetArgument(Object & env, unsigned argNo, const std::string & optArgName = "") {
     assert(env.IsValid());
 
-    if (optArgName.empty()) return env[argNo];
+    if (optArgName.empty()){
+        if(env[argNo] == NULL)Interpreter::RuntimeError("Wrong Arguments");
+        return env[argNo];
+    }
 
     auto arg = env[optArgName];
     if (!arg) arg = env[argNo];
@@ -195,4 +200,104 @@ void LibFunc::Sleep(Object & env) {
     std::this_thread::sleep_for(std::chrono::milliseconds(number));
 
     env.Set(RETVAL_RESERVED_FIELD, Value());
+}
+
+
+
+
+
+void LibFunc::Assert(Object & env) {
+    assert(env.IsValid());
+
+    for(register unsigned i = 0; i < env.GetNumericSize(); ++i) {
+        const Value * value = GetArgument(env, i);
+        if(value->GetType() == Value::Type::BooleanType){
+            if(!value->ToBoolean())Interpreter::Assert("Boolean Not True");
+        }
+        if(value->GetType() == Value::Type::NilType ||
+           value->GetType() == Value::Type::UndefType){
+            Interpreter::Assert("Undefined Value");
+        }
+    }
+    env.Set(RETVAL_RESERVED_FIELD, true);
+}
+
+void LibFunc::Sqrt(Object & env) {
+    assert(env.IsValid());
+    const Value * value = GetArgument(env, 0);
+    if(value->GetType() != Value::Type::NumberType)Interpreter::RuntimeError("You can only square a number");
+    env.Set(RETVAL_RESERVED_FIELD, sqrt(value->ToNumber()));
+}
+
+void LibFunc::Pow(Object & env) {
+    assert(env.IsValid());
+    const Value * value1 = GetArgument(env, 0);
+    const Value * value2 = GetArgument(env, 1);
+    if(value1->GetType() != Value::Type::NumberType || value2->GetType() != Value::Type::NumberType)Interpreter::RuntimeError("You can only power a number");
+    env.Set(RETVAL_RESERVED_FIELD, pow(value1->ToNumber(),value2->ToNumber()));
+}
+
+void LibFunc::Sin(Object & env) {
+    assert(env.IsValid());
+    const Value * value = GetArgument(env, 0);
+    if(value->GetType() != Value::Type::NumberType)Interpreter::RuntimeError("You can only use sin of a number");
+    env.Set(RETVAL_RESERVED_FIELD, sin(value->ToNumber()));
+}
+
+void LibFunc::Cos(Object & env) {
+    assert(env.IsValid());
+    const Value * value = GetArgument(env, 0);
+    if(value->GetType() != Value::Type::NumberType)Interpreter::RuntimeError("You can only use cos of a number");
+    env.Set(RETVAL_RESERVED_FIELD, cos(value->ToNumber()));
+}
+
+void LibFunc::GetTime(Object & env) {
+    assert(env.IsValid());
+    std::time_t t = std::time(0);
+    std::tm* now = std::localtime(&t);
+    std::string conv = std::to_string(now->tm_mday) + "/" + std::to_string(now->tm_mon) + "/" + std::to_string(1900+now->tm_year);
+    conv += " " + std::to_string(now->tm_hour) +":"+ std::to_string(now->tm_min) +":"+ std::to_string(now->tm_sec);
+    env.Set(RETVAL_RESERVED_FIELD, conv);
+}
+
+bool isNumber(std::string str){
+    unsigned int i = 0;
+    if(str[0] == '-')i++;
+    while(i < str.length()){
+        if(isdigit(str[i]) == false && str[i] != '.')return false;
+        i++;
+    }
+    return true;
+}
+
+void LibFunc::Input(Object & env) {
+    assert(env.IsValid());
+    std::string input;
+    std::cin >> input;
+    if(!input.empty() && isNumber(input)){ 
+        env.Set(RETVAL_RESERVED_FIELD, std::stod(input));
+    }else{
+        env.Set(RETVAL_RESERVED_FIELD, input);
+    }
+}
+
+void LibFunc::Random(Object & env) {
+    assert(env.IsValid());
+    env.Set(RETVAL_RESERVED_FIELD, static_cast<double>(std::rand())/ RAND_MAX);
+}
+
+void LibFunc::ToNumber(Object & env) {
+    assert(env.IsValid());
+    const Value * value = GetArgument(env, 0);
+    if(value->GetType() == Value::Type::NumberType){
+        env.Set(RETVAL_RESERVED_FIELD, value->ToNumber());
+        return;
+    }
+    if(value->GetType() != Value::Type::StringType)Interpreter::RuntimeError("You can only use to_number with a string or a number");
+    if(!value->ToString().empty() && isNumber(value->ToString())){ 
+        env.Set(RETVAL_RESERVED_FIELD, std::stod(value->ToString()));
+    }else{
+        Interpreter::RuntimeError("The given string isn't a number");
+    }
+    
 }
