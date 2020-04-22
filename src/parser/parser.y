@@ -73,6 +73,8 @@
 %type <objectVal> callsuffix;
 %type <objectVal> normcall;
 %type <objectVal> methodcall;
+%type <objectVal> arglist;
+%type <objectVal> comma_named_args;
 %type <objectVal> elist;
 %type <objectVal> comma_exprs;
 %type <objectVal> objectdef;
@@ -236,20 +238,33 @@ member : lvalue DOT ID                          { $$ = ParseMember(ParseMemberDo
        | call LEFT_BRACKET expr RIGHT_BRACKET   { $$ = ParseMember(ParseMemberBracket($1, $3));; }
        ;
 
-call : call LEFT_PAR elist RIGHT_PAR                       { $$ = ParseCallCall($1, $3); }
-     | lvalue callsuffix                                   { $$ = ParseLvalueCall($1, $2); }
-     | LEFT_PAR funcdef RIGHT_PAR LEFT_PAR elist RIGHT_PAR { $$ = ParseFuncdefCall($2, $5); }
+call : call LEFT_PAR arglist RIGHT_PAR                       { $$ = ParseCallCall($1, $3); }
+     | lvalue callsuffix                                     { $$ = ParseLvalueCall($1, $2); }
+     | LEFT_PAR funcdef RIGHT_PAR LEFT_PAR arglist RIGHT_PAR { $$ = ParseFuncdefCall($2, $5); }
      ;
 
 callsuffix : normcall   { $$ = ParseCallSuffix($1); }
            | methodcall { $$ = ParseCallSuffix($1); }
            ;
 
-normcall : LEFT_PAR elist RIGHT_PAR { $$ = ParseNormCall($2); }
+normcall : LEFT_PAR arglist RIGHT_PAR { $$ = ParseNormCall($2); }
          ;
 
-methodcall : DOUBLE_DOT ID LEFT_PAR elist RIGHT_PAR { $$ = ParseMethodCall(ParseSimpleID($2), $4); }
+methodcall : DOUBLE_DOT ID LEFT_PAR arglist RIGHT_PAR { $$ = ParseMethodCall(ParseSimpleID($2), $4); }
            ;
+
+arglist : expr comma_exprs                                      { $$ = ParseExprArgList($1, $2); }
+        | ID COLON expr comma_named_args                        { $$ = ParseNamedArgList($1, $3, $4); }
+        | expr comma_exprs COMMA ID COLON expr comma_named_args { $$ = ParseMixedArgList(
+                                                                        ParseExprArgList($1, $2),
+                                                                        ParseNamedArgList($4, $6, $7)
+                                                                        ); }
+        | /* Empty */                                           { $$ = ParseEmptyArgList(); }
+        ;
+
+comma_named_args : comma_named_args COMMA ID COLON expr { $$ = ParseCommaNamedArgs($1, $3, $5); }
+                 | /* Empty */                          { $$ = ParseEmptyArgList(); }
+                 ;
 
 elist : expr comma_exprs { $$ = ParseElist($1, $2); }
       | /* Empty */      { $$ = ParseEmptyElist(); }
@@ -289,11 +304,10 @@ const : NUMBER { $$ = ParseConst(ParseNumber($1)); }
 
 idlist : ID comma_ids                                   { $$ = ParseIdList(ParseFormal($1), $2); }
        | ID ASSIGN expr optionals                       { $$ = ParseIdList(ParseAssign(ParseFormal($1), $3), $4); }
-       | ID comma_ids COMMA ID ASSIGN expr optionals    {
-                                                          $$ = ParseMixedIdList(
+       | ID comma_ids COMMA ID ASSIGN expr optionals    { $$ = ParseMixedIdList(
                                                                 ParseIdList(ParseFormal($1), $2),
                                                                 ParseIdList(ParseAssign(ParseFormal($4), $6), $7)
-                                                          );
+                                                                );
                                                         }
        | /* empty */                                    { $$ = ParseEmptyIdlist(); }
        ;

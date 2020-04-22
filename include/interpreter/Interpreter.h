@@ -143,6 +143,7 @@ private:
     const Value EvalCallSuffix(Object &node);
     const Value EvalNormalCall(Object &node);
     const Value EvalMethodCall(Object &node);
+    const Value EvalArgumentList(Object &node);
     const Value EvalExpressionList(Object &node);
     const Value EvalObjectDef(Object &node);
     const Value EvalIndexed(Object &node);

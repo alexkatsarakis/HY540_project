@@ -313,6 +313,22 @@ const Value Interpreter::EvalMethodCall(Object &node) {
     return EVAL_CHILD();
 }
 
+const Value Interpreter::EvalArgumentList(Object &node) {
+    ASSERT_TYPE(AST_TAG_ARGLIST);
+
+    Object *table = new Object();
+    for (register unsigned i = 0; i < node.GetNumericSize(); ++i) {
+        const Value v = dispatcher.Eval(*node[i]->ToObject_NoConst());
+        table->Set(i, v);
+    }
+    for (const auto &key : node.GetUserKeys()) {
+        const Value v = dispatcher.Eval(*node[key]->ToObject_NoConst());
+        table->Set(key, v);
+    }
+
+    return table;
+}
+
 const Value Interpreter::EvalExpressionList(Object &node) {
     ASSERT_TYPE(AST_TAG_ELIST);
 
@@ -382,7 +398,7 @@ const Value Interpreter::EvalBlock(Object &node) {
         EVAL_CHILD();
     } catch (const ReturnException &e) {
         BlockExit();
-        throw e;
+        throw e;    //Will be caught by EvalCall()->CallProgramFunction()
     }
     BlockExit();
 

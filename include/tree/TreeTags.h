@@ -71,6 +71,8 @@
 
 #define AST_TAG_PRIMARY "primary"
 
+#define AST_TAG_ARGLIST "arglist"
+
 #define AST_TAG_ELIST "elist"
 
 #define AST_TAG_OBJECTDEFLIST "object_def_list"

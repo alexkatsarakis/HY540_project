@@ -58,6 +58,7 @@ void TreeHost::InstallAllAcceptors(void) {
     InstallAcceptor(AST_TAG_CALL_SUFFIX, LAMBDA(AcceptCallSuffix));
     InstallAcceptor(AST_TAG_NORMAL_CALL, LAMBDA(AcceptNormalCall));
     InstallAcceptor(AST_TAG_METHOD_CALL, LAMBDA(AcceptMethodCall));
+    InstallAcceptor(AST_TAG_ARGLIST, LAMBDA(AcceptArgumentList));
     InstallAcceptor(AST_TAG_ELIST, LAMBDA(AcceptExpressionList));
     InstallAcceptor(AST_TAG_OBJECT_DEF, LAMBDA(AcceptObjectDef));
     InstallAcceptor(AST_TAG_INDEXED, LAMBDA(AcceptIndexed));
@@ -420,6 +421,17 @@ void TreeHost::AcceptMethodCall(const Object &node) {
     visitor->VisitMethodCall(node);
 }
 
+void TreeHost::AcceptArgumentList(const Object &node) {
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ARGLIST);
+
+    for (unsigned i = 0; i < node.GetNumericSize(); ++i)
+        Accept(*node[i]->ToObject());
+    for (const auto &key : node.GetUserKeys()) {
+        Accept(*node[key]->ToObject());
+    }
+    visitor->VisitArgumentList(node);
+}
+
 void TreeHost::AcceptExpressionList(const Object &node) {
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ELIST);
 
@@ -525,7 +537,7 @@ void TreeHost::AcceptIdList(const Object &node) {
     visitor->VisitIdList(node);
 }
 
-void TreeHost::AcceptFormal(const Object &node){
+void TreeHost::AcceptFormal(const Object &node) {
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL);
     assert(node.ElementExists(AST_TAG_ID));
 

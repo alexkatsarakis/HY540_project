@@ -87,6 +87,16 @@ Object *ParseNormCall(Object *elist);
 
 Object *ParseMethodCall(Object *id, Object *elist);
 
+Object *ParseExprArgList(Object *expr, Object *rest);
+
+Object *ParseNamedArgList(const char *formalName, Object *named, Object *rest);
+
+Object *ParseMixedArgList(Object *positional, Object *named);
+
+Object *ParseEmptyArgList(void);
+
+Object *ParseCommaNamedArgs(Object *parsed, const char *formalName, Object *named);
+
 Object *ParseEmptyElist(void);
 
 Object *ParseCommaExprs(Object *parsed, Object *expr);
@@ -125,7 +135,7 @@ Object *ParseEmptyIdlist(void);
 
 Object *ParseCommaIds(Object *rest, Object *id);
 
-Object *ParseOptionals(Object *rest, Object* assignment);
+Object *ParseOptionals(Object *rest, Object *assignment);
 
 Object *ParseIdList(Object *id, Object *rest);
 
