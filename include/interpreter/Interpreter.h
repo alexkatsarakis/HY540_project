@@ -86,7 +86,7 @@ private:
     Object *PushSlice(void);
     Object *PushNested(void);
     Object *PopScope(void);
-    Object *PushScope(const std::string & tag);
+    Object *PushScope(const std::string &tag);
 
     /****** Start-up ******/
 
@@ -144,6 +144,7 @@ private:
     const Value EvalNormalCall(Object &node);
     const Value EvalMethodCall(Object &node);
     const Value EvalArgumentList(Object &node);
+    const Value EvalNamedArgument(Object &node);
     const Value EvalExpressionList(Object &node);
     const Value EvalObjectDef(Object &node);
     const Value EvalIndexed(Object &node);

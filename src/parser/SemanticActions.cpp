@@ -71,17 +71,6 @@ Object *ParseRecursion(Object *parsed, Object *current) {
     return parsed;
 }
 
-Object *ParseRecursion(Object *parsed, const char *formalName, Object *current) {
-    assert(parsed && parsed->IsValid());
-    assert(current && current->IsValid());
-    assert(parsed->GetStringSize() >= 1);
-
-    parsed->Set(formalName, Value(current));
-
-    assert(parsed->IsValid());
-    return parsed;
-}
-
 Object *ParseCompleteRecursion(const char *type, Object *current, Object *rest) {
     assert(type);
     assert(current && current->IsValid());
@@ -105,30 +94,7 @@ Object *ParseCompleteRecursion(const char *type, Object *current, Object *rest) 
     return table;
 }
 
-Object *ParseCompleteRecursion(const char *type, const char *formalName, Object *current, Object *rest) {
-    assert(type);
-    assert(current && current->IsValid());
-    assert(rest && rest->IsValid());
-
-    Object *table = new Object();
-    table->Set(AST_TAG_TYPE_KEY, type);
-
-    table->Set(formalName, Value(current));
-
-    for (const std::string &key : rest->GetUserKeys()) {
-        Value v = *((*rest)[key]);
-        table->Set(key, v);
-    }
-
-    /* TODO: Should we delete rest? */
-    rest->Clear();
-    delete rest;
-
-    assert(table->IsValid());
-    return table;
-}
-
-Object *MergeIdLists(const char *type, Object *table1, Object *table2) {
+Object *MergeLists(const char *type, Object *table1, Object *table2) {
     assert(type);
     assert(table1 && table1->IsValid());
     assert(table2 && table2->IsValid());
@@ -144,30 +110,6 @@ Object *MergeIdLists(const char *type, Object *table1, Object *table2) {
         table->Set(double(table1->GetNumericSize() + i), v);
     }
     assert(table->GetNumericSize() == table1->GetNumericSize() + table2->GetNumericSize());
-    /* TODO: Should we delete rest? */
-    table1->Clear(), delete table1;
-    table2->Clear(), delete table2;
-
-    assert(table->IsValid());
-    return table;
-}
-
-Object *MergeArgLists(const char *type, Object *table1, Object *table2) {
-    assert(type);
-    assert(table1 && table1->IsValid());
-    assert(table2 && table2->IsValid());
-
-    Object *table = new Object();
-    table->Set(AST_TAG_TYPE_KEY, type);
-    for (register unsigned i = 0; i < table1->GetNumericSize(); ++i) {
-        Value v = *(*table1)[i];
-        table->Set(i, v);
-    }
-    for (const std::string key : table2->GetUserKeys()) {
-        Value v = *(*table2)[key];
-        table->Set(key, v);
-    }
-    assert(table->GetTotal() == table1->GetNumericSize() + table2->GetStringSize());
     /* TODO: Should we delete rest? */
     table1->Clear(), delete table1;
     table2->Clear(), delete table2;
@@ -356,24 +298,33 @@ Object *ParseMethodCall(Object *id, Object *elist) {
     return ParseTwoChildren(AST_TAG_METHOD_CALL, AST_TAG_FUNCTION, id, AST_TAG_ARGUMENTS, elist);
 }
 
-Object *ParseExprArgList(Object *expr, Object *rest) {
-    return ParseCompleteRecursion(AST_TAG_ARGLIST, expr, rest);
-}
-
-Object *ParseNamedArgList(const char *formalName, Object *named, Object *rest) {
-    return ParseCompleteRecursion(AST_TAG_ARGLIST, formalName, named, rest);
+Object *ParseArgList(Object *arg, Object *rest) {
+    return ParseCompleteRecursion(AST_TAG_ARGLIST, arg, rest);
 }
 
 Object *ParseMixedArgList(Object *positional, Object *named) {
-    return MergeArgLists(AST_TAG_ARGLIST, positional, named);
+    return MergeLists(AST_TAG_ARGLIST, positional, named);
 }
 
 Object *ParseEmptyArgList(void) {
     return ParseEmptyNode(AST_TAG_ARGLIST);
 }
 
-Object *ParseCommaNamedArgs(Object *parsed, const char *formalName, Object *named) {
-    return ParseRecursion(parsed, formalName, named);
+Object *ParseCommaNamedArgs(Object *parsed, Object *named) {
+    return ParseRecursion(parsed, named);
+}
+
+Object *ParseNamedArg(Object *id, Object *expr) {
+    assert(id && id->IsValid());
+    assert(expr && expr->IsValid());
+
+    Object *node = new Object();
+    node->Set(AST_TAG_TYPE_KEY, AST_TAG_NAMED);
+    node->Set(AST_TAG_NAMED_KEY, Value(id));
+    node->Set(AST_TAG_NAMED_VALUE, Value(expr));
+
+    assert(node->IsValid());
+    return node;
 }
 
 Object *ParseEmptyElist(void) {
@@ -404,7 +355,7 @@ Object *ParseIndexed(Object *indexedelem, Object *rest) {
     return ParseCompleteRecursion(AST_TAG_INDEXED, indexedelem, rest);
 }
 
-Object *ParseIndexedElem(Object *key, Object *value) {
+Object *ParseIndexedElem(Object *key, Object *value) {    //Delete duplicate signature in header file
     return ParseTwoChildren(AST_TAG_INDEXED_ELEM, AST_TAG_OBJECT_KEY, key, AST_TAG_OBJECT_VALUE, value);
 }
 
@@ -498,9 +449,10 @@ Object *ParseIdList(Object *id, Object *rest) {
 }
 
 Object *ParseMixedIdList(Object *required, Object *optionals) {
-    return MergeIdLists(AST_TAG_ID_LIST, required, optionals);
+    return MergeLists(AST_TAG_ID_LIST, required, optionals);
 }
 
+// ParseOptionalIdList not used in parser.y, also not in header, delete?
 Object *ParseOptionalIdList(Object *assignment, Object *rest) {
     return ParseCompleteRecursion(AST_TAG_ID_LIST, assignment, rest);
 }

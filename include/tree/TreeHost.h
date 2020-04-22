@@ -60,6 +60,7 @@ public:
     void AcceptNormalCall(const Object &node);
     void AcceptMethodCall(const Object &node);
     void AcceptArgumentList(const Object &node);
+    void AcceptNamedArgument(const Object &node);
     void AcceptExpressionList(const Object &node);
     void AcceptObjectDef(const Object &node);
     void AcceptIndexed(const Object &node);

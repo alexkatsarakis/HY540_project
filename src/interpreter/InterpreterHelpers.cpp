@@ -49,6 +49,7 @@ void Interpreter::InstallEvaluators(void) {
     INSTALL(AST_TAG_AMINUSMINUS, EvalMinusMinusAfter);
     INSTALL(AST_TAG_ELIST, EvalExpressionList);
     INSTALL(AST_TAG_ARGLIST, EvalArgumentList);
+    INSTALL(AST_TAG_NAMED, EvalNamedArgument);
     INSTALL(AST_TAG_CALL_SUFFIX, EvalCallSuffix);
     INSTALL(AST_TAG_CALL, EvalCall);
     INSTALL(AST_TAG_NORMAL_CALL, EvalNormalCall);
@@ -171,8 +172,8 @@ Object *Interpreter::FindScope(const std::string &symbol) const {
     assert(false);
 }
 
-Object *Interpreter::PushScopeSpace(Object * outerScope) {
-    Object * newScopeSpace = new Object();
+Object *Interpreter::PushScopeSpace(Object *outerScope) {
+    Object *newScopeSpace = new Object();
     newScopeSpace->Set(OUTER_RESERVED_FIELD, outerScope);
     newScopeSpace->IncreaseRefCounter();
     scopeStack.push_front(newScopeSpace);
@@ -183,13 +184,13 @@ void Interpreter::PopScopeSpace(void) {
     scopeStack.pop_front();
 }
 
-Object * Interpreter::PushScope(const std::string & tag) {
+Object *Interpreter::PushScope(const std::string &tag) {
     assert(!tag.empty());
     assert(tag == PREVIOUS_RESERVED_FIELD ||
            tag == OUTER_RESERVED_FIELD);
     assert(currentScope);
 
-    Object * scope = new Object();
+    Object *scope = new Object();
     scope->Set(tag, Value(currentScope));
 
     currentScope->IncreaseRefCounter();
@@ -238,8 +239,8 @@ const Value Interpreter::EvalMath(Object &node, MathOp op) {
     if (!op1.IsNumber()) RuntimeError("First operand is not a number in an arithmetic operation");
     if (!op2.IsNumber()) RuntimeError("Second operand is not a number in an arithmetic operation");
 
-    if ( (op == MathOp::Div || op == MathOp::Mod) &&
-         Utilities::IsZero(op2.ToNumber())) RuntimeError("Cannot divide by zero");
+    if ((op == MathOp::Div || op == MathOp::Mod) &&
+        Utilities::IsZero(op2.ToNumber())) RuntimeError("Cannot divide by zero");
 
     switch (op) {
         case MathOp::Plus: return op1.ToNumber() + op2.ToNumber();
@@ -582,22 +583,44 @@ std::vector<std::string> GetFormalNames(const Object &functionFormals) {
     for (register unsigned i = 0; i < functionFormals.GetNumericSize(); ++i) {
         Object &formal = *(functionFormals[i]->ToObject_NoConst());
         assert((formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) || (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN));
-        std::string formalName;
+        std::string name;
         if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
             assert(formal.ElementExists(AST_TAG_ID));
-            formalName = formal[AST_TAG_ID]->ToString();
+            name = formal[AST_TAG_ID]->ToString();
         } else if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
             assert(formal.ElementExists(AST_TAG_LVALUE));
             const Object &formalNode = *(formal[AST_TAG_LVALUE]->ToObject_NoConst());
             assert(formalNode[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL);
             assert(formalNode.ElementExists(AST_TAG_ID));
-            formalName = formalNode[AST_TAG_ID]->ToString();
+            name = formalNode[AST_TAG_ID]->ToString();
         } else {
             assert(0);
         }
-        formalNames.push_back(formalName);
+        formalNames.push_back(name);
     }
     return formalNames;
+}
+
+std::vector<std::string> GetActualNames(const Object &functionActuals) {
+    std::vector<std::string> actualNames;
+    for (register unsigned i = 0; i < functionActuals.GetNumericSize(); ++i) {
+        Object &actual = *(functionActuals[i]->ToObject_NoConst());
+        assert((actual[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR) || (actual[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NAMED));
+        std::string name;
+        if (actual[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR) {
+            continue;
+        } else if (actual[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NAMED) {
+            assert(actual.ElementExists(AST_TAG_NAMED_KEY));
+            const Object &keyNode = *(actual[AST_TAG_NAMED_KEY]->ToObject_NoConst());
+            assert(keyNode[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ID);
+            assert(keyNode.ElementExists(AST_TAG_ID));
+            name = keyNode[AST_TAG_ID]->ToString();
+        } else {
+            assert(0);
+        }
+        actualNames.push_back(name);
+    }
+    return actualNames;
 }
 
 Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClosure, Object *arguments) {
@@ -613,15 +636,21 @@ Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClos
     unsigned functionActualPositionalSize = functionActuals.GetNumericSize();
     if (functionActualPositionalSize > functionFormalSize)
         RuntimeError("Number of Actual Positional Arguments(" + std::to_string(functionActualPositionalSize) + ") exceeds number of Formal Parameters(" + std::to_string(functionFormalSize) + ")\n");
-    //Unexpected name error
-    auto formalNames = GetFormalNames(functionFormals);
-    auto actualNames = functionActuals.GetUserKeys();
+    //Unexpected named error (name not defined in formals)
+    std::vector<std::string> formalNames = GetFormalNames(functionFormals);
+    std::vector<std::string> actualNames = GetActualNames(functionActuals);
     std::vector<std::string> actualMinusFormals;
     std::set_difference(actualNames.begin(), actualNames.end(),
                         formalNames.begin(), formalNames.end(),
                         std::inserter(actualMinusFormals, actualMinusFormals.begin()));
     if (!actualMinusFormals.empty())
         RuntimeError("Unexpected Named\n");    //TODO Add Info
+    //Check for named recurrence
+    auto sortedActualNames(actualNames);
+    std::sort(sortedActualNames.begin(), sortedActualNames.end());
+    if (std::adjacent_find(sortedActualNames.begin(), sortedActualNames.end()) != sortedActualNames.end())
+        RuntimeError("named recurrence\n");                                                                               //TODO Add Info
+    sortedActualNames.erase(std::unique(sortedActualNames.begin(), sortedActualNames.end()), sortedActualNames.end());    //removes duplicates from names vector
 
     for (register unsigned i = 0; i < functionFormals.GetNumericSize(); ++i) {
         Object &formal = *(functionFormals[i]->ToObject_NoConst());
@@ -631,22 +660,10 @@ Value Interpreter::CallProgramFunction(Object *functionAst, Object *functionClos
         Value actualValue;                             //Value of actual
         bool actualExists = false;                     //actual/formal map exists
 
-        /*  //Resolve formal Name
-        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
-            assert(formal.ElementExists(AST_TAG_ID));
-            formalName = formal[AST_TAG_ID]->ToString();
-        }
-        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
-            assert(formal.ElementExists(AST_TAG_LVALUE));
-            const Object &formalNode = *(formal[AST_TAG_LVALUE]->ToObject_NoConst());
-            assert(formalNode[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL);
-            assert(formalNode.ElementExists(AST_TAG_ID));
-            formalName = formalNode[AST_TAG_ID]->ToString();
-        } */
-
         if (i < functionActuals.GetNumericSize()) {
-            if (functionActuals.ElementExists(formalName))
-                RuntimeError("Both positional and named\n");    //TODO Add info
+            //Both positional and named actual match error
+            if (std::find(actualNames.begin(), actualNames.end(), formalName) != actualNames.end())
+                RuntimeError("Both positional and named match\n");    //TODO Add info
             actualExists = true;
             actualValue = *(functionActuals[i]);
             assert(mappedFormals.count(formalName) == 0);
@@ -694,8 +711,8 @@ Value Interpreter::CallLibraryFunction(const std::string &functionId, LibraryFun
     arguments->Set(RETVAL_RESERVED_FIELD, Value(NilTypeValue::Nil));
     assert(functionLib);
     functionLib(*arguments);
-    Value result = *((*arguments)[RETVAL_RESERVED_FIELD]);    //do we need to modify retval?
-    if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter(); //need to know why
+    Value result = *((*arguments)[RETVAL_RESERVED_FIELD]);                                     //do we need to modify retval?
+    if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter();    //need to know why
     retvalRegister = result;
     return retvalRegister;
     // if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter(); //need to know why
