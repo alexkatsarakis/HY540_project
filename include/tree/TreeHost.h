@@ -56,9 +56,6 @@ public:
     void AcceptDot(const Object &node);
     void AcceptBracket(const Object &node);
     void AcceptCall(const Object &node);
-    void AcceptCallSuffix(const Object &node);
-    void AcceptNormalCall(const Object &node);
-    void AcceptMethodCall(const Object &node);
     void AcceptArgumentList(const Object &node);
     void AcceptExpressionList(const Object &node);
     void AcceptObjectDef(const Object &node);

@@ -46,9 +46,6 @@ public:
     virtual void VisitDot(const Object &node) override { DELETE(); }
     virtual void VisitBracket(const Object &node) override { DELETE(); }
     virtual void VisitCall(const Object &node) override { DELETE(); }
-    virtual void VisitCallSuffix(const Object &node) override { DELETE(); }
-    virtual void VisitNormalCall(const Object &node) override { DELETE(); }
-    virtual void VisitMethodCall(const Object &node) override { DELETE(); }
     virtual void VisitArgumentList(const Object &node) override { DELETE(); }
     virtual void VisitExpressionList(const Object &node) override { DELETE(); }
     virtual void VisitObjectDef(const Object &node) override { DELETE(); }

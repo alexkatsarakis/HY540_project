@@ -336,24 +336,18 @@ Object *ParseCallCall(Object *call, Object *elist) {
     return ParseTwoChildren(AST_TAG_CALL, AST_TAG_FUNCTION, call, AST_TAG_ARGUMENTS, elist);
 }
 
-Object *ParseLvalueCall(Object *lvalue, Object *suffix) {
-    return ParseTwoChildren(AST_TAG_CALL, AST_TAG_FUNCTION, lvalue, AST_TAG_SUFFIX, suffix);
+Object *ParseLvalueCall(Object *lvalue, Object *elist) {
+    return ParseTwoChildren(AST_TAG_CALL, AST_TAG_FUNCTION, lvalue, AST_TAG_ARGUMENTS, elist);
+}
+
+Object *ParseLvalueMethodCall(Object *lvalue, Object *id, Object* arguments){
+    Object* node = ParseTwoChildren(AST_TAG_CALL, AST_TAG_FUNCTION, id, AST_TAG_ARGUMENTS, arguments);
+    node->Set(AST_TAG_LVALUE, lvalue);
+    return node;
 }
 
 Object *ParseFuncdefCall(Object *funcdef, Object *elist) {
     return ParseTwoChildren(AST_TAG_CALL, AST_TAG_FUNCTION, funcdef, AST_TAG_ARGUMENTS, elist);
-}
-
-Object *ParseCallSuffix(Object *call) {
-    return ParseSingleChild(AST_TAG_CALL_SUFFIX, call);
-}
-
-Object *ParseNormCall(Object *elist) {
-    return ParseSingleChild(AST_TAG_NORMAL_CALL, elist);
-}
-
-Object *ParseMethodCall(Object *id, Object *elist) {
-    return ParseTwoChildren(AST_TAG_METHOD_CALL, AST_TAG_FUNCTION, id, AST_TAG_ARGUMENTS, elist);
 }
 
 Object *ParseExprArgList(Object *expr, Object *rest) {

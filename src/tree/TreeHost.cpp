@@ -55,9 +55,9 @@ void TreeHost::InstallAllAcceptors(void) {
     InstallAcceptor(AST_TAG_DOT, LAMBDA(AcceptDot));
     InstallAcceptor(AST_TAG_BRACKET, LAMBDA(AcceptBracket));
     InstallAcceptor(AST_TAG_CALL, LAMBDA(AcceptCall));
-    InstallAcceptor(AST_TAG_CALL_SUFFIX, LAMBDA(AcceptCallSuffix));
-    InstallAcceptor(AST_TAG_NORMAL_CALL, LAMBDA(AcceptNormalCall));
-    InstallAcceptor(AST_TAG_METHOD_CALL, LAMBDA(AcceptMethodCall));
+    // InstallAcceptor(AST_TAG_CALL_SUFFIX, LAMBDA(AcceptCallSuffix));
+    // InstallAcceptor(AST_TAG_NORMAL_CALL, LAMBDA(AcceptNormalCall));
+    // InstallAcceptor(AST_TAG_METHOD_CALL, LAMBDA(AcceptMethodCall));
     InstallAcceptor(AST_TAG_ARGLIST, LAMBDA(AcceptArgumentList));
     InstallAcceptor(AST_TAG_ELIST, LAMBDA(AcceptExpressionList));
     InstallAcceptor(AST_TAG_OBJECT_DEF, LAMBDA(AcceptObjectDef));
@@ -381,44 +381,18 @@ void TreeHost::AcceptBracket(const Object &node) {
     Accept(*node[AST_TAG_EXPR]->ToObject());
     visitor->VisitBracket(node);
 }
-
+#include <iostream>
 void TreeHost::AcceptCall(const Object &node) {
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_CALL);
     assert(node.ElementExists(AST_TAG_FUNCTION));
-    assert(node.ElementExists(AST_TAG_SUFFIX) || node.ElementExists(AST_TAG_ARGUMENTS));
-
-    Accept(*node[AST_TAG_FUNCTION]->ToObject());
-    if (node.ElementExists(AST_TAG_SUFFIX))
-        Accept(*node[AST_TAG_SUFFIX]->ToObject());
-    else
-        Accept(*node[AST_TAG_ARGUMENTS]->ToObject());
-    visitor->VisitCall(node);
-}
-
-void TreeHost::AcceptCallSuffix(const Object &node) {
-    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_CALL_SUFFIX);
-    assert(node.ElementExists(AST_TAG_CHILD));
-
-    Accept(*node[AST_TAG_CHILD]->ToObject());
-    visitor->VisitCallSuffix(node);
-}
-
-void TreeHost::AcceptNormalCall(const Object &node) {
-    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NORMAL_CALL);
-    assert(node.ElementExists(AST_TAG_CHILD));
-
-    Accept(*node[AST_TAG_CHILD]->ToObject());
-    visitor->VisitNormalCall(node);
-}
-
-void TreeHost::AcceptMethodCall(const Object &node) {
-    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_METHOD_CALL);
-    assert(node.ElementExists(AST_TAG_FUNCTION));
     assert(node.ElementExists(AST_TAG_ARGUMENTS));
+
+    if (node.ElementExists(AST_TAG_LVALUE))
+        Accept(*node[AST_TAG_LVALUE]->ToObject());
 
     Accept(*node[AST_TAG_FUNCTION]->ToObject());
     Accept(*node[AST_TAG_ARGUMENTS]->ToObject());
-    visitor->VisitMethodCall(node);
+    visitor->VisitCall(node);
 }
 
 void TreeHost::AcceptArgumentList(const Object &node) {

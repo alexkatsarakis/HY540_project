@@ -330,25 +330,7 @@ void VisualizeVisitor::VisitCall(const Object &node) {
     CreateNewNode(AST_TAG_CALL);
     LinkToPreviousNode();
     LinkToOrphan();
-}
-
-void VisualizeVisitor::VisitCallSuffix(const Object &node) {
-    eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_CALL_SUFFIX);
-    CreateNewNode(AST_TAG_CALL_SUFFIX);
-    LinkToPreviousNode();
-}
-
-void VisualizeVisitor::VisitNormalCall(const Object &node) {
-    eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NORMAL_CALL);
-    CreateNewNode(AST_TAG_NORMAL_CALL);
-    LinkToPreviousNode();    // Arglist
-}
-
-void VisualizeVisitor::VisitMethodCall(const Object &node) {
-    eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_METHOD_CALL);
-    CreateNewNode(AST_TAG_METHOD_CALL);
-    LinkToPreviousNode();    // Arglist
-    LinkToOrphan();          // Id
+    if (node.ElementExists(AST_TAG_LVALUE)) LinkToOrphan();
 }
 
 void VisualizeVisitor::VisitEmptyArgumentList(const Object &node) {

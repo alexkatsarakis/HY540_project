@@ -70,9 +70,9 @@
 %type <objectVal> lvalue;
 %type <objectVal> member;
 %type <objectVal> call;
-%type <objectVal> callsuffix;
-%type <objectVal> normcall;
-%type <objectVal> methodcall;
+// %type <objectVal> callsuffix;
+// %type <objectVal> normcall;
+// %type <objectVal> methodcall;
 %type <objectVal> arglist;
 %type <objectVal> comma_named_args;
 %type <objectVal> elist;
@@ -238,20 +238,11 @@ member : lvalue DOT ID                          { $$ = ParseMember(ParseMemberDo
        | call LEFT_BRACKET expr RIGHT_BRACKET   { $$ = ParseMember(ParseMemberBracket($1, $3));; }
        ;
 
-call : call LEFT_PAR arglist RIGHT_PAR                       { $$ = ParseCallCall($1, $3); }
-     | lvalue callsuffix                                     { $$ = ParseLvalueCall($1, $2); }
-     | LEFT_PAR funcdef RIGHT_PAR LEFT_PAR arglist RIGHT_PAR { $$ = ParseFuncdefCall($2, $5); }
+call : call LEFT_PAR arglist RIGHT_PAR                          { $$ = ParseCallCall($1, $3); }
+     | lvalue LEFT_PAR arglist RIGHT_PAR                        { $$ = ParseLvalueCall($1, $3); }
+     | lvalue DOUBLE_DOT ID LEFT_PAR arglist RIGHT_PAR          { $$ = ParseLvalueMethodCall($1, ParseSimpleID($3), $5); }
+     | LEFT_PAR funcdef RIGHT_PAR LEFT_PAR arglist RIGHT_PAR    { $$ = ParseFuncdefCall($2, $5); }
      ;
-
-callsuffix : normcall   { $$ = ParseCallSuffix($1); }
-           | methodcall { $$ = ParseCallSuffix($1); }
-           ;
-
-normcall : LEFT_PAR arglist RIGHT_PAR { $$ = ParseNormCall($2); }
-         ;
-
-methodcall : DOUBLE_DOT ID LEFT_PAR arglist RIGHT_PAR { $$ = ParseMethodCall(ParseSimpleID($2), $4); }
-           ;
 
 arglist : expr comma_exprs                                      { $$ = ParseExprArgList($1, $2); }
         | ID COLON expr comma_named_args                        { $$ = ParseNamedArgList($1, $3, $4); }
@@ -360,7 +351,7 @@ void ProcessAST(Object * ast) {
     visualizeHost->Accept(*ast);
     setParentTreeHost->Accept(*ast);
     validityVisitor->Accept(*ast);
-    interpreter->Execute(*ast);
+    //interpreter->Execute(*ast);
 
 #define AST_MEM_CLEANUP
 #ifdef AST_MEM_CLEANUP

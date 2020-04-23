@@ -79,13 +79,9 @@ Object *ParseCallCall(Object *call, Object *elist);
 
 Object *ParseLvalueCall(Object *lvalue, Object *suffix);
 
+Object *ParseLvalueMethodCall(Object *lvalue, Object *id, Object* arguments);
+
 Object *ParseFuncdefCall(Object *funcdef, Object *elist);
-
-Object *ParseCallSuffix(Object *call);
-
-Object *ParseNormCall(Object *elist);
-
-Object *ParseMethodCall(Object *id, Object *elist);
 
 Object *ParseExprArgList(Object *expr, Object *rest);
 

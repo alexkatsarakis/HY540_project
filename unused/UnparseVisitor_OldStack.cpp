@@ -311,45 +311,24 @@ void UnparseVisitor::VisitBracket(const Object &node) {
 }
 void UnparseVisitor::VisitCall(const Object &node) {
     stringstream code;
-    const Object value = *(node[AST_TAG_FUNCTION]->ToObject());
-    const string childType = value[AST_TAG_TYPE_KEY]->ToString();
-    if (childType == AST_TAG_FUNCTION_DEF) {
-        string elist = stack.top();
-        stack.pop();
-        string funcdef = stack.top();
-        stack.pop();
-        code << "(" << funcdef << ")"
-             << "(" << elist << ")";
-    } else if (childType == AST_TAG_CALL) {
-        string elist = stack.top();
-        stack.pop();
-        string calll = stack.top();
-        stack.pop();
-        code << calll << "(" << elist << ")";
-    } else {
-        string callSuffix = stack.top();
-        stack.pop();
-        string lvalue = stack.top();
-        stack.pop();
-        code << lvalue << callSuffix;
+    if (node.ElementExists(AST_TAG_LVALUE)){
+        string lvalue, id, elist;
+        elist = stack.top(), stack.pop();
+        id = stack.top(), stack.pop();
+        lvalue = stack.top(), stack.pop();
+        
+        code << lvalue << ".." << id << "(" << elist << ")";
+    }else{
+        const Object function = *(node[AST_TAG_FUNCTION]->ToObject());
+        const string functionType = function[AST_TAG_TYPE_KEY]->ToString();
+
+        string callable, args;
+        args = stack.top(), stack.pop();
+        callable = stack.top(), stack.pop();
+
+        (functionType == AST_TAG_FUNCTION_DEF) ? code << "(" << callable << ")" : code << callable;
+        code << "(" << args << ")";
     }
-    stack.push(code.str());
-}
-void UnparseVisitor::VisitCallSuffix(const Object &node) {}
-void UnparseVisitor::VisitNormalCall(const Object &node) {
-    stringstream code;
-    string elist = stack.top();
-    stack.pop();
-    code << "(" << elist << ")";
-    stack.push(code.str());
-}
-void UnparseVisitor::VisitMethodCall(const Object &node) {
-    stringstream code;
-    string elist = stack.top();
-    stack.pop();
-    string id = stack.top();
-    stack.pop();
-    code << ".." << id << "(" << elist << ")";
     stack.push(code.str());
 }
 void UnparseVisitor::VisitExpressionList(const Object &node) {

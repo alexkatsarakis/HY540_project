@@ -21,7 +21,6 @@ const std::string UnparseVisitor::GetUnparsed(const Value *val) const {
     // delete unparseVal; //bug on that
     return str;
 }
-
 const std::string UnparseVisitor::UnparseProgram(const std::string &stmts) {
     WriteFile(stmts);
     return stmts;
@@ -140,20 +139,11 @@ const std::string UnparseVisitor::UnparseBracket(const std::string &lvalue, cons
 const std::string UnparseVisitor::UnparseCallPARENTHESIS(const std::string &call, const std::string &arglist) {
     return string(call + "(" + arglist + ")");
 }
-const std::string UnparseVisitor::UnparseCall(const std::string &lvalue, const std::string &callsuffix) {
-    return string(lvalue + callsuffix);
-}
 const std::string UnparseVisitor::UnparseCallPARENTHESISTWIN(const std::string &funcdef, const std::string &arglist) {
     return string("(" + funcdef + ")" + "(" + arglist + ")");
 }
-const std::string UnparseVisitor::UnparseCallSuffix(const std::string &call) {
-    return call;
-}
-const std::string UnparseVisitor::UnparseNormalCall(const std::string &arglist) {
-    return string("(" + arglist + ")");
-}
-const std::string UnparseVisitor::UnparseMethodCall(const std::string &id, const std::string &arglist) {
-    return string(".." + id + "(" + arglist + ")");
+const std::string UnparseVisitor::UnparseMethodCall(const std::string &lvalue, const std::string id, const std::string arglist){
+    return lvalue + ".." + id + "(" + arglist + ")";
 }
 const std::string UnparseVisitor::UnparseArgumentList(const std::vector<std::string> &posArguments, const std::vector<std::string> &namedArguments) {
     string argumentListStr;
@@ -474,37 +464,34 @@ void UnparseVisitor::VisitBracket(const Object &node) {
 void UnparseVisitor::VisitCall(const Object &node) {
     const Object value = *(node[AST_TAG_FUNCTION]->ToObject());
     const string childType = value[AST_TAG_TYPE_KEY]->ToString();
-    if (childType == AST_TAG_FUNCTION_DEF)
+
+    if (node.ElementExists(AST_TAG_LVALUE)){
         const_cast<Object &>(node).Set(
             UNPARSE_VALUE,
-            Value(UnparseCallPARENTHESISTWIN(GetUnparsed(node[AST_TAG_FUNCTION]),
-                                             GetUnparsed(node[AST_TAG_ARGUMENTS]))));
-    else if (childType == AST_TAG_CALL)
-        const_cast<Object &>(node).Set(
-            UNPARSE_VALUE,
-            Value(UnparseCallPARENTHESIS(GetUnparsed(node[AST_TAG_FUNCTION]),
-                                         GetUnparsed(node[AST_TAG_ARGUMENTS]))));
-    else
-        const_cast<Object &>(node).Set(
-            UNPARSE_VALUE,
-            Value(UnparseCall(GetUnparsed(node[AST_TAG_FUNCTION]),
-                              GetUnparsed(node[AST_TAG_SUFFIX]))));
-}
-void UnparseVisitor::VisitCallSuffix(const Object &node) {
-    const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
-        Value(UnparseCallSuffix(GetUnparsed(node[AST_TAG_CHILD]))));
-}
-void UnparseVisitor::VisitNormalCall(const Object &node) {
-    const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
-        Value(UnparseNormalCall(GetUnparsed(node[AST_TAG_CHILD]))));
-}
-void UnparseVisitor::VisitMethodCall(const Object &node) {
-    const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
-        Value(UnparseMethodCall(GetUnparsed(node[AST_TAG_FUNCTION]),
-                                GetUnparsed(node[AST_TAG_ARGUMENTS]))));
+            Value(UnparseMethodCall(
+                GetUnparsed(node[AST_TAG_LVALUE]),
+                GetUnparsed(node[AST_TAG_FUNCTION]),
+                GetUnparsed(node[AST_TAG_ARGUMENTS])
+            ))
+        );
+    }else{
+        if (childType == AST_TAG_FUNCTION_DEF)
+            const_cast<Object &>(node).Set(
+                UNPARSE_VALUE,
+                Value(UnparseCallPARENTHESISTWIN(
+                    GetUnparsed(node[AST_TAG_FUNCTION]),
+                    GetUnparsed(node[AST_TAG_ARGUMENTS])
+                ))
+            );
+        else
+            const_cast<Object &>(node).Set(
+                UNPARSE_VALUE,
+                Value(UnparseCallPARENTHESIS(
+                    GetUnparsed(node[AST_TAG_FUNCTION]),
+                    GetUnparsed(node[AST_TAG_ARGUMENTS])
+                ))
+            );
+    }
 }
 void UnparseVisitor::VisitArgumentList(const Object &node) {
     vector<string> posArguments;

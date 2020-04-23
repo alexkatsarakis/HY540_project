@@ -88,9 +88,6 @@ public:
     virtual void VisitDot(const Object &node) override;
     virtual void VisitBracket(const Object &node) override;
     virtual void VisitCall(const Object &node) override;
-    virtual void VisitCallSuffix(const Object &node) override;
-    virtual void VisitNormalCall(const Object &node) override;
-    virtual void VisitMethodCall(const Object &node) override;
     virtual void VisitArgumentList(const Object &node) override;
     virtual void VisitExpressionList(const Object &node) override;
     virtual void VisitObjectDef(const Object &node) override;
