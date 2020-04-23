@@ -5,6 +5,8 @@
 #include <cassert>
 #include <iostream>
 
+/****** Evaluators ******/
+
 const Value Interpreter::EvalProgram(Object &node) {
     ASSERT_TYPE(AST_TAG_PROGRAM);
     EVAL_CHILD();
@@ -261,32 +263,26 @@ const Value Interpreter::EvalBracket(Object &node) {
 
 const Value Interpreter::EvalCall(Object &node) {
     ASSERT_TYPE(AST_TAG_CALL);
-    //FUNC_ENTER
     Value functionVal = EVAL(AST_TAG_FUNCTION);
     Value actualsVal = EVAL(AST_TAG_SUFFIX);
-    // std::vector<std::string> actualNames = GetActualNames(*(node[AST_TAG_SUFFIX]->ToObject_NoConst()));
+    Object actuals = *(actualsVal.ToObject_NoConst());
+    std::vector<std::string> actualNames = actuals.GetUserKeys();
 
     if (functionVal.IsObject()) {
         const Value *element = (*functionVal.ToObject())["()"];
         if (!element)
             RuntimeError("Cannot call an object if it is not a functor");
-        else
-            functionVal = (*element);
+        functionVal = (*element);
     }
-
     if (!functionVal.IsLibraryFunction() && !functionVal.IsProgramFunction())
         RuntimeError("Cannot call something that is not a function");
 
-    assert(functionVal.IsLibraryFunction() || functionVal.IsProgramFunction());
-    assert(actualsVal.IsObject());
-    Object actuals = *(actualsVal.ToObject_NoConst());
     retvalRegister.FromUndef();    //reset retVal register
-    Value result;
 
+    Value result;
     if (functionVal.IsProgramFunction()) {
         Object functionAst = *(functionVal.ToProgramFunctionAST_NoConst());
         Object functionClosure = *(functionVal.ToProgramFunctionClosure_NoConst());
-        auto actualNames = actuals.GetUserKeys();
         result = CallProgramFunction(functionAst, functionClosure, actuals, actualNames);
     } else if (functionVal.IsLibraryFunction()) {
         std::string functionId = functionVal.ToLibraryFunctionId();
@@ -297,7 +293,6 @@ const Value Interpreter::EvalCall(Object &node) {
     }
 
     actuals.Clear();
-    // delete actuals;
     actualsVal.FromUndef();
     return result;
 }
@@ -343,7 +338,7 @@ const Value Interpreter::EvalArgumentList(Object &node) {
     return table;
 }
 
-const Value Interpreter::EvalNamedArgument(Object &node) {    //TODO, study evaluation return value
+const Value Interpreter::EvalNamedArgument(Object &node) {
     ASSERT_TYPE(AST_TAG_NAMED);
     return EVAL(AST_TAG_NAMED_VALUE);
 }
@@ -475,11 +470,10 @@ const Value Interpreter::EvalFalse(Object &node) {
 const Value Interpreter::EvalIdList(Object &node) {
     ASSERT_TYPE(AST_TAG_ID_LIST);
     assert(false);
-    return NIL_VAL
+    return NIL_VAL;
 }
 
 const Value Interpreter::EvalFormal(Object &node) {
-    // assert(false);
     std::string formalName = node[AST_TAG_ID]->ToString();
     if (IsLibFunc(formalName)) RuntimeError("Formal argument \"" + formalName + "\" shadows library function");
     if (LookupCurrentScope(formalName)) RuntimeError("Formal argument \"" + formalName + "\" already defined as a formal");

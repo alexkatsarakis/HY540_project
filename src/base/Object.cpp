@@ -69,16 +69,11 @@ unsigned Object::GetStringSize(void) const {
     return strMap.size();
 }
 
-unsigned Object::GetUserKeySize(void) const {
-    assert(IsValid());
-    return GetUserKeys().size();
-}
-
-const std::vector<std::string> Object::GetUserKeys(void) const {
+std::vector<std::string> Object::GetUserKeys(void) const {
     assert(IsValid());
     std::vector<std::string> keys;
     for (const auto &pair : strMap) {
-        if (pair.first == AST_TAG_TYPE_KEY) continue;
+        // if (pair.first == AST_TAG_TYPE_KEY) continue;
         if (pair.first.at(0) == '$') continue;
         keys.push_back(pair.first);
     }

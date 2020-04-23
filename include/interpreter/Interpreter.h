@@ -54,6 +54,7 @@ private:
     Symbol EvalLocalIdWrite(Object &node);
     Symbol EvalFormalWrite(Object &node);
     Symbol TableSetElem(const Value &lvalue, const Value &index);
+
     /****** Evaluation Helpers ******/
 
     const Value TableGetElem(const Value &lvalue, const Value &index);
@@ -68,8 +69,13 @@ private:
 
     void BlockEnter(void);
     void BlockExit(void);
+
+    /****** Function Call Evaluation Helpers ******/
+
     Value CallProgramFunction(Object &functionAst, Object &functionClosure, const Object &actuals, const std::vector<std::string> &actualNames);
     Value CallLibraryFunction(const std::string &functionId, LibraryFunc functionLib, Object &actuals);
+    void ProgramFunctionRuntimeChecks(const Object &formals, const std::vector<std::string> &formalNames, const Object &actuals, const std::vector<std::string> &actualNames);
+    std::vector<std::string> GetFormalNames(const Object &formals);
 
     /****** Symbol Lookup ******/
 
@@ -81,6 +87,7 @@ private:
     bool IsGlobalScope(Object *scope) const;
 
     /****** Environment Actions ******/
+
     Object *PushScopeSpace(Object *outerScope);
     void PopScopeSpace(void);
     Object *PushSlice(void);
@@ -97,13 +104,11 @@ private:
 
     bool IsLibFunc(const std::string &symbol) const;
     bool IsReservedField(const std::string &index) const;
-    const Value GetFromContext(Object *table, const Value &index, bool lookupFail);
+    const Value GetFromContext(Object *table, const Value &index, bool lookupFail);    // not implemented, delete
     const Value GetStringFromContext(Object *table, const Value &index, bool lookupFail);
     const Value GetNumberFromContext(Object *table, const Value &index, bool lookupFail);
     Symbol ClosureSetElem(const Value &lvalue, const Value &index);
     Symbol ObjectSetElem(const Value &lvalue, const Value &index);
-    std::vector<std::string> GetFormalNames(const Object &formals);
-    std::vector<std::string> GetActualNames(const Object &actuals);
 
     /****** Evaluators ******/
 
@@ -188,12 +193,12 @@ public:
 #define POSITIONAL_SIZE_RESERVED_FIELD "$positional_size"
 
 /****** Macros Shortcuts ******/
-#define NIL_VAL Value(NilTypeValue::Nil);
+#define NIL_VAL Value(NilTypeValue::Nil)
 #define EVAL_CHILD() dispatcher.Eval(*node[AST_TAG_CHILD]->ToObject_NoConst())
 #define EVAL(type) dispatcher.Eval(*node[type]->ToObject_NoConst())
-#define ASSERT_TYPE(type) assert(node[AST_TAG_TYPE_KEY]->ToString() == type);
-#define INSTALL(tag, method) dispatcher.Install(tag, [this](Object &node) { return method(node); });
-#define INSTALL_WRITE_FUNC(tag, method) dispatcher.InstallWriteFunc(tag, [this](Object &node) { return method(node); });
+#define ASSERT_TYPE(type) assert(node[AST_TAG_TYPE_KEY]->ToString() == type)
+#define INSTALL(tag, method) dispatcher.Install(tag, [this](Object &node) { return method(node); })
+#define INSTALL_WRITE_FUNC(tag, method) dispatcher.InstallWriteFunc(tag, [this](Object &node) { return method(node); })
 #define EVAL_WRITE(type) dispatcher.EvalWriteFunc(*node[type]->ToObject_NoConst())
 
 #endif

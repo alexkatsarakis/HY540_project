@@ -44,9 +44,7 @@ public:
 
     unsigned GetStringSize(void) const;
 
-    unsigned GetUserKeySize(void) const;
-
-    const std::vector<std::string> GetUserKeys(void) const;    //Named argument keys    //TODO: return const reference fix
+    std::vector<std::string> GetUserKeys(void) const;
 
     unsigned GetReferences(void) const;
 
