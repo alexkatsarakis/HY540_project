@@ -74,6 +74,7 @@
 %type <objectVal> normcall;
 %type <objectVal> methodcall;
 %type <objectVal> arglist;
+%type <objectVal> named_arg;
 %type <objectVal> comma_named_args;
 %type <objectVal> elist;
 %type <objectVal> comma_exprs;
@@ -253,21 +254,25 @@ normcall : LEFT_PAR arglist RIGHT_PAR { $$ = ParseNormCall($2); }
 methodcall : DOUBLE_DOT ID LEFT_PAR arglist RIGHT_PAR { $$ = ParseMethodCall(ParseSimpleID($2), $4); }
            ;
 
-arglist : expr comma_exprs                                      { $$ = ParseExprArgList($1, $2); }
-        | ID COLON expr comma_named_args                        { $$ = ParseNamedArgList($1, $3, $4); }
-        | expr comma_exprs COMMA ID COLON expr comma_named_args { $$ = ParseMixedArgList(
-                                                                        ParseExprArgList($1, $2),
-                                                                        ParseNamedArgList($4, $6, $7)
-                                                                        ); }
-        | /* Empty */                                           { $$ = ParseEmptyArgList(); }
+arglist : expr comma_exprs                                  {  $$ = ParseArgList($1, $2);  }
+        | named_arg comma_named_args                        {  $$ = ParseArgList($1, $2);  }
+        | expr comma_exprs COMMA named_arg comma_named_args {  $$ = ParseMixedArgList(
+                                                                        ParseArgList($1, $2),
+                                                                        ParseArgList($4, $5)
+                                                                        );
+                                                            }
+        | /* Empty */                                       {  $$ = ParseEmptyArgList();  }
         ;
 
-comma_named_args : comma_named_args COMMA ID COLON expr { $$ = ParseCommaNamedArgs($1, $3, $5); }
-                 | /* Empty */                          { $$ = ParseEmptyArgList(); }
+comma_named_args : comma_named_args COMMA named_arg {  $$ = ParseCommaNamedArgs($1, $3);  }
+                 | /* Empty */                      {  $$ = ParseEmptyArgList();  }
                  ;
 
-elist : expr comma_exprs { $$ = ParseElist($1, $2); }
-      | /* Empty */      { $$ = ParseEmptyElist(); }
+named_arg : ID COLON expr   {  $$ = ParseNamedArg(ParseSimpleID($1), $3);  }
+          ;
+
+elist : expr comma_exprs    { $$ = ParseElist($1, $2); }
+      | /* Empty */         { $$ = ParseEmptyElist(); }
       ;
 
 comma_exprs : comma_exprs COMMA expr { $$ = ParseCommaExprs($1, $3); }

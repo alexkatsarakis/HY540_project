@@ -54,7 +54,7 @@ void VisualizeVisitor::LinkToNode(unsigned node) {
     output << NODE_PREFIX << lastNode << TO_NODE_PREFIX << node << std::endl;
 }
 
-void VisualizeVisitor::LinkToNodeEdgeLabel(unsigned node, const std::string & str) {
+void VisualizeVisitor::LinkToNodeEdgeLabel(unsigned node, const std::string &str) {
     assert(!str.empty());
     output << NODE_PREFIX << lastNode << TO_NODE_PREFIX << node << "[ label = \"" << str << "\"]" << std::endl;
 }
@@ -358,7 +358,7 @@ void VisualizeVisitor::VisitEmptyArgumentList(const Object &node) {
 
 void VisualizeVisitor::VisitNormalArgumentList(const Object &node) {
     CreateNewNode(AST_TAG_ARGLIST);
-
+    /*
     auto named = node.GetUserKeys();
     auto it = named.rbegin();
     unsigned i = 0;
@@ -376,6 +376,9 @@ void VisualizeVisitor::VisitNormalArgumentList(const Object &node) {
     }
 
     for (; i < node.GetNumericSize(); ++i) LinkToOrphan();
+ */
+    LinkToPreviousNode();
+    for (register unsigned i = 1; i < node.GetNumericSize(); ++i) LinkToOrphan();
 }
 
 void VisualizeVisitor::VisitArgumentList(const Object &node) {
@@ -384,6 +387,13 @@ void VisualizeVisitor::VisitArgumentList(const Object &node) {
         VisitEmptyArgumentList(node);
     else
         VisitNormalArgumentList(node);
+}
+
+void VisualizeVisitor::VisitNamedArgument(const Object &node) {
+    eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NAMED);
+    CreateNewNode(AST_TAG_NAMED);
+    LinkToPreviousNode();    // Expr
+    LinkToOrphan();          // id
 }
 
 void VisualizeVisitor::VisitEmptyExpressionList(const Object &node) {
