@@ -104,7 +104,7 @@ private:
 
     bool IsLibFunc(const std::string &symbol) const;
     bool IsReservedField(const std::string &index) const;
-    const Value GetFromContext(Object *table, const Value &index, bool lookupFail);    // not implemented, delete
+    const Value GetFromContext(Object *table, const Value &index, bool lookupFail);    // TODO not implemented, delete
     const Value GetStringFromContext(Object *table, const Value &index, bool lookupFail);
     const Value GetNumberFromContext(Object *table, const Value &index, bool lookupFail);
     Symbol ClosureSetElem(const Value &lvalue, const Value &index);

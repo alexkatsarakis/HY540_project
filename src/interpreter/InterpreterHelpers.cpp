@@ -495,7 +495,7 @@ Value Interpreter::CallLibraryFunction(const std::string &functionId, LibraryFun
     actuals.Set(RETVAL_RESERVED_FIELD, Value(NilTypeValue::Nil));
     functionLib(actuals);                                                                      //Library function Call
     Value result = *(actuals[RETVAL_RESERVED_FIELD]);                                          //do we need to modify retval?
-    if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter();    //need to know why
+    if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter();    //TODO need to know why
     retvalRegister = result;
     return retvalRegister;
 }
@@ -515,7 +515,7 @@ void Interpreter::ProgramFunctionRuntimeChecks(const Object &formals, const std:
     if (!actualMinusFormals.empty())
         RuntimeError("Unexpected Named\n");    //TODO Add Info
 
-    //actual-formal matching
+    //checks on actual-formal matching
     for (register unsigned i = 0; i < formals.GetNumericSize(); ++i) {
         Object &formal = *(formals[i]->ToObject_NoConst());
         std::string formalName = formalNames.at(i);    //Name of formal, i is index of formal/actual

@@ -113,7 +113,7 @@ Object *ParseIndexed(Object *indexedelem, Object *rest);
 
 Object *ParseIndexedElem(Object *key, Object *value);
 
-Object *ParseIndexedElem(Object *key, Object *value);    //redefinition of ParseIndexedElem, why g++ allowed this, delete
+Object *ParseIndexedElem(Object *key, Object *value);    // TODO redefinition of ParseIndexedElem, why g++ allowed this, delete
 
 Object *ParseBlock(Object *stmts);
 
