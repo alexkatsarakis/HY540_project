@@ -509,8 +509,10 @@ void Interpreter::ProgramFunctionRuntimeChecks(const Object &formals, const std:
 
     //Unexpected named error (name not defined in formals)
     std::vector<std::string> actualMinusFormals;
-    std::set_difference(actualNames.begin(), actualNames.end(),
-                        formalNames.begin(), formalNames.end(),
+    std::set<std::string> v1(actualNames.begin(), actualNames.end());
+    std::set<std::string> v2(formalNames.begin(), formalNames.end());
+    std::set_difference(v1.begin(), v1.end(),
+                        v2.begin(), v2.end(),
                         std::inserter(actualMinusFormals, actualMinusFormals.begin()));
     if (!actualMinusFormals.empty())
         RuntimeError("Unexpected Named\n");    //TODO Add Info
