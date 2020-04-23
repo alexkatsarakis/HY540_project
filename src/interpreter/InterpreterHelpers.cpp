@@ -50,10 +50,7 @@ void Interpreter::InstallEvaluators(void) {
     INSTALL(AST_TAG_ELIST, EvalExpressionList);
     INSTALL(AST_TAG_ARGLIST, EvalArgumentList);
     INSTALL(AST_TAG_NAMED, EvalNamedArgument);
-    INSTALL(AST_TAG_CALL_SUFFIX, EvalCallSuffix);
     INSTALL(AST_TAG_CALL, EvalCall);
-    INSTALL(AST_TAG_NORMAL_CALL, EvalNormalCall);
-    INSTALL(AST_TAG_METHOD_CALL, EvalMethodCall);
     INSTALL(AST_TAG_BLOCK, EvalBlock);
     INSTALL(AST_TAG_IF, EvalIf);
     INSTALL(AST_TAG_WHILE, EvalWhile);

@@ -356,7 +356,7 @@ void ProcessAST(Object * ast) {
     visualizeHost->Accept(*ast);
     setParentTreeHost->Accept(*ast);
     validityVisitor->Accept(*ast);
-    //interpreter->Execute(*ast);
+    interpreter->Execute(*ast);
 
 #define AST_MEM_CLEANUP
 #ifdef AST_MEM_CLEANUP

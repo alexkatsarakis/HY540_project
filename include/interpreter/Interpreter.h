@@ -104,7 +104,7 @@ private:
     Symbol ObjectSetElem(const Value &lvalue, const Value &index);
     std::vector<std::string> GetFormalNames(const Object &formals);
     std::vector<std::string> GetActualNames(const Object &actuals);
-
+    void ExtractCallable(Value& lvalue, Value& callable, Object& node);
     /****** Evaluators ******/
 
     const Value EvalProgram(Object &node);

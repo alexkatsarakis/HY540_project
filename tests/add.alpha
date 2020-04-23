@@ -1,14 +1,14 @@
-object1 = [];
-object1[0] = 1;
-
-function get(this, index = 0){
-    return this[index];
+function add(x, y = 0){
+    return x + y;
 }
 
-object1.get = get;
-object1["()"] = get;
+print(add(1, y : 1));
 
-print(get(obj1ect1, 10));
-print(obj1ect1(11));
-print(object1.get(object1, 12));
-print(object1..get(index : 13));
+object1 = [];
+object1[1] = 1;
+
+function get(this, ind){
+    return this[ind];
+}
+
+print(get(object1, ind : 1));
