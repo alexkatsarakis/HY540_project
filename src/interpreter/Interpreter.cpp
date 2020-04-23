@@ -289,7 +289,8 @@ const Value Interpreter::EvalCall(Object &node) {
         }
     }
 
-    Object actuals = *(EVAL(AST_TAG_ARGUMENTS).ToObject_NoConst());
+    Value actualsVal = EVAL(AST_TAG_ARGUMENTS);
+    Object actuals = *actualsVal.ToObject_NoConst();
 
     if (node.ElementExists(AST_TAG_LVALUE)){
         for (int i  = actuals.GetNumericSize(); i > 0; i--)
@@ -312,9 +313,9 @@ const Value Interpreter::EvalCall(Object &node) {
     }else
         assert(false);
 
-    // actuals.Clear();
-    // // delete actuals;
-    // actualsVal.FromUndef();
+    actuals.Clear();
+    // delete actuals;
+    actualsVal.FromUndef();
     return result;
 }
 
