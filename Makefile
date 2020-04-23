@@ -44,8 +44,8 @@ CFLAGS=-O0 -g3 -std=c++14 -Wshadow -Wall -Wextra -Wold-style-cast -Wpedantic\
 -Wfloat-equal -Wpointer-arith -Wcast-qual -Wstrict-overflow=5 -Wwrite-strings\
 -Wswitch-default -Wswitch-enum -Wunreachable-code -Winit-self\
 -Wno-unused-parameter
-endif
 # -Wconversion
+endif
 
 # Find all source files
 SRCS:=$(shell cd $(SRCDIR); find -name '*.cpp' -printf '%P\n' )

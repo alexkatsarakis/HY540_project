@@ -18,7 +18,8 @@ void UnparseVisitor::WriteFile(const std::string &program) {
 const std::string UnparseVisitor::GetUnparsed(const Value *val) const {
     const Value *unparseVal = val->ToObject_NoConst()->GetAndRemove(UNPARSE_VALUE);
     string str = unparseVal->ToString();
-    // delete unparseVal; //bug on that
+    // unparseVal->FromUndef();    // bug on that
+    // delete unparseVal;
     return str;
 }
 const std::string UnparseVisitor::UnparseProgram(const std::string &stmts) {

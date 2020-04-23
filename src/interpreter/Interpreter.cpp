@@ -5,6 +5,8 @@
 #include <cassert>
 #include <iostream>
 
+/****** Evaluators ******/
+
 const Value Interpreter::EvalProgram(Object &node) {
     ASSERT_TYPE(AST_TAG_PROGRAM);
     EVAL_CHILD();
@@ -291,7 +293,9 @@ const Value Interpreter::EvalCall(Object &node) {
 
     Value actualsVal = EVAL(AST_TAG_ARGUMENTS);
     Object actuals = *actualsVal.ToObject_NoConst();
+    std::vector<std::string> actualNames = actuals.GetUserKeys();
 
+    /* in the case of method call, adds "this" as the first argument */
     if (node.ElementExists(AST_TAG_LVALUE)){
         for (int i  = actuals.GetNumericSize(); i > 0; i--)
             actuals.Set(i, *actuals[i - 1]);
@@ -314,7 +318,6 @@ const Value Interpreter::EvalCall(Object &node) {
         assert(false);
 
     actuals.Clear();
-    // delete actuals;
     actualsVal.FromUndef();
     return result;
 }
@@ -345,7 +348,7 @@ const Value Interpreter::EvalArgumentList(Object &node) {
     return table;
 }
 
-const Value Interpreter::EvalNamedArgument(Object &node) {    //TODO, study evaluation return value
+const Value Interpreter::EvalNamedArgument(Object &node) {
     ASSERT_TYPE(AST_TAG_NAMED);
     return EVAL(AST_TAG_NAMED_VALUE);
 }
@@ -477,11 +480,10 @@ const Value Interpreter::EvalFalse(Object &node) {
 const Value Interpreter::EvalIdList(Object &node) {
     ASSERT_TYPE(AST_TAG_ID_LIST);
     assert(false);
-    return NIL_VAL
+    return NIL_VAL;
 }
 
 const Value Interpreter::EvalFormal(Object &node) {
-    // assert(false);
     std::string formalName = node[AST_TAG_ID]->ToString();
     if (IsLibFunc(formalName)) RuntimeError("Formal argument \"" + formalName + "\" shadows library function");
     if (LookupCurrentScope(formalName)) RuntimeError("Formal argument \"" + formalName + "\" already defined as a formal");

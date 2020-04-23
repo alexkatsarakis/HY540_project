@@ -8,6 +8,8 @@
 #include <iostream>
 #include <set>
 
+/****** Start-up ******/
+
 void Interpreter::InstallEvaluators(void) {
     /* Evaluators used for read-only access */
     INSTALL(AST_TAG_PROGRAM, EvalProgram);
@@ -76,6 +78,49 @@ void Interpreter::InstallEvaluators(void) {
     INSTALL_WRITE_FUNC(AST_TAG_FORMAL, EvalFormalWrite);
 }
 
+#define INSTALL_LIB_FUNC(x, y)                 \
+    globalScope->Set(x, Value(LibFunc::y, x)); \
+    libraryFuncs.push_front(x);
+
+void Interpreter::InstallLibFuncs(void) {
+    INSTALL_LIB_FUNC("print", Print);
+    INSTALL_LIB_FUNC("typeof", Typeof);
+    INSTALL_LIB_FUNC("object_keys", ObjectKeys);
+    INSTALL_LIB_FUNC("object_size", ObjectSize);
+    INSTALL_LIB_FUNC("sleep", Sleep);
+    INSTALL_LIB_FUNC("assert", Assert);
+    INSTALL_LIB_FUNC("sqrt", Sqrt);
+    INSTALL_LIB_FUNC("pow", Pow);
+    INSTALL_LIB_FUNC("sin", Sin);
+    INSTALL_LIB_FUNC("cos", Cos);
+    INSTALL_LIB_FUNC("get_time", GetTime);
+    INSTALL_LIB_FUNC("input", Input);
+    INSTALL_LIB_FUNC("to_number", ToNumber);
+    INSTALL_LIB_FUNC("rand", Random);
+}
+
+/****** Public Members ******/
+
+Interpreter::Interpreter(void) {
+    globalScope = new Object();
+    globalScope->IncreaseRefCounter();
+    scopeStack.push_front(globalScope);
+
+    currentScope = globalScope;
+    currentScope->IncreaseRefCounter();
+    inFunctionScope = false;
+
+    InstallLibFuncs();
+    InstallEvaluators();
+}
+
+void Interpreter::Execute(Object &program) {
+    assert(program[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_PROGRAM);
+    assert(program.ElementExists(AST_TAG_CHILD));
+
+    dispatcher.Eval(program);
+}
+
 void Interpreter::RuntimeError(const std::string &msg) {
     std::cerr << "\033[31;1m"
               << "Runtime Error: "
@@ -84,150 +129,182 @@ void Interpreter::RuntimeError(const std::string &msg) {
 }
 
 void Interpreter::Assert(const std::string &msg) {
-    std::cerr << "\033[31;1m"     //34;1m"
+    std::cerr << "\033[31;1m"    //34;1m"
               << "Assertion: "
               << "\033[0m" << msg << std::endl;
     exit(EXIT_FAILURE);
 }
 
-bool Interpreter::IsReservedField(const std::string &index) const {
-    return (index == OUTER_RESERVED_FIELD ||
-            index == PREVIOUS_RESERVED_FIELD ||
-            index == RETVAL_RESERVED_FIELD ||
-            index == CLOSURE_RESERVED_FIELD);
+Interpreter::~Interpreter() {
+    /* Cleanup */
+    dispatcher.Clear();
+    libraryFuncs.clear();
+    globalScope->Clear();
+    delete globalScope;
 }
 
-const Value *Interpreter::LookupScope(Object *scope, const std::string &symbol) const {
-    assert(scope && scope->IsValid());
-    assert(!symbol.empty());
+/****** Lvalue Write Access ******/
 
-    /* If this scope contains the symbol simply return it */
-    if (scope->ElementExists(symbol)) return (*scope)[symbol];
-
-    /* Check if the scope is sliced */
-    while (scope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
-        Object *previous = (*scope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
-        if (previous->ElementExists(symbol)) return (*previous)[symbol];
-        scope = previous;
-    }
-
-    return nullptr;
+Symbol Interpreter::EvalLvalueWrite(Object &node) {
+    ASSERT_TYPE(AST_TAG_LVALUE);
+    return EVAL_WRITE(AST_TAG_CHILD);
 }
 
-const Value *Interpreter::LookupCurrentScope(const std::string &symbol) const {
-    assert(!symbol.empty());
-    return LookupScope(currentScope, symbol);
+Symbol Interpreter::EvalMemberWrite(Object &node) {
+    ASSERT_TYPE(AST_TAG_MEMBER);
+    return EVAL_WRITE(AST_TAG_CHILD);
 }
 
-bool Interpreter::IsGlobalScope(Object *scope) const {
-    assert(scope);
+Symbol Interpreter::EvalDotWrite(Object &node) {
+    ASSERT_TYPE(AST_TAG_DOT);
 
-    /* Move backwards towards the first slice of the scope */
-    while (scope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
-        scope = (*scope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
-    }
-
-    /* The first slice of the global scope should contain library functions */
-    return (!scope->ElementExists(OUTER_RESERVED_FIELD) &&
-            scope->ElementExists("print") &&
-            (*scope)["print"]->IsLibraryFunction());
+    auto lvalue = EVAL(AST_TAG_LVALUE);
+    auto index = GetIdName(*node[AST_TAG_ID]->ToObject());
+    return TableSetElem(lvalue, index);
 }
 
-Object *Interpreter::GetGlobalScope(void) const {
-    assert(currentScope);
-
-    Object *scope = currentScope;
-    const Value *value = LookupScope(scope, OUTER_RESERVED_FIELD);
-    while (value) {
-        scope = value->ToObject_NoConst();
-        value = LookupScope(scope, OUTER_RESERVED_FIELD);
-    }
-
-    return scope;
+Symbol Interpreter::EvalBracketWrite(Object &node) {
+    ASSERT_TYPE(AST_TAG_BRACKET);
+    const Value lvalue = EVAL(AST_TAG_LVALUE);
+    const Value index = EVAL(AST_TAG_EXPR);
+    return TableSetElem(lvalue, index);
 }
 
-const Value *Interpreter::LookupGlobalScope(const std::string &symbol) const {
-    assert(!symbol.empty());
+Symbol Interpreter::EvalIdWrite(Object &node) {
+    ASSERT_TYPE(AST_TAG_ID);
 
-    Object *scope = GetGlobalScope();
-    return LookupScope(scope, symbol);
+    std::string name = node[AST_TAG_ID]->ToString();
+    Object *scope = FindScope(name);
+    if (!scope) scope = currentScope;
+
+    return Symbol(scope, name);
 }
 
-Object *Interpreter::FindScope(const std::string &symbol) const {
-    assert(!symbol.empty());
+Symbol Interpreter::EvalGlobalIdWrite(Object &node) {
+    ASSERT_TYPE(AST_TAG_DOUBLECOLON_ID);
 
-    Object *scope = currentScope;
+    std::string symbol = node[AST_TAG_ID]->ToString();
+    if (!LookupGlobalScope(symbol)) RuntimeError("Global symbol \"" + symbol + "\" does not exist (Undefined Symbol)");
 
-    while (true) {
-        if (scope->ElementExists(symbol)) return scope;
-
-        /* Check if the scope is sliced */
-        while (scope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
-            Object *previous = (*scope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
-            if (previous->ElementExists(symbol)) return previous;
-            scope = previous;
-        }
-
-        if (!scope->ElementExists(OUTER_RESERVED_FIELD)) return nullptr;
-
-        scope = (*scope)[OUTER_RESERVED_FIELD]->ToObject_NoConst();
-    }
-
-    assert(false);
+    return Symbol(GetGlobalScope(), symbol);
 }
 
-Object *Interpreter::PushScopeSpace(Object *outerScope) {
-    Object *newScopeSpace = new Object();
-    newScopeSpace->Set(OUTER_RESERVED_FIELD, outerScope);
-    newScopeSpace->IncreaseRefCounter();
-    scopeStack.push_front(newScopeSpace);
-    return newScopeSpace;
+Symbol Interpreter::EvalLocalIdWrite(Object &node) {
+    ASSERT_TYPE(AST_TAG_LOCAL_ID);
+    std::string symbol = node[AST_TAG_ID]->ToString();
+    return Symbol(currentScope, symbol);
 }
 
-void Interpreter::PopScopeSpace(void) {
-    scopeStack.pop_front();
+Symbol Interpreter::EvalFormalWrite(Object &node) {
+    ASSERT_TYPE(AST_TAG_FORMAL);
+
+    std::string formalName = node[AST_TAG_ID]->ToString();
+
+    if (IsLibFunc(formalName)) RuntimeError("Formal argument \"" + formalName + "\" shadows library function");
+
+    if (LookupCurrentScope(formalName)) RuntimeError("Formal argument \"" + formalName + "\" already defined as a formal");
+
+    return Symbol(currentScope, formalName);
 }
 
-Object *Interpreter::PushScope(const std::string &tag) {
-    assert(!tag.empty());
-    assert(tag == PREVIOUS_RESERVED_FIELD ||
-           tag == OUTER_RESERVED_FIELD);
-    assert(currentScope);
+Symbol Interpreter::TableSetElem(const Value &lvalue, const Value &index) {
+    if (!lvalue.IsObject() && !lvalue.IsProgramFunction())
+        RuntimeError("Cannot set field \"" + (index.IsString() ? index.ToString() : std::to_string(index.ToNumber())) + "\" of something that is not an object");
 
-    Object *scope = new Object();
-    scope->Set(tag, Value(currentScope));
+    if (!index.IsString() && !index.IsNumber())
+        RuntimeError("Keys of objects can only be strings or numbers");
 
-    currentScope->IncreaseRefCounter();
-    scope->IncreaseRefCounter();
+    if (index.IsString() &&
+        index.ToString()[0] == '$' &&
+        !IsReservedField(index.ToString()))
+        RuntimeError("Cannot write to field \"" + index.ToString() + "\". No write access to user-defined $ indices");
 
-    assert(!scopeStack.empty());
-    scopeStack.pop_front();
-    scopeStack.push_front(scope);
-
-    return scope;
+    /* The 3 cases of a TABLESETELEM instruction are:
+     *
+     * func.x = 0;
+     * func.$closure.x = 0;
+     * table.x = ;
+     */
+    if (lvalue.IsProgramFunction())
+        return ClosureSetElem(lvalue.ToProgramFunctionClosure_NoConst(), index);
+    else if (lvalue.IsObjectClosure())
+        return ClosureSetElem(lvalue, index);
+    else
+        return ObjectSetElem(lvalue, index);
 }
 
-Object *Interpreter::PushSlice(void) {
-    return PushScope(PREVIOUS_RESERVED_FIELD);
+/****** Evaluation Helpers ******/
+
+const Value Interpreter::TableGetElem(const Value &lvalue, const Value &index) {
+    if (!lvalue.IsObject() && !lvalue.IsProgramFunction()) RuntimeError("Cannot get field \"" + (index.IsString() ? index.ToString() : std::to_string(index.ToNumber())) + "\" of something that is not an object");
+    if (!index.IsString() && !index.IsNumber()) RuntimeError("Keys of objects can only be strings or numbers");
+
+    if (lvalue.IsProgramFunction() &&
+        index.ToString() == CLOSURE_RESERVED_FIELD)
+        return Value(lvalue.ToProgramFunctionClosure_NoConst(), true);
+
+    Object *table = nullptr;
+    if (lvalue.IsObject())
+        table = lvalue.ToObject_NoConst();
+    else
+        table = lvalue.ToProgramFunctionClosure_NoConst();
+
+    bool shouldFail = false;
+    if (lvalue.IsProgramFunction())
+        shouldFail = true;
+    else if (lvalue.IsObject() && lvalue.IsObjectClosure())
+        shouldFail = true;
+
+    if (index.IsString())
+        return GetStringFromContext(table, index, shouldFail);
+    else
+        return GetNumberFromContext(table, index, shouldFail);
 }
 
-Object *Interpreter::PushNested(void) {
-    return PushScope(OUTER_RESERVED_FIELD);
+const Value Interpreter::GetIdName(const Object &node) {
+    assert(node.ElementExists(AST_TAG_ID));
+    auto name = node[AST_TAG_ID];
+    assert(name->IsString());
+    return *name;
 }
 
-Object *Interpreter::PopScope(void) {
-    assert(currentScope && currentScope->IsValid());
-    assert(currentScope->ElementExists(OUTER_RESERVED_FIELD));
+const Value Interpreter::HandleAggregators(Object &node, MathOp op, bool returnChanged) {
+    assert(node.IsValid());
 
-    Object *scope = currentScope;
-    currentScope = (*scope)[OUTER_RESERVED_FIELD]->ToObject_NoConst();
-    scope->DecreaseRefCounter();
-    return scope;
-}
+    Symbol lvalue = EVAL_WRITE(AST_TAG_CHILD);
+    assert(lvalue.IsValid());
 
-bool Interpreter::IsLibFunc(const std::string &symbol) const {
-    assert(!symbol.empty());
-    return std::find(libraryFuncs.begin(), libraryFuncs.end(), symbol) != libraryFuncs.end();
+    const Value *value = nullptr;
+    if (lvalue.IsIndexString())
+        value = (*lvalue.GetContext())[lvalue.ToString()];
+    else if (lvalue.IsIndexNumber())
+        value = (*lvalue.GetContext())[lvalue.ToNumber()];
+    else
+        assert(false);
+
+    if (!value->IsNumber()) RuntimeError("Increment/decrement operators can only be applied to numbers not to " + value->GetTypeToString());
+
+    double number = value->ToNumber();
+    double result = number;
+
+    if (op == MathOp::Plus)
+        result = number + 1;
+    else if (op == MathOp::Minus)
+        result = number - 1;
+    else
+        assert(false);
+
+    if (lvalue.IsIndexString())
+        lvalue.GetContext()->Set(lvalue.ToString(), result);
+    else if (lvalue.IsIndexNumber())
+        lvalue.GetContext()->Set(lvalue.ToNumber(), result);
+    else
+        assert(false);
+
+    if (returnChanged)
+        return result;
+    else
+        return number;
 }
 
 const Value Interpreter::EvalMath(Object &node, MathOp op) {
@@ -331,50 +408,308 @@ void Interpreter::RemoveFromContext(const Symbol &lvalue, const Value &rvalue) {
     if (old && old->IsObject()) old->ToObject_NoConst()->DecreaseRefCounter();
 }
 
-const Value Interpreter::HandleAggregators(Object &node, MathOp op, bool returnChanged) {
-    assert(node.IsValid());
+/****** Evaluation Side Actions ******/
 
-    Symbol lvalue = EVAL_WRITE(AST_TAG_CHILD);
-    assert(lvalue.IsValid());
-
-    const Value *value = nullptr;
-    if (lvalue.IsIndexString())
-        value = (*lvalue.GetContext())[lvalue.ToString()];
-    else if (lvalue.IsIndexNumber())
-        value = (*lvalue.GetContext())[lvalue.ToNumber()];
-    else
-        assert(false);
-
-    if (!value->IsNumber()) RuntimeError("Increment/decrement operators can only be applied to numbers not to " + value->GetTypeToString());
-
-    double number = value->ToNumber();
-    double result = number;
-
-    if (op == MathOp::Plus)
-        result = number + 1;
-    else if (op == MathOp::Minus)
-        result = number - 1;
-    else
-        assert(false);
-
-    if (lvalue.IsIndexString())
-        lvalue.GetContext()->Set(lvalue.ToString(), result);
-    else if (lvalue.IsIndexNumber())
-        lvalue.GetContext()->Set(lvalue.ToNumber(), result);
-    else
-        assert(false);
-
-    if (returnChanged)
-        return result;
-    else
-        return number;
+void Interpreter::BlockEnter(void) {
+    currentScope = PushNested();
 }
 
-const Value Interpreter::GetIdName(const Object &node) {
-    assert(node.ElementExists(AST_TAG_ID));
-    auto name = node[AST_TAG_ID];
-    assert(name->IsString());
-    return *name;
+void Interpreter::BlockExit(void) {
+    assert(currentScope);
+
+    Object *tmp = nullptr;
+
+    bool shouldSlice = currentScope->ElementExists(PREVIOUS_RESERVED_FIELD);
+    while (currentScope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
+        tmp = currentScope;
+        currentScope = (*currentScope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
+        tmp->DecreaseRefCounter();
+    }
+
+    assert(currentScope->ElementExists(OUTER_RESERVED_FIELD));
+    PopScope();
+
+    if (shouldSlice) currentScope = PushSlice();
+}
+
+/****** Function Call Evaluation Helpers ******/
+
+Value Interpreter::CallProgramFunction(Object &functionAst, Object &functionClosure, const Object &actuals, const std::vector<std::string> &actualNames) {
+    //function entry
+    currentScope = PushScopeSpace(&functionClosure);
+    inFunctionScope = true;
+
+    const Object &formals = *(functionAst[AST_TAG_FUNCTION_FORMALS]->ToObject());
+    std::vector<std::string> formalNames = GetFormalNames(formals);
+
+    ProgramFunctionRuntimeChecks(formals, formalNames, actuals, actualNames);
+    //actual-formal matching
+    for (register unsigned i = 0; i < formals.GetNumericSize(); ++i) {
+        Object &formal = *(formals[i]->ToObject_NoConst());
+        std::string formalName = formalNames.at(i);    //Name of formal, i is index of formal/actual
+        Value actualValue;                             //Value of actual
+        bool matchExists = false;                      //actual-formal match exists
+
+        if (i < actuals[POSITIONAL_SIZE_RESERVED_FIELD]->ToNumber()) {
+            matchExists = true;
+            actualValue = *(actuals[i]);
+        } else if (actuals.ElementExists(formalName)) {
+            matchExists = true;
+            unsigned index = actuals[formalName]->ToNumber();
+            actualValue = *(actuals[index]);
+        }
+
+        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
+            assert(matchExists);
+            dispatcher.Eval(formal);
+        } else if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
+            if (!matchExists)
+                actualValue = dispatcher.Eval(formal);    //Evaluate optional expression
+        } else {
+            assert(0);
+        }
+        currentScope->Set(formalName, actualValue);
+    }
+
+    //function body evaluation
+    Value retVal;    // initialized to undef, in case function never returns a value
+    try {
+        dispatcher.Eval(*(functionAst[AST_TAG_STMT]->ToObject_NoConst()));
+    } catch (const ReturnException &e) {
+        retVal = e.retVal;
+    }
+
+    //function exit
+    //PopScope(); Done in BlockExit
+    PopScopeSpace();
+    currentScope = scopeStack.front();
+
+    return retVal;
+}
+
+Value Interpreter::CallLibraryFunction(const std::string &functionId, LibraryFunc functionLib, Object &actuals) {
+    assert(functionLib);
+    actuals.Set(RETVAL_RESERVED_FIELD, Value(NilTypeValue::Nil));
+    functionLib(actuals);                                                                      //Library function Call
+    Value result = *(actuals[RETVAL_RESERVED_FIELD]);                                          //do we need to modify retval?
+    if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter();    //TODO need to know why
+    retvalRegister = result;
+    return retvalRegister;
+}
+
+void Interpreter::ProgramFunctionRuntimeChecks(const Object &formals, const std::vector<std::string> &formalNames, const Object &actuals, const std::vector<std::string> &actualNames) {
+    //Number of args error
+    unsigned formalSize = formals.GetNumericSize();
+    unsigned actualPositionalSize = actuals[POSITIONAL_SIZE_RESERVED_FIELD]->ToNumber();
+    if (actualPositionalSize > formalSize)
+        RuntimeError("Number of Actual Positional Arguments(" + std::to_string(actualPositionalSize) + ") exceeds number of Formal Parameters(" + std::to_string(formalSize) + ")\n");
+
+    //Unexpected named error (name not defined in formals)
+    std::vector<std::string> actualMinusFormals;
+    std::set<std::string> v1(actualNames.begin(), actualNames.end());
+    std::set<std::string> v2(formalNames.begin(), formalNames.end());
+    std::set_difference(v1.begin(), v1.end(),
+                        v2.begin(), v2.end(),
+                        std::inserter(actualMinusFormals, actualMinusFormals.begin()));
+    if (!actualMinusFormals.empty())
+        RuntimeError("Unexpected Named\n");    //TODO Add Info
+
+    //checks on actual-formal matching
+    for (register unsigned i = 0; i < formals.GetNumericSize(); ++i) {
+        Object &formal = *(formals[i]->ToObject_NoConst());
+        std::string formalName = formalNames.at(i);    //Name of formal, i is index of formal/actual
+        bool matchExists = false;                      //actual-formal match exists
+        assert(formalName != POSITIONAL_SIZE_RESERVED_FIELD);
+
+        if (i < actuals[POSITIONAL_SIZE_RESERVED_FIELD]->ToNumber()) {
+            //Both positional and named actual match error
+            if (std::find(actualNames.begin(), actualNames.end(), formalName) != actualNames.end())
+                RuntimeError("Both positional and named match\n");    //TODO Add info
+            matchExists = true;
+        } else if (actuals.ElementExists(formalName)) {
+            assert(std::find(actualNames.begin(), actualNames.end(), formalName) != actualNames.end());
+            matchExists = true;
+        }
+
+        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
+            //A non-optional formal is not matched
+            if (!matchExists)
+                RuntimeError("Formal does not match actual\n");    //TODO Add info
+        } else if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
+            ;
+        } else {
+            assert(0);
+        }
+    }
+}
+
+std::vector<std::string> Interpreter::GetFormalNames(const Object &formals) {
+    std::vector<std::string> formalNames;
+    for (register unsigned i = 0; i < formals.GetNumericSize(); ++i) {
+        Object &formal = *(formals[i]->ToObject_NoConst());
+        assert((formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) || (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN));
+        std::string name;
+        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
+            assert(formal.ElementExists(AST_TAG_ID));
+            name = formal[AST_TAG_ID]->ToString();
+        } else if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
+            assert(formal.ElementExists(AST_TAG_LVALUE));
+            const Object &formalNode = *(formal[AST_TAG_LVALUE]->ToObject_NoConst());
+            assert(formalNode[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL);
+            assert(formalNode.ElementExists(AST_TAG_ID));
+            name = formalNode[AST_TAG_ID]->ToString();
+        } else {
+            assert(0);
+        }
+        formalNames.push_back(name);
+    }
+    return formalNames;
+}
+
+/****** Symbol Lookup ******/
+
+const Value *Interpreter::LookupScope(Object *scope, const std::string &symbol) const {
+    assert(scope && scope->IsValid());
+    assert(!symbol.empty());
+
+    /* If this scope contains the symbol simply return it */
+    if (scope->ElementExists(symbol)) return (*scope)[symbol];
+
+    /* Check if the scope is sliced */
+    while (scope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
+        Object *previous = (*scope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
+        if (previous->ElementExists(symbol)) return (*previous)[symbol];
+        scope = previous;
+    }
+
+    return nullptr;
+}
+
+const Value *Interpreter::LookupCurrentScope(const std::string &symbol) const {
+    assert(!symbol.empty());
+    return LookupScope(currentScope, symbol);
+}
+
+const Value *Interpreter::LookupGlobalScope(const std::string &symbol) const {
+    assert(!symbol.empty());
+
+    Object *scope = GetGlobalScope();
+    return LookupScope(scope, symbol);
+}
+
+Object *Interpreter::FindScope(const std::string &symbol) const {
+    assert(!symbol.empty());
+
+    Object *scope = currentScope;
+
+    while (true) {
+        if (scope->ElementExists(symbol)) return scope;
+
+        /* Check if the scope is sliced */
+        while (scope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
+            Object *previous = (*scope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
+            if (previous->ElementExists(symbol)) return previous;
+            scope = previous;
+        }
+
+        if (!scope->ElementExists(OUTER_RESERVED_FIELD)) return nullptr;
+
+        scope = (*scope)[OUTER_RESERVED_FIELD]->ToObject_NoConst();
+    }
+
+    assert(false);
+}
+
+Object *Interpreter::GetGlobalScope(void) const {
+    assert(currentScope);
+
+    Object *scope = currentScope;
+    const Value *value = LookupScope(scope, OUTER_RESERVED_FIELD);
+    while (value) {
+        scope = value->ToObject_NoConst();
+        value = LookupScope(scope, OUTER_RESERVED_FIELD);
+    }
+
+    return scope;
+}
+
+bool Interpreter::IsGlobalScope(Object *scope) const {
+    assert(scope);
+
+    /* Move backwards towards the first slice of the scope */
+    while (scope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
+        scope = (*scope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
+    }
+
+    /* The first slice of the global scope should contain library functions */
+    return (!scope->ElementExists(OUTER_RESERVED_FIELD) &&
+            scope->ElementExists("print") &&
+            (*scope)["print"]->IsLibraryFunction());
+}
+
+/****** Environment Actions ******/
+
+Object *Interpreter::PushScopeSpace(Object *outerScope) {
+    Object *newScopeSpace = new Object();
+    newScopeSpace->Set(OUTER_RESERVED_FIELD, outerScope);
+    newScopeSpace->IncreaseRefCounter();
+    scopeStack.push_front(newScopeSpace);
+    return newScopeSpace;
+}
+
+void Interpreter::PopScopeSpace(void) {
+    scopeStack.pop_front();
+}
+
+Object *Interpreter::PushSlice(void) {
+    return PushScope(PREVIOUS_RESERVED_FIELD);
+}
+
+Object *Interpreter::PushNested(void) {
+    return PushScope(OUTER_RESERVED_FIELD);
+}
+
+Object *Interpreter::PopScope(void) {
+    assert(currentScope && currentScope->IsValid());
+    assert(currentScope->ElementExists(OUTER_RESERVED_FIELD));
+
+    Object *scope = currentScope;
+    currentScope = (*scope)[OUTER_RESERVED_FIELD]->ToObject_NoConst();
+    scope->DecreaseRefCounter();
+    return scope;
+}
+
+Object *Interpreter::PushScope(const std::string &tag) {
+    assert(!tag.empty());
+    assert(tag == PREVIOUS_RESERVED_FIELD ||
+           tag == OUTER_RESERVED_FIELD);
+    assert(currentScope);
+
+    Object *scope = new Object();
+    scope->Set(tag, Value(currentScope));
+
+    currentScope->IncreaseRefCounter();
+    scope->IncreaseRefCounter();
+
+    assert(!scopeStack.empty());
+    scopeStack.pop_front();
+    scopeStack.push_front(scope);
+
+    return scope;
+}
+
+/****** Helpers ******/
+
+bool Interpreter::IsLibFunc(const std::string &symbol) const {
+    assert(!symbol.empty());
+    return std::find(libraryFuncs.begin(), libraryFuncs.end(), symbol) != libraryFuncs.end();
+}
+
+bool Interpreter::IsReservedField(const std::string &index) const {
+    return (index == OUTER_RESERVED_FIELD ||
+            index == PREVIOUS_RESERVED_FIELD ||
+            index == RETVAL_RESERVED_FIELD ||
+            index == CLOSURE_RESERVED_FIELD);
 }
 
 const Value Interpreter::GetStringFromContext(Object *table, const Value &index, bool lookupFail) {
@@ -413,32 +748,6 @@ const Value Interpreter::GetNumberFromContext(Object *table, const Value &index,
     assert(false); /* Keep this to suppress -Wreturn-type warning */
 }
 
-const Value Interpreter::TableGetElem(const Value &lvalue, const Value &index) {
-    if (!lvalue.IsObject() && !lvalue.IsProgramFunction()) RuntimeError("Cannot get field \"" + (index.IsString() ? index.ToString() : std::to_string(index.ToNumber())) + "\" of something that is not an object");
-    if (!index.IsString() && !index.IsNumber()) RuntimeError("Keys of objects can only be strings or numbers");
-
-    if (lvalue.IsProgramFunction() &&
-        index.ToString() == CLOSURE_RESERVED_FIELD)
-        return Value(lvalue.ToProgramFunctionClosure_NoConst(), true);
-
-    Object *table = nullptr;
-    if (lvalue.IsObject())
-        table = lvalue.ToObject_NoConst();
-    else
-        table = lvalue.ToProgramFunctionClosure_NoConst();
-
-    bool shouldFail = false;
-    if (lvalue.IsProgramFunction())
-        shouldFail = true;
-    else if (lvalue.IsObject() && lvalue.IsObjectClosure())
-        shouldFail = true;
-
-    if (index.IsString())
-        return GetStringFromContext(table, index, shouldFail);
-    else
-        return GetNumberFromContext(table, index, shouldFail);
-}
-
 Symbol Interpreter::ClosureSetElem(const Value &lvalue, const Value &index) {
     assert(lvalue.IsObject());
 
@@ -470,294 +779,4 @@ Symbol Interpreter::ObjectSetElem(const Value &lvalue, const Value &index) {
         return Symbol(table, index.ToString(), true);
     else
         assert(false);
-}
-
-Symbol Interpreter::TableSetElem(const Value &lvalue, const Value &index) {
-    if (!lvalue.IsObject() && !lvalue.IsProgramFunction())
-        RuntimeError("Cannot set field \"" + (index.IsString() ? index.ToString() : std::to_string(index.ToNumber())) + "\" of something that is not an object");
-
-    if (!index.IsString() && !index.IsNumber())
-        RuntimeError("Keys of objects can only be strings or numbers");
-
-    if (index.IsString() &&
-        index.ToString()[0] == '$' &&
-        !IsReservedField(index.ToString()))
-        RuntimeError("Cannot write to field \"" + index.ToString() + "\". No write access to user-defined $ indices");
-
-    /* The 3 cases of a TABLESETELEM instruction are:
-     *
-     * func.x = 0;
-     * func.$closure.x = 0;
-     * table.x = ;
-     */
-    if (lvalue.IsProgramFunction())
-        return ClosureSetElem(lvalue.ToProgramFunctionClosure_NoConst(), index);
-    else if (lvalue.IsObjectClosure())
-        return ClosureSetElem(lvalue, index);
-    else
-        return ObjectSetElem(lvalue, index);
-}
-
-Symbol Interpreter::EvalMemberWrite(Object &node) {
-    ASSERT_TYPE(AST_TAG_MEMBER);
-    return EVAL_WRITE(AST_TAG_CHILD);
-}
-
-Symbol Interpreter::EvalDotWrite(Object &node) {
-    ASSERT_TYPE(AST_TAG_DOT);
-
-    auto lvalue = EVAL(AST_TAG_LVALUE);
-    auto index = GetIdName(*node[AST_TAG_ID]->ToObject());
-    return TableSetElem(lvalue, index);
-}
-
-Symbol Interpreter::EvalBracketWrite(Object &node) {
-    ASSERT_TYPE(AST_TAG_BRACKET);
-    const Value lvalue = EVAL(AST_TAG_LVALUE);
-    const Value index = EVAL(AST_TAG_EXPR);
-    return TableSetElem(lvalue, index);
-}
-
-Symbol Interpreter::EvalIdWrite(Object &node) {
-    ASSERT_TYPE(AST_TAG_ID);
-
-    std::string name = node[AST_TAG_ID]->ToString();
-    Object *scope = FindScope(name);
-    if (!scope) scope = currentScope;
-
-    return Symbol(scope, name);
-}
-
-Symbol Interpreter::EvalGlobalIdWrite(Object &node) {
-    ASSERT_TYPE(AST_TAG_DOUBLECOLON_ID);
-
-    std::string symbol = node[AST_TAG_ID]->ToString();
-    if (!LookupGlobalScope(symbol)) RuntimeError("Global symbol \"" + symbol + "\" does not exist (Undefined Symbol)");
-
-    return Symbol(GetGlobalScope(), symbol);
-}
-
-Symbol Interpreter::EvalLocalIdWrite(Object &node) {
-    ASSERT_TYPE(AST_TAG_LOCAL_ID);
-    std::string symbol = node[AST_TAG_ID]->ToString();
-    return Symbol(currentScope, symbol);
-}
-
-Symbol Interpreter::EvalFormalWrite(Object &node) {
-    ASSERT_TYPE(AST_TAG_FORMAL);
-
-    std::string formalName = node[AST_TAG_ID]->ToString();
-
-    if (IsLibFunc(formalName)) RuntimeError("Formal argument \"" + formalName + "\" shadows library function");
-
-    if (LookupCurrentScope(formalName)) RuntimeError("Formal argument \"" + formalName + "\" already defined as a formal");
-
-    return Symbol(currentScope, formalName);
-}
-
-Symbol Interpreter::EvalLvalueWrite(Object &node) {
-    ASSERT_TYPE(AST_TAG_LVALUE);
-    return EVAL_WRITE(AST_TAG_CHILD);
-}
-
-void Interpreter::BlockEnter(void) {
-    currentScope = PushNested();
-}
-
-void Interpreter::BlockExit(void) {
-    assert(currentScope);
-
-    Object *tmp = nullptr;
-
-    bool shouldSlice = currentScope->ElementExists(PREVIOUS_RESERVED_FIELD);
-    while (currentScope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
-        tmp = currentScope;
-        currentScope = (*currentScope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
-        tmp->DecreaseRefCounter();
-    }
-
-    assert(currentScope->ElementExists(OUTER_RESERVED_FIELD));
-    PopScope();
-
-    if (shouldSlice) currentScope = PushSlice();
-}
-
-std::vector<std::string> Interpreter::GetFormalNames(const Object &formals) {
-    std::vector<std::string> formalNames;
-    for (register unsigned i = 0; i < formals.GetNumericSize(); ++i) {
-        Object &formal = *(formals[i]->ToObject_NoConst());
-        assert((formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) || (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN));
-        std::string name;
-        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
-            assert(formal.ElementExists(AST_TAG_ID));
-            name = formal[AST_TAG_ID]->ToString();
-        } else if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
-            assert(formal.ElementExists(AST_TAG_LVALUE));
-            const Object &formalNode = *(formal[AST_TAG_LVALUE]->ToObject_NoConst());
-            assert(formalNode[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL);
-            assert(formalNode.ElementExists(AST_TAG_ID));
-            name = formalNode[AST_TAG_ID]->ToString();
-        } else {
-            assert(0);
-        }
-        formalNames.push_back(name);
-    }
-    return formalNames;
-}
-
-std::vector<std::string> Interpreter::GetActualNames(const Object &actuals) {    //unused
-    std::vector<std::string> actualNames;
-    for (register unsigned i = 0; i < actuals.GetStringSize(); ++i) {
-        Object &actual = *(actuals[i]->ToObject_NoConst());
-        assert((actual[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR) || (actual[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NAMED));
-        std::string name;
-        if (actual[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR) {
-            continue;
-        } else if (actual[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NAMED) {
-            assert(actual.ElementExists(AST_TAG_NAMED_KEY));
-            const Object &keyNode = *(actual[AST_TAG_NAMED_KEY]->ToObject_NoConst());
-            assert(keyNode[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ID);
-            assert(keyNode.ElementExists(AST_TAG_ID));
-            name = keyNode[AST_TAG_ID]->ToString();
-        } else {
-            assert(0);
-        }
-        actualNames.push_back(name);
-    }
-    return actualNames;
-}
-
-Value Interpreter::CallProgramFunction(Object &functionAst, Object &functionClosure, const Object &actuals, const std::vector<std::string> &actualNames) {
-    currentScope = PushScopeSpace(&functionClosure);
-    inFunctionScope = true;
-
-    const Object &formals = *(functionAst[AST_TAG_FUNCTION_FORMALS]->ToObject());
-
-    //Number of args error
-    unsigned formalSize = formals.GetNumericSize();
-    unsigned actualPositionalSize = actuals[POSITIONAL_SIZE_RESERVED_FIELD]->ToNumber();
-    if (actualPositionalSize > formalSize)
-        RuntimeError("Number of Actual Positional Arguments(" + std::to_string(actualPositionalSize) + ") exceeds number of Formal Parameters(" + std::to_string(formalSize) + ")\n");
-    //Unexpected named error (name not defined in formals)
-    std::vector<std::string> formalNames = GetFormalNames(formals);
-    std::vector<std::string> actualMinusFormals;
-    std::set_difference(actualNames.begin(), actualNames.end(),
-                        formalNames.begin(), formalNames.end(),
-                        std::inserter(actualMinusFormals, actualMinusFormals.begin()));
-    if (!actualMinusFormals.empty())
-        RuntimeError("Unexpected Named\n");    //TODO Add Info
-    //Check for named recurrence
-    /* auto sortedActualNames(actualNames);
-    std::sort(sortedActualNames.begin(), sortedActualNames.end());
-    if (std::adjacent_find(sortedActualNames.begin(), sortedActualNames.end()) != sortedActualNames.end())
-        RuntimeError("named recurrence\n");                                                                               //TODO Add Info, We may allow this, comment out if so
-    sortedActualNames.erase(std::unique(sortedActualNames.begin(), sortedActualNames.end()), sortedActualNames.end());    //removes duplicates from names vector
- */
-    for (register unsigned i = 0; i < formals.GetNumericSize(); ++i) {
-        Object &formal = *(formals[i]->ToObject_NoConst());
-        assert((formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) || (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN));
-
-        std::string formalName = formalNames.at(i);    //Name of formal, i is index of formal/actual
-        Value actualValue;                             //Value of actual
-        bool actualExists = false;                     //actual/formal map exists
-
-        if (i < actuals[POSITIONAL_SIZE_RESERVED_FIELD]->ToNumber()) {
-            //Both positional and named actual match error
-            for (const auto &key : actualNames) {
-                if (key == formalName) RuntimeError("Both positional and named match\n");    //TODO Add info
-            }
-            actualExists = true;
-            actualValue = *(actuals[i]);
-        } else if (actuals.ElementExists(formalName)) {
-            actualExists = true;
-            unsigned index = actuals[formalName]->ToNumber();
-            actualValue = *(actuals[index]);
-        }
-
-        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
-            if (!actualExists)
-                RuntimeError("Formal does not match actual\n");    //TODO Add info
-            dispatcher.Eval(formal);
-        }
-        if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
-            if (!actualExists) actualValue = dispatcher.Eval(formal);    //Evaluate optional expression
-        }
-        currentScope->Set(formalName, actualValue);
-    }
-
-    //function body evaluation
-    Value retVal;    // initialized to undef, in case function never returns a value
-    try {
-        dispatcher.Eval(*(functionAst[AST_TAG_STMT]->ToObject_NoConst()));
-    } catch (const ReturnException &e) {
-        //RETURN_VAL
-        retVal = e.retVal;
-    }
-
-    //FUNC_EXIT
-    //Pop function environment
-    // PopScope(); //Done in BlockExit
-
-    PopScopeSpace();
-    currentScope = scopeStack.front();
-
-    return retVal;
-}
-
-Value Interpreter::CallLibraryFunction(const std::string &functionId, LibraryFunc functionLib, Object &actuals) {
-    actuals.Set(RETVAL_RESERVED_FIELD, Value(NilTypeValue::Nil));
-    assert(functionLib);
-    functionLib(actuals);
-    Value result = *(actuals[RETVAL_RESERVED_FIELD]);                                          //do we need to modify retval?
-    if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter();    //need to know why
-    retvalRegister = result;
-    return retvalRegister;
-    // if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter(); //need to know why
-}
-
-Interpreter::Interpreter(void) {
-    globalScope = new Object();
-    globalScope->IncreaseRefCounter();
-    scopeStack.push_front(globalScope);
-
-    currentScope = globalScope;
-    currentScope->IncreaseRefCounter();
-    inFunctionScope = false;
-
-    InstallLibFuncs();
-    InstallEvaluators();
-}
-
-#define INSTALL_LIB_FUNC(x,y) globalScope->Set(x,Value(LibFunc::y, x));libraryFuncs.push_front(x);
-
-void Interpreter::InstallLibFuncs(void) {
-    INSTALL_LIB_FUNC("print",Print);
-    INSTALL_LIB_FUNC("typeof",Typeof);
-    INSTALL_LIB_FUNC("object_keys",ObjectKeys);
-    INSTALL_LIB_FUNC("object_size",ObjectSize);
-    INSTALL_LIB_FUNC("sleep",Sleep);
-    INSTALL_LIB_FUNC("assert",Assert);
-    INSTALL_LIB_FUNC("sqrt",Sqrt);
-    INSTALL_LIB_FUNC("pow",Pow);
-    INSTALL_LIB_FUNC("sin",Sin);
-    INSTALL_LIB_FUNC("cos",Cos);
-    INSTALL_LIB_FUNC("get_time",GetTime);
-    INSTALL_LIB_FUNC("input",Input);
-    INSTALL_LIB_FUNC("to_number",ToNumber);
-    INSTALL_LIB_FUNC("rand",Random);
-}
-
-void Interpreter::Execute(Object &program) {
-    assert(program[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_PROGRAM);
-    assert(program.ElementExists(AST_TAG_CHILD));
-
-    dispatcher.Eval(program);
-}
-
-Interpreter::~Interpreter() {
-    /* Cleanup */
-    dispatcher.Clear();
-    libraryFuncs.clear();
-    globalScope->Clear();
-    delete globalScope;
 }

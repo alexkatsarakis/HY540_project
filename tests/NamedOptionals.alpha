@@ -1,0 +1,13 @@
+function fun(a, b, c, d = "type", e = [{"type" : "type"}]) {
+    print("fun", a, b, c, d, e);
+}
+//fun();                                // formal a not match
+//fun(1);                               // formal b not match
+fun(1, 2, 3);
+fun(1, 2, 3, 4, 5);
+fun(e:1, d:2, c:3, b:4, a:5);
+//fun(1, 2, d:3);                       // formal c not match
+fun(1, 2, c:3);
+fun(1, 2, 3, e: "type");
+//fun(1, 2, 3, z: "unnamed");           // unexpected named z
+//fun(1, 2, 3, d : true, b : "rename");   // overwrite formal b
