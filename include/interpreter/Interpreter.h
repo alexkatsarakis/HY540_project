@@ -68,8 +68,8 @@ private:
 
     void BlockEnter(void);
     void BlockExit(void);
-    Value CallProgramFunction(Object *functionAst, Object *functionClosure, Object *arguments);
-    Value CallLibraryFunction(const std::string &functionId, LibraryFunc functionLib, Object *arguments);
+    Value CallProgramFunction(Object &functionAst, Object &functionClosure, const Object &actuals, const std::vector<std::string> &actualNames);
+    Value CallLibraryFunction(const std::string &functionId, LibraryFunc functionLib, Object &actuals);
 
     /****** Symbol Lookup ******/
 
@@ -102,6 +102,8 @@ private:
     const Value GetNumberFromContext(Object *table, const Value &index, bool lookupFail);
     Symbol ClosureSetElem(const Value &lvalue, const Value &index);
     Symbol ObjectSetElem(const Value &lvalue, const Value &index);
+    std::vector<std::string> GetFormalNames(const Object &formals);
+    std::vector<std::string> GetActualNames(const Object &actuals);
 
     /****** Evaluators ******/
 
@@ -181,6 +183,7 @@ public:
 #define OUTER_RESERVED_FIELD "$outer"
 #define RETVAL_RESERVED_FIELD "$retval"
 #define CLOSURE_RESERVED_FIELD "$closure"
+#define POSITIONAL_SIZE_RESERVED_FIELD "$positional_size"
 
 /****** Macros Shortcuts ******/
 #define NIL_VAL Value(NilTypeValue::Nil);
