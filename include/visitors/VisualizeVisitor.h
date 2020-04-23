@@ -22,7 +22,7 @@ private:
 
     void LinkToNode(unsigned node);
 
-    void LinkToNodeEdgeLabel(unsigned node, const std::string & str);
+    void LinkToNodeEdgeLabel(unsigned node, const std::string &str);
 
     void SaveOrphan(void);
 
@@ -89,6 +89,7 @@ public:
     virtual void VisitBracket(const Object &node) override;
     virtual void VisitCall(const Object &node) override;
     virtual void VisitArgumentList(const Object &node) override;
+    virtual void VisitNamedArgument(const Object &node) override;
     virtual void VisitExpressionList(const Object &node) override;
     virtual void VisitObjectDef(const Object &node) override;
     virtual void VisitIndexed(const Object &node) override;

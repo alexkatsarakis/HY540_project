@@ -56,6 +56,7 @@ public:
     IMPL_VISIT(Bracket)
     IMPL_VISIT(Call)
     IMPL_VISIT(ArgumentList)
+    IMPL_VISIT(NamedArgument)
     IMPL_VISIT(ExpressionList)
     IMPL_VISIT(ObjectDef)
     IMPL_VISIT(Indexed)

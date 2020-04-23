@@ -83,15 +83,15 @@ Object *ParseLvalueMethodCall(Object *lvalue, Object *id, Object* arguments);
 
 Object *ParseFuncdefCall(Object *funcdef, Object *elist);
 
-Object *ParseExprArgList(Object *expr, Object *rest);
-
-Object *ParseNamedArgList(const char *formalName, Object *named, Object *rest);
+Object *ParseArgList(Object *arg, Object *rest);
 
 Object *ParseMixedArgList(Object *positional, Object *named);
 
 Object *ParseEmptyArgList(void);
 
-Object *ParseCommaNamedArgs(Object *parsed, const char *formalName, Object *named);
+Object *ParseCommaNamedArgs(Object *parsed, Object *named);
+
+Object *ParseNamedArg(Object *id, Object *expr);
 
 Object *ParseEmptyElist(void);
 
@@ -109,7 +109,7 @@ Object *ParseIndexed(Object *indexedelem, Object *rest);
 
 Object *ParseIndexedElem(Object *key, Object *value);
 
-Object *ParseIndexedElem(Object *key, Object *value);    //redefinition of top, why g++ allowed this?
+Object *ParseIndexedElem(Object *key, Object *value);    //redefinition of ParseIndexedElem, why g++ allowed this, delete
 
 Object *ParseBlock(Object *stmts);
 

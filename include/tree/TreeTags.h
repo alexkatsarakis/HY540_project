@@ -72,6 +72,9 @@
 #define AST_TAG_PRIMARY "primary"
 
 #define AST_TAG_ARGLIST "arglist"
+#define AST_TAG_NAMED "named"
+#define AST_TAG_NAMED_KEY "named_key"
+#define AST_TAG_NAMED_VALUE "named_value"
 
 #define AST_TAG_ELIST "elist"
 

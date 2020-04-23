@@ -37,10 +37,14 @@ LINKER= $(patsubst %,$(LINKER_PREFIX)/%,$(LINKER_DIRS))
 # -Wunreachable-code: Warn if the compiler detects that code will never be executed
 # -Winit-self: Warn about uninitialized variables which are initialized with themselves
 # -Wconversion: Warn for implicit conversions that may alter a value
+ifeq ($(BUILD),release)
+CFLAGS=-O3 -std=c++14 -DNDEBUG
+else
 CFLAGS=-O0 -g3 -std=c++14 -Wshadow -Wall -Wextra -Wold-style-cast -Wpedantic\
 -Wfloat-equal -Wpointer-arith -Wcast-qual -Wstrict-overflow=5 -Wwrite-strings\
 -Wswitch-default -Wswitch-enum -Wunreachable-code -Winit-self\
 -Wno-unused-parameter
+endif
 # -Wconversion
 
 # Find all source files
@@ -131,3 +135,7 @@ clear: clean distclean
 
 viz: run
 	xdot alpha_AST.dot
+
+release: clean
+	make -j 4 "BUILD=release"
+	@echo 'Build successful for release mode'

@@ -145,21 +145,18 @@ const std::string UnparseVisitor::UnparseCallPARENTHESISTWIN(const std::string &
 const std::string UnparseVisitor::UnparseMethodCall(const std::string &lvalue, const std::string id, const std::string arglist){
     return lvalue + ".." + id + "(" + arglist + ")";
 }
-const std::string UnparseVisitor::UnparseArgumentList(const std::vector<std::string> &posArguments, const std::vector<std::string> &namedArguments) {
+const std::string UnparseVisitor::UnparseArgumentList(const std::vector<std::string> &arguments) {
     string argumentListStr;
-    //positional
-    for (auto argument : posArguments)
+    for (auto argument : arguments)
         argumentListStr.append(argument).append(", ");
-    //named
-    for (unsigned i = 0; i < namedArguments.size(); i += 2) {
-        argumentListStr.append(namedArguments.at(i)).append(" : ");
-        argumentListStr.append(namedArguments.at(i + 1)).append(", ");
-    }
     if (!argumentListStr.empty()) {
         assert(argumentListStr.at(argumentListStr.size() - 2) == ',');
         argumentListStr.erase(argumentListStr.size() - 2);
     }
     return argumentListStr;
+}
+const std::string UnparseVisitor::UnparseNamedArgument(const std::string &id, const std::string &expr) {
+    return string(id + " : " + expr);
 }
 const std::string UnparseVisitor::UnparseExpressionList(const std::vector<std::string> &expressions) {
     string expressionListStr;
@@ -494,17 +491,18 @@ void UnparseVisitor::VisitCall(const Object &node) {
     }
 }
 void UnparseVisitor::VisitArgumentList(const Object &node) {
-    vector<string> posArguments;
-    vector<string> namedArguments;
+    vector<string> arguments;
     for (unsigned i = 0; i < node.GetNumericSize(); ++i)
-        posArguments.push_back(GetUnparsed(node[i]));
-    for (const auto &key : node.GetUserKeys()) {
-        namedArguments.push_back(key);
-        namedArguments.push_back(GetUnparsed(node[key]));
-    }
+        arguments.push_back(GetUnparsed(node[i]));
     const_cast<Object &>(node).Set(
         UNPARSE_VALUE,
-        Value(UnparseArgumentList(posArguments, namedArguments)));
+        Value(UnparseArgumentList(arguments)));
+}
+void UnparseVisitor::VisitNamedArgument(const Object &node) {
+    const_cast<Object &>(node).Set(
+        UNPARSE_VALUE,
+        Value(UnparseNamedArgument(GetUnparsed(node[AST_TAG_NAMED_KEY]),
+                                   GetUnparsed(node[AST_TAG_NAMED_VALUE]))));
 }
 void UnparseVisitor::VisitExpressionList(const Object &node) {
     vector<string> expressions;
