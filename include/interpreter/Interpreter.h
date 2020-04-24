@@ -2,6 +2,7 @@
 #define _INTERPRETER_H_
 
 #include "EvalDispatcher.h"
+#include "HiddenTags.h"
 #include "Object.h"
 #include "Symbol.h"
 #include "Value.h"
@@ -15,11 +16,7 @@ private:
 
     struct BreakException {};
     struct ContinueException {};
-    struct ReturnException {
-        const Value retVal;
-        ReturnException() : retVal(Value()) {}
-        ReturnException(const Value &_retVal) : retVal(_retVal) {}
-    };
+    struct ReturnException {};
 
     enum MathOp { Plus,
                   Minus,
@@ -183,13 +180,6 @@ public:
 
     virtual ~Interpreter();
 };
-
-/****** Reserved Fields ******/
-#define PREVIOUS_RESERVED_FIELD "$previous"
-#define OUTER_RESERVED_FIELD "$outer"
-#define RETVAL_RESERVED_FIELD "$retval"
-#define CLOSURE_RESERVED_FIELD "$closure"
-#define POSITIONAL_SIZE_RESERVED_FIELD "$positional_size"
 
 /****** Macros Shortcuts ******/
 #define NIL_VAL Value(NilTypeValue::Nil)

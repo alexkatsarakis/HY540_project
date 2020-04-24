@@ -466,17 +466,16 @@ Value Interpreter::CallProgramFunction(Object &functionAst, Object &functionClos
             if (!matchExists)
                 actualValue = dispatcher.Eval(formal);    //Evaluate optional expression
         } else {
-            assert(0);
+            assert(false);
         }
         currentScope->Set(formalName, actualValue);
     }
 
     //function body evaluation
-    Value retVal;    // initialized to undef, in case function never returns a value
     try {
         dispatcher.Eval(*(functionAst[AST_TAG_STMT]->ToObject_NoConst()));
     } catch (const ReturnException &e) {
-        retVal = e.retVal;
+        ;
     }
 
     //function exit
@@ -484,7 +483,7 @@ Value Interpreter::CallProgramFunction(Object &functionAst, Object &functionClos
     PopScopeSpace();
     currentScope = scopeStack.front();
 
-    return retVal;
+    return retvalRegister;
 }
 
 Value Interpreter::CallLibraryFunction(const std::string &functionId, LibraryFunc functionLib, Object &actuals) {
@@ -538,7 +537,7 @@ void Interpreter::ProgramFunctionRuntimeChecks(const Object &formals, const std:
         } else if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
             ;
         } else {
-            assert(0);
+            assert(false);
         }
     }
 }
@@ -559,7 +558,7 @@ std::vector<std::string> Interpreter::GetFormalNames(const Object &formals) {
             assert(formalNode.ElementExists(AST_TAG_ID));
             name = formalNode[AST_TAG_ID]->ToString();
         } else {
-            assert(0);
+            assert(false);
         }
         formalNames.push_back(name);
     }

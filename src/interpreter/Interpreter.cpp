@@ -265,25 +265,25 @@ const Value Interpreter::EvalCall(Object &node) {
     ASSERT_TYPE(AST_TAG_CALL);
     Value callable, lvalue;
 
-    if (node.ElementExists(AST_TAG_LVALUE)){
+    if (node.ElementExists(AST_TAG_LVALUE)) {
         lvalue = EVAL(AST_TAG_LVALUE);
-        const Object* idNode = node[AST_TAG_FUNCTION]->ToObject();
+        const Object *idNode = node[AST_TAG_FUNCTION]->ToObject();
         std::string id = (*idNode)[AST_TAG_ID]->ToString();
-        
+
         callable = TableGetElem(lvalue, id);
-        
+
         if (!callable.IsProgramFunction())
             RuntimeError("Cannot call something that is not a function");
 
-    }else{
+    } else {
         Value functionVal = EVAL(AST_TAG_FUNCTION);
-        if (functionVal.IsObject()){
+        if (functionVal.IsObject()) {
             const Value *element = (*functionVal.ToObject())["()"];
             if (!element)
                 RuntimeError("Cannot call an object if it is not a functor");
-            
+
             callable = *element;
-        }else{
+        } else {
             if (!functionVal.IsLibraryFunction() && !functionVal.IsProgramFunction())
                 RuntimeError("Cannot call something that is not a function");
 
@@ -296,26 +296,25 @@ const Value Interpreter::EvalCall(Object &node) {
     std::vector<std::string> actualNames = actuals.GetUserKeys();
 
     /* in the case of method call, adds "this" as the first argument */
-    if (node.ElementExists(AST_TAG_LVALUE)){
-        for (int i  = actuals.GetNumericSize(); i > 0; i--)
+    if (node.ElementExists(AST_TAG_LVALUE)) {
+        for (int i = actuals.GetNumericSize(); i > 0; i--)
             actuals.Set(i, *actuals[i - 1]);
 
         actuals.Set(0, lvalue);
     }
 
-    retvalRegister.FromUndef();    //reset retVal register
     Value result;
-
-    if (callable.IsProgramFunction()){
+    if (callable.IsProgramFunction()) {
         Object functionAst = *(callable.ToProgramFunctionAST_NoConst());
         Object functionClosure = *(callable.ToProgramFunctionClosure_NoConst());
         result = CallProgramFunction(functionAst, functionClosure, actuals, actuals.GetUserKeys());
-    }else if (callable.IsLibraryFunction()){
+    } else if (callable.IsLibraryFunction()) {
         std::string functionId = callable.ToLibraryFunctionId();
         LibraryFunc functionLib = callable.ToLibraryFunction();
         result = CallLibraryFunction(functionId, functionLib, actuals);
-    }else
+    } else {
         assert(false);
+    }
 
     actuals.Clear();
     actualsVal.FromUndef();
@@ -548,7 +547,10 @@ const Value Interpreter::EvalFor(Object &node) {
 
 const Value Interpreter::EvalReturn(Object &node) {
     ASSERT_TYPE(AST_TAG_RETURN);
-    if (node.ElementExists(AST_TAG_CHILD)) throw ReturnException(EVAL_CHILD());
+    Value result;    // initialized to undef, in case function never returns a value
+    if (node.ElementExists(AST_TAG_CHILD)) result = EVAL_CHILD();
+    if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter();
+    retvalRegister = result;
     throw ReturnException();
 }
 

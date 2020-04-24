@@ -1,5 +1,5 @@
 #ifndef _TREE_TAGS_H_
-#define _TREE_TAGS_H
+#define _TREE_TAGS_H_
 
 #define AST_TAG_TYPE_KEY "type"
 

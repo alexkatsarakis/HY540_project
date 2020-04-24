@@ -27,9 +27,6 @@
 
     void ProcessAST(Object * ast);
 
-    /* The  number of the current line */
-    extern int yylineno;
-
     /* Holds the text of the current token. It may be modified but not lengthened */
     extern char * yytext;
 

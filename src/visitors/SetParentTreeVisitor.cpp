@@ -1,16 +1,16 @@
 #include "SetParentTreeVisitor.h"
 
-#define PARENT_FIELD "$$Parent"
+#include "HiddenTags.h"
 using namespace std;
 
 void SetParentTreeVisitor::SetParent(const Object &parent) {
     Object &parentNoConst = const_cast<Object &>(parent);
     if (isRemoval) {
-        parentNoConst.Remove(PARENT_FIELD);
+        parentNoConst.Remove(PARENT_RESERVED_FIELD);
         return;
     }
     while (!valueStack.IsEmpty())
-        valueStack.GetTopAndPop().ToObject_NoConst()->Set(PARENT_FIELD, Value(&parentNoConst));
+        valueStack.GetTopAndPop().ToObject_NoConst()->Set(PARENT_RESERVED_FIELD, Value(&parentNoConst));
     valueStack.Push(Value(&parentNoConst));
 }
 
