@@ -136,7 +136,7 @@ void Interpreter::RuntimeWarning(const std::string &msg, unsigned line) {
     std::cerr << "\033[36;1m"    //CYAN
               << lineMsg
               << "\033[33;1m"    //YELLOW
-              << "Runtime Error: "
+              << "Runtime Warning: "
               << "\033[0m" << msg << std::endl;
 }
 
@@ -560,7 +560,7 @@ void Interpreter::ProgramFunctionRuntimeChecks(const Object &formals, const std:
 std::vector<std::string> Interpreter::GetFormalNames(const Object &formals) {
     std::vector<std::string> formalNames;
     for (register unsigned i = 0; i < formals.GetNumericSize(); ++i) {
-        Object &formal = *(formals[i]->ToObject_NoConst());
+        const Object &formal = *(formals[i]->ToObject());
         assert((formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) || (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN));
         std::string name;
         if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
@@ -568,7 +568,7 @@ std::vector<std::string> Interpreter::GetFormalNames(const Object &formals) {
             name = formal[AST_TAG_ID]->ToString();
         } else if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
             assert(formal.ElementExists(AST_TAG_LVALUE));
-            const Object &formalNode = *(formal[AST_TAG_LVALUE]->ToObject_NoConst());
+            const Object &formalNode = *(formal[AST_TAG_LVALUE]->ToObject());
             assert(formalNode[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL);
             assert(formalNode.ElementExists(AST_TAG_ID));
             name = formalNode[AST_TAG_ID]->ToString();

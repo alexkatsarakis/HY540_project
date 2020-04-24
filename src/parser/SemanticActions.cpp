@@ -3,11 +3,11 @@
 #include "HiddenTags.h"
 #include "Object.h"
 #include "TreeTags.h"
+#include "Utilities.h"
 #include "Value.h"
 
+#include <algorithm>
 #include <cassert>
-
-#define SET_LINE(n) n->Set(LINE_NUMBER_RESERVED_FIELD, double(yylineno));
 
 /*********** Helper Functions ***********/
 
@@ -127,6 +127,45 @@ Object *MergeLists(const char *type, Object *table1, Object *table2) {
 
     assert(table->IsValid());
     return table;
+}
+
+void CheckIdListRecurence(const Object &list) {
+    std::vector<std::string> vec;
+    for (register unsigned i = 0; i < list.GetNumericSize(); ++i) {
+        const Object node = *(list[i]->ToObject());
+        std::string name;
+        if (node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
+            assert(node.ElementExists(AST_TAG_ID));
+            name = node[AST_TAG_ID]->ToString();
+        } else if (node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
+            assert(node.ElementExists(AST_TAG_LVALUE));
+            const Object &formalNode = *(node[AST_TAG_LVALUE]->ToObject());
+            assert(formalNode[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL);
+            assert(formalNode.ElementExists(AST_TAG_ID));
+            name = formalNode[AST_TAG_ID]->ToString();
+        } else {
+            assert(false);
+        }
+        if (std::find(vec.begin(), vec.end(), name) != vec.end())
+            Utilities::SyntaxError("formal recurrence\n", GET_LINE(node));    //TODO Error or Warning
+        vec.push_back(name);
+    }
+}
+
+void CheckArgListRecurence(const Object &list) {
+    std::vector<std::string> vec;
+    for (register unsigned i = 0; i < list.GetNumericSize(); ++i) {
+        const Object node = *(list[i]->ToObject());
+        if (node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NAMED) {
+            assert(node.ElementExists(AST_TAG_NAMED_KEY));
+            const Object &idNode = *(node[AST_TAG_NAMED_KEY]->ToObject());
+            assert(idNode.ElementExists(AST_TAG_ID));
+            std::string name = idNode[AST_TAG_ID]->ToString();
+            if (std::find(vec.begin(), vec.end(), name) != vec.end())
+                Utilities::SyntaxError("named argument recurrence\n", GET_LINE(node));    //TODO Error or Warning
+            vec.push_back(name);
+        }
+    }
 }
 
 /*********** Parse Functions ***********/
@@ -306,11 +345,15 @@ Object *ParseFuncdefCall(Object *funcdef, Object *elist) {
 }
 
 Object *ParseArgList(Object *arg, Object *rest) {
-    return ParseCompleteRecursion(AST_TAG_ARGLIST, arg, rest);
+    Object *list = ParseCompleteRecursion(AST_TAG_ARGLIST, arg, rest);
+    CheckArgListRecurence(*list);
+    return list;
 }
 
 Object *ParseMixedArgList(Object *positional, Object *named) {
-    return MergeLists(AST_TAG_ARGLIST, positional, named);
+    Object *list = MergeLists(AST_TAG_ARGLIST, positional, named);
+    CheckArgListRecurence(*list);
+    return list;
 }
 
 Object *ParseEmptyArgList(void) {
@@ -459,11 +502,15 @@ Object *ParseOptionals(Object *rest, Object *assignment) {
 }
 
 Object *ParseIdList(Object *id, Object *rest) {
-    return ParseCompleteRecursion(AST_TAG_ID_LIST, id, rest);
+    Object *list = ParseCompleteRecursion(AST_TAG_ID_LIST, id, rest);
+    CheckIdListRecurence(*list);
+    return list;
 }
 
 Object *ParseMixedIdList(Object *required, Object *optionals) {
-    return MergeLists(AST_TAG_ID_LIST, required, optionals);
+    Object *list = MergeLists(AST_TAG_ID_LIST, required, optionals);
+    CheckIdListRecurence(*list);
+    return list;
 }
 
 // ParseOptionalIdList not used in parser.y, also not in header, delete?

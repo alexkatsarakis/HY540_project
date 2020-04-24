@@ -336,7 +336,7 @@ const Value Interpreter::EvalArgumentList(Object &node) {
             const Object &idNode = *(argument[AST_TAG_NAMED_KEY]->ToObject());
             assert(idNode.ElementExists(AST_TAG_ID));
             std::string id = idNode[AST_TAG_ID]->ToString();
-            if (table->ElementExists(id)) RuntimeError("named recurrence\n", GET_LINE(node));    //Comment if we allow this
+            // if (table->ElementExists(id)) RuntimeError("named recurrence\n", GET_LINE(node));    //Checked at compile time
             table->Set(id, Value(double(i)));
         } else {
             positionalSize++;
