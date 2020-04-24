@@ -69,9 +69,9 @@ private:
 
     /****** Function Call Evaluation Helpers ******/
 
-    Value CallProgramFunction(Object &functionAst, Object &functionClosure, const Object &actuals, const std::vector<std::string> &actualNames);
+    Value CallProgramFunction(Object &functionAst, Object &functionClosure, const Object &actuals, const std::vector<std::string> &actualNames, const Object &callNode);
     Value CallLibraryFunction(const std::string &functionId, LibraryFunc functionLib, Object &actuals);
-    void ProgramFunctionRuntimeChecks(const Object &formals, const std::vector<std::string> &formalNames, const Object &actuals, const std::vector<std::string> &actualNames);
+    void ProgramFunctionRuntimeChecks(const Object &formals, const std::vector<std::string> &formalNames, const Object &actuals, const std::vector<std::string> &actualNames, const Object &callNode);
     std::vector<std::string> GetFormalNames(const Object &formals);
 
     /****** Symbol Lookup ******/
@@ -174,9 +174,11 @@ public:
 
     void Execute(Object &program);
 
-    static void RuntimeError(const std::string &msg);
+    static void RuntimeError(const std::string &msg, unsigned line = 0);
 
-    static void Assert(const std::string &msg);
+    static void RuntimeWarning(const std::string &msg, unsigned line = 0);
+
+    static void Assert(const std::string &msg, unsigned line = 0);
 
     virtual ~Interpreter();
 };
@@ -189,5 +191,6 @@ public:
 #define INSTALL(tag, method) dispatcher.Install(tag, [this](Object &node) { return method(node); })
 #define INSTALL_WRITE_FUNC(tag, method) dispatcher.InstallWriteFunc(tag, [this](Object &node) { return method(node); })
 #define EVAL_WRITE(type) dispatcher.EvalWriteFunc(*node[type]->ToObject_NoConst())
+#define GET_LINE(node) static_cast<unsigned>(node[LINE_NUMBER_RESERVED_FIELD]->ToNumber())
 
 #endif

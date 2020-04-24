@@ -1,11 +1,11 @@
 #include "SemanticActions.h"
+
+#include "HiddenTags.h"
 #include "Object.h"
 #include "TreeTags.h"
 #include "Value.h"
 
 #include <cassert>
-
-#define LINE_NUMBER_RESERVED_FIELD "$line_number"
 
 #define SET_LINE(n) n->Set(LINE_NUMBER_RESERVED_FIELD, double(yylineno));
 
@@ -73,7 +73,7 @@ Object *ParseRecursion(Object *parsed, Object *current) {
     assert(current && current->IsValid());
     assert(parsed->GetTotal() >= 1);
 
-    parsed->Set(parsed->GetNumericSize(), Value(current));    //TODO: Convert GetTotal to GetNumeric ?
+    parsed->Set(parsed->GetNumericSize(), Value(current));
 
     assert(parsed->IsValid());
     return parsed;

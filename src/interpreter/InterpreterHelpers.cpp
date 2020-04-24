@@ -121,15 +121,30 @@ void Interpreter::Execute(Object &program) {
     dispatcher.Eval(program);
 }
 
-void Interpreter::RuntimeError(const std::string &msg) {
-    std::cerr << "\033[31;1m"
+void Interpreter::RuntimeError(const std::string &msg, unsigned line) {
+    std::string lineMsg = (line != 0) ? "Line " + std::to_string(line) + " " : "";
+    std::cerr << "\033[36;1m"    //CYAN
+              << lineMsg
+              << "\033[31;1m"    //RED
               << "Runtime Error: "
               << "\033[0m" << msg << std::endl;
     exit(EXIT_FAILURE);
 }
 
-void Interpreter::Assert(const std::string &msg) {
-    std::cerr << "\033[31;1m"    //34;1m"
+void Interpreter::RuntimeWarning(const std::string &msg, unsigned line) {
+    std::string lineMsg = (line != 0) ? "Line " + std::to_string(line) + " " : "";
+    std::cerr << "\033[36;1m"    //CYAN
+              << lineMsg
+              << "\033[33;1m"    //YELLOW
+              << "Runtime Error: "
+              << "\033[0m" << msg << std::endl;
+}
+
+void Interpreter::Assert(const std::string &msg, unsigned line) {
+    std::string lineMsg = (line != 0) ? "Line " + std::to_string(line) + " " : "";
+    std::cerr << "\033[36;1m"    //CYAN
+              << lineMsg
+              << "\033[31;1m"    //RED   //34;1m" BLUE
               << "Assertion: "
               << "\033[0m" << msg << std::endl;
     exit(EXIT_FAILURE);
@@ -184,7 +199,7 @@ Symbol Interpreter::EvalGlobalIdWrite(Object &node) {
     ASSERT_TYPE(AST_TAG_DOUBLECOLON_ID);
 
     std::string symbol = node[AST_TAG_ID]->ToString();
-    if (!LookupGlobalScope(symbol)) RuntimeError("Global symbol \"" + symbol + "\" does not exist (Undefined Symbol)");
+    if (!LookupGlobalScope(symbol)) RuntimeError("Global symbol \"" + symbol + "\" does not exist (Undefined Symbol)", GET_LINE(node));
 
     return Symbol(GetGlobalScope(), symbol);
 }
@@ -200,9 +215,9 @@ Symbol Interpreter::EvalFormalWrite(Object &node) {
 
     std::string formalName = node[AST_TAG_ID]->ToString();
 
-    if (IsLibFunc(formalName)) RuntimeError("Formal argument \"" + formalName + "\" shadows library function");
+    if (IsLibFunc(formalName)) RuntimeError("Formal argument \"" + formalName + "\" shadows library function", GET_LINE(node));
 
-    if (LookupCurrentScope(formalName)) RuntimeError("Formal argument \"" + formalName + "\" already defined as a formal");
+    if (LookupCurrentScope(formalName)) RuntimeError("Formal argument \"" + formalName + "\" already defined as a formal", GET_LINE(node));
 
     return Symbol(currentScope, formalName);
 }
@@ -282,7 +297,7 @@ const Value Interpreter::HandleAggregators(Object &node, MathOp op, bool returnC
     else
         assert(false);
 
-    if (!value->IsNumber()) RuntimeError("Increment/decrement operators can only be applied to numbers not to " + value->GetTypeToString());
+    if (!value->IsNumber()) RuntimeError("Increment/decrement operators can only be applied to numbers not to " + value->GetTypeToString(), GET_LINE(node));
 
     double number = value->ToNumber();
     double result = number;
@@ -317,11 +332,11 @@ const Value Interpreter::EvalMath(Object &node, MathOp op) {
     if (op1.IsString() && op2.IsString() && op == MathOp::Plus)
         return (op1.ToString() + op2.ToString());
 
-    if (!op1.IsNumber()) RuntimeError("First operand is not a number in an arithmetic operation");
-    if (!op2.IsNumber()) RuntimeError("Second operand is not a number in an arithmetic operation");
+    if (!op1.IsNumber()) RuntimeError("First operand is not a number in an arithmetic operation", GET_LINE(node));
+    if (!op2.IsNumber()) RuntimeError("Second operand is not a number in an arithmetic operation", GET_LINE(node));
 
     if ((op == MathOp::Div || op == MathOp::Mod) &&
-        Utilities::IsZero(op2.ToNumber())) RuntimeError("Cannot divide by zero");
+        Utilities::IsZero(op2.ToNumber())) RuntimeError("Cannot divide by zero", GET_LINE(node));
 
     switch (op) {
         case MathOp::Plus: return op1.ToNumber() + op2.ToNumber();
@@ -434,7 +449,7 @@ void Interpreter::BlockExit(void) {
 
 /****** Function Call Evaluation Helpers ******/
 
-Value Interpreter::CallProgramFunction(Object &functionAst, Object &functionClosure, const Object &actuals, const std::vector<std::string> &actualNames) {
+Value Interpreter::CallProgramFunction(Object &functionAst, Object &functionClosure, const Object &actuals, const std::vector<std::string> &actualNames, const Object &callNode) {
     //function entry
     currentScope = PushScopeSpace(&functionClosure);
     inFunctionScope = true;
@@ -442,7 +457,7 @@ Value Interpreter::CallProgramFunction(Object &functionAst, Object &functionClos
     const Object &formals = *(functionAst[AST_TAG_FUNCTION_FORMALS]->ToObject());
     std::vector<std::string> formalNames = GetFormalNames(formals);
 
-    ProgramFunctionRuntimeChecks(formals, formalNames, actuals, actualNames);
+    ProgramFunctionRuntimeChecks(formals, formalNames, actuals, actualNames, callNode);
     //actual-formal matching
     for (register unsigned i = 0; i < formals.GetNumericSize(); ++i) {
         Object &formal = *(formals[i]->ToObject_NoConst());
@@ -496,12 +511,12 @@ Value Interpreter::CallLibraryFunction(const std::string &functionId, LibraryFun
     return retvalRegister;
 }
 
-void Interpreter::ProgramFunctionRuntimeChecks(const Object &formals, const std::vector<std::string> &formalNames, const Object &actuals, const std::vector<std::string> &actualNames) {
+void Interpreter::ProgramFunctionRuntimeChecks(const Object &formals, const std::vector<std::string> &formalNames, const Object &actuals, const std::vector<std::string> &actualNames, const Object &callNode) {
     //Number of args error
     unsigned formalSize = formals.GetNumericSize();
     unsigned actualPositionalSize = actuals[POSITIONAL_SIZE_RESERVED_FIELD]->ToNumber();
     if (actualPositionalSize > formalSize)
-        RuntimeError("Number of Actual Positional Arguments(" + std::to_string(actualPositionalSize) + ") exceeds number of Formal Parameters(" + std::to_string(formalSize) + ")\n");
+        RuntimeError("Number of Actual Positional Arguments(" + std::to_string(actualPositionalSize) + ") exceeds number of Formal Parameters(" + std::to_string(formalSize) + ")\n", GET_LINE(callNode));
 
     //Unexpected named error (name not defined in formals)
     std::vector<std::string> actualMinusFormals;
@@ -511,7 +526,7 @@ void Interpreter::ProgramFunctionRuntimeChecks(const Object &formals, const std:
                         v2.begin(), v2.end(),
                         std::inserter(actualMinusFormals, actualMinusFormals.begin()));
     if (!actualMinusFormals.empty())
-        RuntimeError("Unexpected Named\n");    //TODO Add Info
+        RuntimeError("Unexpected Named\n", GET_LINE(callNode));    //TODO Add Info
 
     //checks on actual-formal matching
     for (register unsigned i = 0; i < formals.GetNumericSize(); ++i) {
@@ -523,7 +538,7 @@ void Interpreter::ProgramFunctionRuntimeChecks(const Object &formals, const std:
         if (i < actuals[POSITIONAL_SIZE_RESERVED_FIELD]->ToNumber()) {
             //Both positional and named actual match error
             if (std::find(actualNames.begin(), actualNames.end(), formalName) != actualNames.end())
-                RuntimeError("Both positional and named match\n");    //TODO Add info
+                RuntimeError("Both positional and named match\n", GET_LINE(callNode));    //TODO Add info
             matchExists = true;
         } else if (actuals.ElementExists(formalName)) {
             assert(std::find(actualNames.begin(), actualNames.end(), formalName) != actualNames.end());
@@ -533,7 +548,7 @@ void Interpreter::ProgramFunctionRuntimeChecks(const Object &formals, const std:
         if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
             //A non-optional formal is not matched
             if (!matchExists)
-                RuntimeError("Formal does not match actual\n");    //TODO Add info
+                RuntimeError("Formal does not match actual\n", GET_LINE(callNode));    //TODO Add info
         } else if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
             ;
         } else {
