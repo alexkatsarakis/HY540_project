@@ -16,6 +16,9 @@ unsigned whitespace = 0;
 
 #define WHITESPACE_STEP 4
 
+
+#define SET_RETVAL(x) env.Set(RETVAL_RESERVED_FIELD,(x));
+
 void PrintNumber(std::ostream & stream, const Value * value);
 void PrintString(std::ostream & stream, const Value * value);
 void PrintBoolean(std::ostream & stream, const Value * value);
@@ -151,13 +154,13 @@ void LibFunc::Print(Object & env) {
         PrintValue(std::cout, value);
     }
 
-    env.Set(RETVAL_RESERVED_FIELD, Value());
+    SET_RETVAL(Value());
 }
 
 void LibFunc::Typeof(Object & env) {
     assert(env.IsValid());
     const Value * value = GetArgument(env, 0);
-    env.Set(RETVAL_RESERVED_FIELD, value->GetTypeToString());
+    SET_RETVAL(value->GetTypeToString());
 }
 
 void LibFunc::ObjectKeys(Object & env) {
@@ -175,7 +178,7 @@ void LibFunc::ObjectKeys(Object & env) {
         table->Set(i++, key);
     });
 
-    env.Set(RETVAL_RESERVED_FIELD, table);
+    SET_RETVAL(table);
 }
 
 void LibFunc::ObjectSize(Object & env) {
@@ -185,7 +188,7 @@ void LibFunc::ObjectSize(Object & env) {
     if (!value->IsObject()) return Interpreter::RuntimeError("Library function \"object_size\" did not receive an object.");
 
     const Object * obj = value->ToObject();
-    env.Set(RETVAL_RESERVED_FIELD, static_cast<double>(obj->GetTotal()));
+    SET_RETVAL(static_cast<double>(obj->GetTotal()));
 }
 
 void LibFunc::Sleep(Object & env) {
@@ -199,7 +202,7 @@ void LibFunc::Sleep(Object & env) {
 
     std::this_thread::sleep_for(std::chrono::milliseconds(number));
 
-    env.Set(RETVAL_RESERVED_FIELD, Value());
+    SET_RETVAL(Value());
 }
 
 
@@ -210,7 +213,7 @@ void LibFunc::Assert(Object & env) {
     assert(env.IsValid());
 
     for(register unsigned i = 0; i < env.GetNumericSize(); ++i) {
-        const Value * value = GetArgument(env, i);
+        const auto& value = GetArgument(env, i);
         if(value->GetType() == Value::Type::BooleanType){
             if(!value->ToBoolean())Interpreter::Assert("Boolean Not True");
         }
@@ -219,36 +222,36 @@ void LibFunc::Assert(Object & env) {
             Interpreter::Assert("Undefined Value");
         }
     }
-    env.Set(RETVAL_RESERVED_FIELD, true);
+    SET_RETVAL(true);
 }
 
 void LibFunc::Sqrt(Object & env) {
     assert(env.IsValid());
-    const Value * value = GetArgument(env, 0);
+    const auto& value = GetArgument(env, 0);
     if(value->GetType() != Value::Type::NumberType)Interpreter::RuntimeError("You can only square a number");
-    env.Set(RETVAL_RESERVED_FIELD, sqrt(value->ToNumber()));
+    SET_RETVAL(sqrt(value->ToNumber()));
 }
 
 void LibFunc::Pow(Object & env) {
     assert(env.IsValid());
-    const Value * value1 = GetArgument(env, 0);
-    const Value * value2 = GetArgument(env, 1);
+    const auto& value1 = GetArgument(env, 0);
+    const auto& value2 = GetArgument(env, 1);
     if(value1->GetType() != Value::Type::NumberType || value2->GetType() != Value::Type::NumberType)Interpreter::RuntimeError("You can only power a number");
-    env.Set(RETVAL_RESERVED_FIELD, pow(value1->ToNumber(),value2->ToNumber()));
+    SET_RETVAL(pow(value1->ToNumber(),value2->ToNumber()));
 }
 
 void LibFunc::Sin(Object & env) {
     assert(env.IsValid());
-    const Value * value = GetArgument(env, 0);
+    const auto& value = GetArgument(env, 0);
     if(value->GetType() != Value::Type::NumberType)Interpreter::RuntimeError("You can only use sin of a number");
-    env.Set(RETVAL_RESERVED_FIELD, sin(value->ToNumber()));
+    SET_RETVAL(sin(value->ToNumber()));
 }
 
 void LibFunc::Cos(Object & env) {
     assert(env.IsValid());
-    const Value * value = GetArgument(env, 0);
+    const auto& value = GetArgument(env, 0);
     if(value->GetType() != Value::Type::NumberType)Interpreter::RuntimeError("You can only use cos of a number");
-    env.Set(RETVAL_RESERVED_FIELD, cos(value->ToNumber()));
+    SET_RETVAL(cos(value->ToNumber()));
 }
 
 void LibFunc::GetTime(Object & env) {
@@ -257,7 +260,7 @@ void LibFunc::GetTime(Object & env) {
     std::tm* now = std::localtime(&t);
     std::string conv = std::to_string(now->tm_mday) + "/" + std::to_string(now->tm_mon) + "/" + std::to_string(1900+now->tm_year);
     conv += " " + std::to_string(now->tm_hour) +":"+ std::to_string(now->tm_min) +":"+ std::to_string(now->tm_sec);
-    env.Set(RETVAL_RESERVED_FIELD, conv);
+    SET_RETVAL(conv);
 }
 
 bool isNumber(std::string str){
@@ -275,29 +278,89 @@ void LibFunc::Input(Object & env) {
     std::string input;
     std::cin >> input;
     if(!input.empty() && isNumber(input)){ 
-        env.Set(RETVAL_RESERVED_FIELD, std::stod(input));
+        SET_RETVAL(std::stod(input));
     }else{
-        env.Set(RETVAL_RESERVED_FIELD, input);
+        SET_RETVAL(input);
     }
 }
 
 void LibFunc::Random(Object & env) {
     assert(env.IsValid());
-    env.Set(RETVAL_RESERVED_FIELD, static_cast<double>(std::rand())/ RAND_MAX);
+    SET_RETVAL(static_cast<double>(std::rand())/ RAND_MAX);
 }
 
 void LibFunc::ToNumber(Object & env) {
     assert(env.IsValid());
-    const Value * value = GetArgument(env, 0);
+    const auto& value = GetArgument(env, 0);
     if(value->GetType() == Value::Type::NumberType){
-        env.Set(RETVAL_RESERVED_FIELD, value->ToNumber());
+        SET_RETVAL(value->ToNumber());
         return;
     }
     if(value->GetType() != Value::Type::StringType)Interpreter::RuntimeError("You can only use to_number with a string or a number");
-    if(!value->ToString().empty() && isNumber(value->ToString())){ 
-        env.Set(RETVAL_RESERVED_FIELD, std::stod(value->ToString()));
-    }else{
-        Interpreter::RuntimeError("The given string isn't a number");
-    }
+    if(value->ToString().empty() || !isNumber(value->ToString()))Interpreter::RuntimeError("The given string isn't a number");
+
+    SET_RETVAL(std::stod(value->ToString()));
     
+}
+
+void LibFunc::FileOpen(Object & env) {
+    assert(env.IsValid());
+    const auto& path = GetArgument(env, 0);
+    const auto& mode = GetArgument(env, 1);
+    
+    if(path->GetType() != Value::Type::StringType)Interpreter::RuntimeError("First argument in file open should be a string with the path");
+    if(mode->GetType() != Value::Type::StringType)Interpreter::RuntimeError("Second argument in file open should be a string with the mode");
+
+    auto* fp = fopen(path->ToString().c_str(),mode->ToString().c_str());
+    if(fp){
+        SET_RETVAL(Value(fp, "EXTERNAL_FILE"));
+    }else{
+        SET_RETVAL(Value());
+    }
+}
+
+void LibFunc::FileClose(Object & env) {
+    assert(env.IsValid());
+    const auto& fp = GetArgument(env, 0);
+    
+    if(fp->GetType() != Value::Type::NativePtrType)Interpreter::RuntimeError("First argument in file_close is ...");
+    if(fp->ToNativeTypeId() != "EXTERNAL_FILE")Interpreter::RuntimeError("First argument in file_close is not a file");
+    
+    fclose(static_cast<FILE*>(fp->ToNativePtr()));
+    //FREE FP
+
+    SET_RETVAL(true);
+}
+
+void LibFunc::FileWrite(Object & env) {
+    assert(env.IsValid());
+    const auto& fp = GetArgument(env, 0);
+    const auto& value = GetArgument(env, 1);
+    
+    if(fp->GetType() != Value::Type::NativePtrType)Interpreter::RuntimeError("First argument in file_write is ...");
+    if(fp->ToNativeTypeId() != "EXTERNAL_FILE")Interpreter::RuntimeError("First argument in file_write is not a file");
+    
+    if(value->GetType() != Value::Type::StringType)Interpreter::RuntimeError("Second argument in file_write must be a string");
+    
+    fprintf(static_cast<FILE*>(fp->ToNativePtr()),"%s",value->ToString().c_str());
+    
+    SET_RETVAL(true);
+}
+
+void LibFunc::FileRead(Object & env) {
+    assert(env.IsValid());
+    const auto& fp = GetArgument(env, 0);
+    
+    if(fp->GetType() != Value::Type::NativePtrType)Interpreter::RuntimeError("First argument in file_write is ...");
+    if(fp->ToNativeTypeId() != "EXTERNAL_FILE")Interpreter::RuntimeError("First argument in file_write is not a file");
+    
+    const auto& filePtr = static_cast<FILE*>(fp->ToNativePtr());
+    fseek(filePtr, 0, SEEK_END); 
+    unsigned long size = ftell(filePtr);
+    fseek(filePtr, 0, SEEK_SET);
+    char* content = static_cast<char*>(malloc(sizeof(char)*size));
+    fread(content, 1, size, filePtr);
+    
+    SET_RETVAL(content);
+    free(content);
 }

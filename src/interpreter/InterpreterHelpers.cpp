@@ -95,6 +95,10 @@ void Interpreter::InstallLibFuncs(void) {
     INSTALL_LIB_FUNC("cos", Cos);
     INSTALL_LIB_FUNC("get_time", GetTime);
     INSTALL_LIB_FUNC("input", Input);
+    INSTALL_LIB_FUNC("file_open", FileOpen);
+    INSTALL_LIB_FUNC("file_close",FileClose);
+    INSTALL_LIB_FUNC("file_write",FileWrite);
+    INSTALL_LIB_FUNC("file_read",FileRead);
     INSTALL_LIB_FUNC("to_number", ToNumber);
     INSTALL_LIB_FUNC("rand", Random);
 }
