@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <thread>
 #include <chrono>
+#include <fstream>
 
 unsigned whitespace = 0;
 
@@ -31,12 +32,14 @@ const Value * GetArgument(Object & env, unsigned argNo, const std::string & optA
     assert(env.IsValid());
 
     if (optArgName.empty()){
-        if(env[argNo] == NULL)Interpreter::RuntimeError("Wrong Arguments");
+        if (!env[argNo]) Interpreter::RuntimeError("Library function did not receive argument " + std::to_string(argNo + 1));
         return env[argNo];
     }
 
-    auto arg = env[optArgName];
+    const Value * arg = env[optArgName];
     if (!arg) arg = env[argNo];
+
+    Interpreter::RuntimeError("Library function did not receive valid argument");
 
     return arg;
 }
@@ -157,6 +160,7 @@ void LibFunc::Print(Object & env) {
 void LibFunc::Typeof(Object & env) {
     assert(env.IsValid());
     const Value * value = GetArgument(env, 0);
+    assert(value);
     env.Set(RETVAL_RESERVED_FIELD, value->GetTypeToString());
 }
 
@@ -164,15 +168,15 @@ void LibFunc::ObjectKeys(Object & env) {
     assert(env.IsValid());
 
     const Value * value = GetArgument(env, 0);
-    if (!value->IsObject()) return Interpreter::RuntimeError("Library function \"object_keys\" did not receive an object.");
+    assert(value);
+    if (!value->IsObject()) return Interpreter::RuntimeError("Library function \"object_keys\" received a " + value->GetTypeToString() + " instead of an object");
 
     const Object * obj = value->ToObject();
     Object * table = new Object();
-    table->IncreaseRefCounter();
-    unsigned i = 0;
+    unsigned index = 0;
 
-    obj->Visit([table, &i](const Value &key, const Value &val) {
-        table->Set(i++, key);
+    obj->Visit([table, &index](const Value &key, const Value &val) {
+        table->Set(index++, key);
     });
 
     env.Set(RETVAL_RESERVED_FIELD, table);
@@ -182,7 +186,8 @@ void LibFunc::ObjectSize(Object & env) {
     assert(env.IsValid());
 
     const Value * value = GetArgument(env, 0);
-    if (!value->IsObject()) return Interpreter::RuntimeError("Library function \"object_size\" did not receive an object.");
+    assert(value);
+    if (!value->IsObject()) return Interpreter::RuntimeError("Library function \"object_size\" received a " + value->GetTypeToString() + " instead of an object");
 
     const Object * obj = value->ToObject();
     env.Set(RETVAL_RESERVED_FIELD, static_cast<double>(obj->GetTotal()));
@@ -192,8 +197,10 @@ void LibFunc::Sleep(Object & env) {
     assert(env.IsValid());
 
     const Value * value = GetArgument(env, 0);
-    if (!value->IsNumber()) return Interpreter::RuntimeError("Library function \"sleep\" did not receive a number.");
-    if (!Utilities::IsInt(value->ToNumber())) return Interpreter::RuntimeError("Library function \"sleep\" did not receive an integer.");
+    assert(value);
+
+    if (!value->IsNumber()) return Interpreter::RuntimeError("Library function \"sleep\" did not receive a number");
+    if (!Utilities::IsInt(value->ToNumber())) return Interpreter::RuntimeError("Library function \"sleep\" did not receive an integer");
 
     int number = static_cast<int>(value->ToNumber());
 
@@ -202,22 +209,11 @@ void LibFunc::Sleep(Object & env) {
     env.Set(RETVAL_RESERVED_FIELD, Value());
 }
 
-
-
-
-
 void LibFunc::Assert(Object & env) {
-    assert(env.IsValid());
-
     for(register unsigned i = 0; i < env.GetNumericSize(); ++i) {
         const Value * value = GetArgument(env, i);
-        if(value->GetType() == Value::Type::BooleanType){
-            if(!value->ToBoolean())Interpreter::Assert("Boolean Not True");
-        }
-        if(value->GetType() == Value::Type::NilType ||
-           value->GetType() == Value::Type::UndefType){
-            Interpreter::Assert("Undefined Value");
-        }
+        assert(value);
+        if (!value->operator bool()) Interpreter::Assert("Value of " + value->GetTypeToString() + " was evaluated to false");
     }
     env.Set(RETVAL_RESERVED_FIELD, true);
 }
@@ -273,16 +269,33 @@ bool isNumber(std::string str){
 void LibFunc::Input(Object & env) {
     assert(env.IsValid());
     std::string input;
-    std::cin >> input;
-    if(!input.empty() && isNumber(input)){ 
+    std::getline(std::cin, input);
+    if(!input.empty() && isNumber(input)){
         env.Set(RETVAL_RESERVED_FIELD, std::stod(input));
     }else{
         env.Set(RETVAL_RESERVED_FIELD, input);
     }
 }
 
+void SeedRNG(void) {
+ unsigned seed = time(NULL);
+
+    std::ifstream urandom("/dev/urandom", std::ios::in | std::ios::binary);
+    if (urandom)
+        urandom.read(reinterpret_cast<char *>(&seed), sizeof(seed));
+
+    std::srand(seed);
+}
+
 void LibFunc::Random(Object & env) {
     assert(env.IsValid());
+
+    static unsigned char callCount = 0;
+    if (!callCount) {
+        callCount = 1;
+        SeedRNG();
+    }
+
     env.Set(RETVAL_RESERVED_FIELD, static_cast<double>(std::rand())/ RAND_MAX);
 }
 
@@ -294,10 +307,10 @@ void LibFunc::ToNumber(Object & env) {
         return;
     }
     if(value->GetType() != Value::Type::StringType)Interpreter::RuntimeError("You can only use to_number with a string or a number");
-    if(!value->ToString().empty() && isNumber(value->ToString())){ 
+    if(!value->ToString().empty() && isNumber(value->ToString())){
         env.Set(RETVAL_RESERVED_FIELD, std::stod(value->ToString()));
     }else{
         Interpreter::RuntimeError("The given string isn't a number");
     }
-    
+
 }
