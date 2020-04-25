@@ -126,30 +126,30 @@ void Interpreter::Execute(Object &program) {
 }
 
 void Interpreter::RuntimeError(const std::string &msg, unsigned line) {
-    std::string lineMsg = (line != 0) ? "Line " + std::to_string(line) + " " : "";
-    std::cerr << "\033[36;1m"    //CYAN
-              << lineMsg
-              << "\033[31;1m"    //RED
-              << "Runtime Error: "
+    std::string lineMsg = (line != 0) ? (" at line " + std::to_string(line)) :
+                          (lineNumber != 0) ? (" at line " + std::to_string(lineNumber)) : "";
+
+    std::cerr << "\033[31;1m"    //RED
+              << "Runtime Error" << lineMsg << ": "
               << "\033[0m" << msg << std::endl;
     exit(EXIT_FAILURE);
 }
 
 void Interpreter::RuntimeWarning(const std::string &msg, unsigned line) {
-    std::string lineMsg = (line != 0) ? "Line " + std::to_string(line) + " " : "";
-    std::cerr << "\033[36;1m"    //CYAN
-              << lineMsg
-              << "\033[33;1m"    //YELLOW
-              << "Runtime Warning: "
+    std::string lineMsg = (line != 0) ? (" at line " + std::to_string(line)) :
+                          (lineNumber != 0) ? (" at line " + std::to_string(lineNumber)) : "";
+
+    std::cerr << "\033[31;1m"    //RED
+              << "Runtime Warning" << lineMsg << ": "
               << "\033[0m" << msg << std::endl;
 }
 
 void Interpreter::Assert(const std::string &msg, unsigned line) {
-    std::string lineMsg = (line != 0) ? "Line " + std::to_string(line) + " " : "";
-    std::cerr << "\033[36;1m"    //CYAN
-              << lineMsg
-              << "\033[31;1m"    //RED   //34;1m" BLUE
-              << "Assertion: "
+    std::string lineMsg = (line != 0) ? (" at line " + std::to_string(line)) :
+                          (lineNumber != 0) ? (" at line " + std::to_string(lineNumber)) : "";
+
+    std::cerr << "\033[31;1m"    //RED
+              << "Assertion Failed" << lineMsg << ": "
               << "\033[0m" << msg << std::endl;
     exit(EXIT_FAILURE);
 }
@@ -179,6 +179,8 @@ Symbol Interpreter::EvalDotWrite(Object &node) {
 
     auto lvalue = EVAL(AST_TAG_LVALUE);
     auto index = GetIdName(*node[AST_TAG_ID]->ToObject());
+
+    CHANGE_LINE();
     return TableSetElem(lvalue, index);
 }
 
@@ -186,6 +188,8 @@ Symbol Interpreter::EvalBracketWrite(Object &node) {
     ASSERT_TYPE(AST_TAG_BRACKET);
     const Value lvalue = EVAL(AST_TAG_LVALUE);
     const Value index = EVAL(AST_TAG_EXPR);
+
+    CHANGE_LINE();
     return TableSetElem(lvalue, index);
 }
 
@@ -201,9 +205,10 @@ Symbol Interpreter::EvalIdWrite(Object &node) {
 
 Symbol Interpreter::EvalGlobalIdWrite(Object &node) {
     ASSERT_TYPE(AST_TAG_DOUBLECOLON_ID);
+    CHANGE_LINE();
 
     std::string symbol = node[AST_TAG_ID]->ToString();
-    if (!LookupGlobalScope(symbol)) RuntimeError("Global symbol \"" + symbol + "\" does not exist (Undefined Symbol)", GET_LINE(node));
+    if (!LookupGlobalScope(symbol)) RuntimeError("Global symbol \"" + symbol + "\" does not exist (Undefined Symbol)");
 
     return Symbol(GetGlobalScope(), symbol);
 }
@@ -216,12 +221,13 @@ Symbol Interpreter::EvalLocalIdWrite(Object &node) {
 
 Symbol Interpreter::EvalFormalWrite(Object &node) {
     ASSERT_TYPE(AST_TAG_FORMAL);
+    CHANGE_LINE();
 
     std::string formalName = node[AST_TAG_ID]->ToString();
 
-    if (IsLibFunc(formalName)) RuntimeError("Formal argument \"" + formalName + "\" shadows library function", GET_LINE(node));
+    if (IsLibFunc(formalName)) RuntimeError("Formal argument \"" + formalName + "\" shadows library function");
 
-    if (LookupCurrentScope(formalName)) RuntimeError("Formal argument \"" + formalName + "\" already defined as a formal", GET_LINE(node));
+    if (LookupCurrentScope(formalName)) RuntimeError("Formal argument \"" + formalName + "\" already defined as a formal");
 
     return Symbol(currentScope, formalName);
 }
@@ -282,7 +288,7 @@ const Value Interpreter::TableGetElem(const Value &lvalue, const Value &index) {
 
 const Value Interpreter::GetIdName(const Object &node) {
     assert(node.ElementExists(AST_TAG_ID));
-    auto name = node[AST_TAG_ID];
+    const Value * name = node[AST_TAG_ID];
     assert(name->IsString());
     return *name;
 }
@@ -293,6 +299,8 @@ const Value Interpreter::HandleAggregators(Object &node, MathOp op, bool returnC
     Symbol lvalue = EVAL_WRITE(AST_TAG_CHILD);
     assert(lvalue.IsValid());
 
+    CHANGE_LINE();
+
     const Value *value = nullptr;
     if (lvalue.IsIndexString())
         value = (*lvalue.GetContext())[lvalue.ToString()];
@@ -301,7 +309,7 @@ const Value Interpreter::HandleAggregators(Object &node, MathOp op, bool returnC
     else
         assert(false);
 
-    if (!value->IsNumber()) RuntimeError("Increment/decrement operators can only be applied to numbers not to " + value->GetTypeToString(), GET_LINE(node));
+    if (!value->IsNumber()) RuntimeError("Increment/decrement operators can only be applied to numbers not to " + value->GetTypeToString());
 
     double number = value->ToNumber();
     double result = number;
@@ -332,15 +340,17 @@ const Value Interpreter::EvalMath(Object &node, MathOp op) {
     auto op1 = EVAL(AST_TAG_FIRST_EXPR);
     auto op2 = EVAL(AST_TAG_SECOND_EXPR);
 
+    CHANGE_LINE();
+
     /* Special case for string concatenation */
     if (op1.IsString() && op2.IsString() && op == MathOp::Plus)
         return (op1.ToString() + op2.ToString());
 
-    if (!op1.IsNumber()) RuntimeError("First operand is not a number in an arithmetic operation", GET_LINE(node));
-    if (!op2.IsNumber()) RuntimeError("Second operand is not a number in an arithmetic operation", GET_LINE(node));
+    if (!op1.IsNumber()) RuntimeError("First operand is not a number in an arithmetic operation");
+    if (!op2.IsNumber()) RuntimeError("Second operand is not a number in an arithmetic operation");
 
     if ((op == MathOp::Div || op == MathOp::Mod) &&
-        Utilities::IsZero(op2.ToNumber())) RuntimeError("Cannot divide by zero", GET_LINE(node));
+        Utilities::IsZero(op2.ToNumber())) RuntimeError("Cannot divide by zero");
 
     switch (op) {
         case MathOp::Plus: return op1.ToNumber() + op2.ToNumber();
@@ -364,7 +374,7 @@ bool Interpreter::ValuesAreEqual(const Value &v1, const Value &v2) {
     assert(v2.IsValid());
 
     /* We do not allow comparisons with Undef */
-    if (v1.IsUndef() || v2.IsUndef()) RuntimeError("Undef found in equality operator");
+    if (v1.IsUndef() || v2.IsUndef()) RuntimeError("Undefined value found in equality operator");
     /* If one of the operands is boolean simply convert the other operand to
      * boolean and compare them. */
     if (v1.IsBoolean() || v2.IsBoolean()) return (static_cast<bool>(v1) == static_cast<bool>(v2));
@@ -385,9 +395,9 @@ bool Interpreter::ValuesAreEqual(const Value &v1, const Value &v2) {
         return v1.ToLibraryFunction() == v2.ToLibraryFunction();
     else if (v1.IsNativePtr())
         return v1.ToNativePtr() == v2.ToNativePtr();
-    else if (v1.IsObject()) {
+    else if (v1.IsObject())
         return v1.ToObject() == v2.ToObject();
-    } else
+    else
         assert(false);
 }
 
@@ -427,6 +437,21 @@ void Interpreter::RemoveFromContext(const Symbol &lvalue, const Value &rvalue) {
     if (old && old->IsObject()) old->ToObject_NoConst()->DecreaseRefCounter();
 }
 
+void Interpreter::CleanupForLoop(Value & elist1, Value & elist2) {
+    assert(elist1.IsObject());
+
+    elist1.ToObject_NoConst()->Clear();
+    delete elist1.ToObject_NoConst();
+
+    /* Elist2 can be undef if it has not been evaluated yet:
+       for(i = 0; i < 10; ++i) if (i == 0) return;
+     */
+    if (elist2.IsObject()) {
+        elist2.ToObject_NoConst()->Clear();
+        delete elist2.ToObject_NoConst();
+    }
+}
+
 /****** Evaluation Side Actions ******/
 
 void Interpreter::BlockEnter(void) {
@@ -442,6 +467,7 @@ void Interpreter::BlockExit(void) {
     while (currentScope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
         tmp = currentScope;
         currentScope = (*currentScope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
+        assert(currentScope);
         tmp->DecreaseRefCounter();
     }
 
@@ -453,7 +479,7 @@ void Interpreter::BlockExit(void) {
 
 /****** Function Call Evaluation Helpers ******/
 
-Value Interpreter::CallProgramFunction(Object &functionAst, Object &functionClosure, const Object &actuals, const std::vector<std::string> &actualNames, const Object &callNode) {
+Value Interpreter::CallProgramFunction(Object &functionAst, Object &functionClosure, const Object &actuals, const std::vector<std::string> &actualNames) {
     //function entry
     currentScope = PushScopeSpace(&functionClosure);
     inFunctionScope = true;
@@ -461,7 +487,7 @@ Value Interpreter::CallProgramFunction(Object &functionAst, Object &functionClos
     const Object &formals = *(functionAst[AST_TAG_FUNCTION_FORMALS]->ToObject());
     std::vector<std::string> formalNames = GetFormalNames(formals);
 
-    ProgramFunctionRuntimeChecks(formals, formalNames, actuals, actualNames, callNode);
+    ProgramFunctionRuntimeChecks(formals, formalNames, actuals, actualNames);
     //actual-formal matching
     for (register unsigned i = 0; i < formals.GetNumericSize(); ++i) {
         Object &formal = *(formals[i]->ToObject_NoConst());
@@ -507,20 +533,26 @@ Value Interpreter::CallProgramFunction(Object &functionAst, Object &functionClos
 
 Value Interpreter::CallLibraryFunction(const std::string &functionId, LibraryFunc functionLib, Object &actuals) {
     assert(functionLib);
+    assert(!functionId.empty());
+
     actuals.Set(RETVAL_RESERVED_FIELD, Value(NilTypeValue::Nil));
+
     functionLib(actuals);                                                                      //Library function Call
     Value result = *(actuals[RETVAL_RESERVED_FIELD]);                                          //do we need to modify retval?
+
     if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter();    //TODO need to know why
     retvalRegister = result;
+    if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->IncreaseRefCounter();
+
     return retvalRegister;
 }
 
-void Interpreter::ProgramFunctionRuntimeChecks(const Object &formals, const std::vector<std::string> &formalNames, const Object &actuals, const std::vector<std::string> &actualNames, const Object &callNode) {
+void Interpreter::ProgramFunctionRuntimeChecks(const Object &formals, const std::vector<std::string> &formalNames, const Object &actuals, const std::vector<std::string> &actualNames) {
     //Number of args error
     unsigned formalSize = formals.GetNumericSize();
     unsigned actualPositionalSize = actuals[POSITIONAL_SIZE_RESERVED_FIELD]->ToNumber();
     if (actualPositionalSize > formalSize)
-        RuntimeError("Number of Actual Positional Arguments(" + std::to_string(actualPositionalSize) + ") exceeds number of Formal Parameters(" + std::to_string(formalSize) + ")\n", GET_LINE(callNode));
+        RuntimeError("Number of Actual Positional Arguments(" + std::to_string(actualPositionalSize) + ") exceeds number of Formal Parameters(" + std::to_string(formalSize) + ")");
 
     //Unexpected named error (name not defined in formals)
     std::vector<std::string> actualMinusFormals;
@@ -530,7 +562,7 @@ void Interpreter::ProgramFunctionRuntimeChecks(const Object &formals, const std:
                         v2.begin(), v2.end(),
                         std::inserter(actualMinusFormals, actualMinusFormals.begin()));
     if (!actualMinusFormals.empty())
-        RuntimeError("Unexpected Named\n", GET_LINE(callNode));    //TODO Add Info
+        RuntimeError("Unexpected Named");    //TODO Add Info
 
     //checks on actual-formal matching
     for (register unsigned i = 0; i < formals.GetNumericSize(); ++i) {
@@ -542,7 +574,7 @@ void Interpreter::ProgramFunctionRuntimeChecks(const Object &formals, const std:
         if (i < actuals[POSITIONAL_SIZE_RESERVED_FIELD]->ToNumber()) {
             //Both positional and named actual match error
             if (std::find(actualNames.begin(), actualNames.end(), formalName) != actualNames.end())
-                RuntimeError("Both positional and named match\n", GET_LINE(callNode));    //TODO Add info
+                RuntimeError("Both positional and named match");    //TODO Add info
             matchExists = true;
         } else if (actuals.ElementExists(formalName)) {
             assert(std::find(actualNames.begin(), actualNames.end(), formalName) != actualNames.end());
@@ -552,7 +584,7 @@ void Interpreter::ProgramFunctionRuntimeChecks(const Object &formals, const std:
         if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
             //A non-optional formal is not matched
             if (!matchExists)
-                RuntimeError("Formal does not match actual\n", GET_LINE(callNode));    //TODO Add info
+                RuntimeError("Formal does not match actual");    //TODO Add info
         } else if (formal[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
             ;
         } else {
@@ -617,6 +649,7 @@ const Value *Interpreter::LookupGlobalScope(const std::string &symbol) const {
 
 Object *Interpreter::FindScope(const std::string &symbol) const {
     assert(!symbol.empty());
+    assert(currentScope);
 
     Object *scope = currentScope;
 
@@ -676,6 +709,7 @@ Object *Interpreter::PushScopeSpace(Object *outerScope) {
 }
 
 void Interpreter::PopScopeSpace(void) {
+    assert(!scopeStack.empty());
     scopeStack.pop_front();
 }
 
@@ -731,7 +765,7 @@ bool Interpreter::IsReservedField(const std::string &index) const {
 }
 
 const Value Interpreter::GetStringFromContext(Object *table, const Value &index, bool lookupFail) {
-    assert(table);
+    assert(table && table->IsValid());
     assert(index.IsString());
 
     std::string str = index.ToString();
@@ -749,7 +783,7 @@ const Value Interpreter::GetStringFromContext(Object *table, const Value &index,
 }
 
 const Value Interpreter::GetNumberFromContext(Object *table, const Value &index, bool lookupFail) {
-    assert(table);
+    assert(table && table->IsValid());
     assert(index.IsNumber());
 
     double num = index.ToNumber();
@@ -770,6 +804,7 @@ Symbol Interpreter::ClosureSetElem(const Value &lvalue, const Value &index) {
     assert(lvalue.IsObject());
 
     Object *table = lvalue.ToObject_NoConst();
+    assert(table);
 
     if (index.IsString() && index.ToString() == CLOSURE_RESERVED_FIELD)
         RuntimeError("Cannot change the closure object of a function");
@@ -790,6 +825,7 @@ Symbol Interpreter::ObjectSetElem(const Value &lvalue, const Value &index) {
     assert(lvalue.IsObject());
 
     Object *table = lvalue.ToObject_NoConst();
+    assert(table);
 
     if (index.IsNumber())
         return Symbol(table, index.ToNumber(), true);
@@ -797,4 +833,14 @@ Symbol Interpreter::ObjectSetElem(const Value &lvalue, const Value &index) {
         return Symbol(table, index.ToString(), true);
     else
         assert(false);
+}
+
+unsigned Interpreter::GetLineNumber(void) const {
+    assert(lineNumber);
+    return lineNumber;
+}
+
+void Interpreter::SetLineNumber(unsigned num) {
+    assert(num);
+    lineNumber = num;
 }
