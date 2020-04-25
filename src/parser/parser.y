@@ -390,6 +390,8 @@ int main(int argc, char ** argv) {
 
         delete unparseHost;
         delete visualizeHost;
+        delete setParentTreeHost;
+        delete validityVisitor;
         delete interpreter;
 
         fclose(yyin);

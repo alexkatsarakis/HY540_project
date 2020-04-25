@@ -154,8 +154,31 @@ Interpreter::~Interpreter() {
     /* Cleanup */
     dispatcher.Clear();
     libraryFuncs.clear();
-    globalScope->Clear();
-    delete globalScope;
+
+    assert(scopeStack.size() == 1);
+
+    Object * scope = scopeStack.front();
+    Object * prev = nullptr;
+
+    while(scope) {
+        assert(!scope->ElementExists(OUTER_RESERVED_FIELD));
+
+        const Value * value = (*scope)[PREVIOUS_RESERVED_FIELD];
+
+        if (value) prev = value->ToObject_NoConst();
+        else prev = nullptr;
+
+        scope->Visit([](const Value &key, const Value &val) {
+            if (val.IsObject()) val.ToObject_NoConst()->DecreaseRefCounter();
+        });
+
+        scope->Clear();
+        delete scope;
+
+        scope = prev;
+    }
+
+    scopeStack.clear();
 }
 
 /****** Lvalue Write Access ******/

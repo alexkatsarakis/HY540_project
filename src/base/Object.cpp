@@ -104,11 +104,12 @@ const Value *Object::GetAndRemove(double key) {
     auto pair = numMap.find(key);
     if (pair == numMap.end()) return nullptr;
     unsigned oldSize = numMap.size();
+    const Value * value = pair->second;
     numMap.erase(pair);
 
     assert(numMap.size() == oldSize - 1);
     assert(IsValid());
-    return pair->second;
+    return value;
 }
 
 const Value *Object::GetAndRemove(const std::string &key) {
@@ -118,11 +119,12 @@ const Value *Object::GetAndRemove(const std::string &key) {
     auto pair = strMap.find(key);
     if (pair == strMap.end()) return nullptr;
     unsigned oldSize = strMap.size();
+    const Value * value = pair->second;
     strMap.erase(pair);
 
     assert(strMap.size() == oldSize - 1);
     assert(IsValid());
-    return pair->second;
+    return value;
 }
 
 void Object::Clear(void) {
@@ -169,6 +171,7 @@ void Object::Set(double key, const Value &value) {
     assert(IsValid());
 
     auto val = new Value(value);
+    if(numMap.find(key) != numMap.end()) delete numMap[key];
     numMap[key] = val;
 
     assert(numMap.size() > 0);
@@ -180,9 +183,8 @@ void Object::Set(const std::string &key, const Value &value) {
     assert(value.IsValid());
     assert(IsValid());
 
-    /* TODISCUSS: If the specific key has already a value, this will lead to a
-     * memory leak */
     auto val = new Value(value);
+    if(strMap.find(key) != strMap.end()) delete strMap[key];
     strMap[key] = val;
 
     assert(strMap.size() > 0);
@@ -233,7 +235,6 @@ void Object::Apply(const Applier &func) {
 /****** Destructor ******/
 
 Object::~Object() {
-    assert(IsValid());
     numMap.clear();
     strMap.clear();
     refCounter = 0;

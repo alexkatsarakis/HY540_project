@@ -19,7 +19,7 @@ const std::string UnparseVisitor::GetUnparsed(const Value *val) const {
     const Value *unparseVal = val->ToObject_NoConst()->GetAndRemove(UNPARSE_VALUE_RESERVED_FIELD);
     string str = unparseVal->ToString();
     // unparseVal->FromUndef();    // bug on that
-    // delete unparseVal;
+    delete unparseVal;
     return str;
 }
 const std::string UnparseVisitor::UnparseProgram(const std::string &stmts) {
