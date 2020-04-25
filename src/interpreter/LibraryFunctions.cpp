@@ -17,7 +17,9 @@ unsigned whitespace = 0;
 #define WHITESPACE_STEP 4
 
 
+#define NAT_POINTER_EXTERNAL_FILE "EXTERNAL_FILE_PTR"
 #define SET_RETVAL(x) env.Set(RETVAL_RESERVED_FIELD,(x));
+#define THROW_WRONG_ARGUMENT Interpreter::RuntimeError("Wrong Argument Value");
 
 void PrintNumber(std::ostream & stream, const Value * value);
 void PrintString(std::ostream & stream, const Value * value);
@@ -228,7 +230,7 @@ void LibFunc::Assert(Object & env) {
 void LibFunc::Sqrt(Object & env) {
     assert(env.IsValid());
     const auto& value = GetArgument(env, 0);
-    if(value->GetType() != Value::Type::NumberType)Interpreter::RuntimeError("You can only square a number");
+    if(!value->IsNumber())THROW_WRONG_ARGUMENT;
     SET_RETVAL(sqrt(value->ToNumber()));
 }
 
@@ -236,21 +238,22 @@ void LibFunc::Pow(Object & env) {
     assert(env.IsValid());
     const auto& value1 = GetArgument(env, 0);
     const auto& value2 = GetArgument(env, 1);
-    if(value1->GetType() != Value::Type::NumberType || value2->GetType() != Value::Type::NumberType)Interpreter::RuntimeError("You can only power a number");
+    if(!value1->IsNumber())THROW_WRONG_ARGUMENT;
+    if(!value2->IsNumber())THROW_WRONG_ARGUMENT;
     SET_RETVAL(pow(value1->ToNumber(),value2->ToNumber()));
 }
 
 void LibFunc::Sin(Object & env) {
     assert(env.IsValid());
     const auto& value = GetArgument(env, 0);
-    if(value->GetType() != Value::Type::NumberType)Interpreter::RuntimeError("You can only use sin of a number");
+    if(!value->IsNumber())THROW_WRONG_ARGUMENT;
     SET_RETVAL(sin(value->ToNumber()));
 }
 
 void LibFunc::Cos(Object & env) {
     assert(env.IsValid());
     const auto& value = GetArgument(env, 0);
-    if(value->GetType() != Value::Type::NumberType)Interpreter::RuntimeError("You can only use cos of a number");
+    if(!value->IsNumber())THROW_WRONG_ARGUMENT;
     SET_RETVAL(cos(value->ToNumber()));
 }
 
@@ -292,12 +295,12 @@ void LibFunc::Random(Object & env) {
 void LibFunc::ToNumber(Object & env) {
     assert(env.IsValid());
     const auto& value = GetArgument(env, 0);
-    if(value->GetType() == Value::Type::NumberType){
+    if(value->IsNumber()){
         SET_RETVAL(value->ToNumber());
         return;
     }
-    if(value->GetType() != Value::Type::StringType)Interpreter::RuntimeError("You can only use to_number with a string or a number");
-    if(value->ToString().empty() || !isNumber(value->ToString()))Interpreter::RuntimeError("The given string isn't a number");
+    if(!value->IsString())THROW_WRONG_ARGUMENT;
+    if(value->ToString().empty() || !isNumber(value->ToString()))THROW_WRONG_ARGUMENT;
 
     SET_RETVAL(std::stod(value->ToString()));
     
@@ -308,12 +311,12 @@ void LibFunc::FileOpen(Object & env) {
     const auto& path = GetArgument(env, 0);
     const auto& mode = GetArgument(env, 1);
     
-    if(path->GetType() != Value::Type::StringType)Interpreter::RuntimeError("First argument in file open should be a string with the path");
-    if(mode->GetType() != Value::Type::StringType)Interpreter::RuntimeError("Second argument in file open should be a string with the mode");
+    if(!path->IsString())THROW_WRONG_ARGUMENT;
+    if(!mode->IsString())THROW_WRONG_ARGUMENT;
 
     auto* fp = fopen(path->ToString().c_str(),mode->ToString().c_str());
     if(fp){
-        SET_RETVAL(Value(fp, "EXTERNAL_FILE"));
+        SET_RETVAL(Value(fp, NAT_POINTER_EXTERNAL_FILE));
     }else{
         SET_RETVAL(Value());
     }
@@ -323,11 +326,11 @@ void LibFunc::FileClose(Object & env) {
     assert(env.IsValid());
     const auto& fp = GetArgument(env, 0);
     
-    if(fp->GetType() != Value::Type::NativePtrType)Interpreter::RuntimeError("First argument in file_close is ...");
-    if(fp->ToNativeTypeId() != "EXTERNAL_FILE")Interpreter::RuntimeError("First argument in file_close is not a file");
+    if(!fp->IsNativePtr())THROW_WRONG_ARGUMENT;
+    if(fp->ToNativeTypeId() != NAT_POINTER_EXTERNAL_FILE)THROW_WRONG_ARGUMENT;
     
     fclose(static_cast<FILE*>(fp->ToNativePtr()));
-    //FREE FP
+    //FREE FP //TODO
 
     SET_RETVAL(true);
 }
@@ -337,10 +340,9 @@ void LibFunc::FileWrite(Object & env) {
     const auto& fp = GetArgument(env, 0);
     const auto& value = GetArgument(env, 1);
     
-    if(fp->GetType() != Value::Type::NativePtrType)Interpreter::RuntimeError("First argument in file_write is ...");
-    if(fp->ToNativeTypeId() != "EXTERNAL_FILE")Interpreter::RuntimeError("First argument in file_write is not a file");
-    
-    if(value->GetType() != Value::Type::StringType)Interpreter::RuntimeError("Second argument in file_write must be a string");
+    if(!fp->IsNativePtr())THROW_WRONG_ARGUMENT;
+    if(fp->ToNativeTypeId() != NAT_POINTER_EXTERNAL_FILE)THROW_WRONG_ARGUMENT;
+    if(!value->IsString())THROW_WRONG_ARGUMENT;
     
     fprintf(static_cast<FILE*>(fp->ToNativePtr()),"%s",value->ToString().c_str());
     
@@ -351,15 +353,16 @@ void LibFunc::FileRead(Object & env) {
     assert(env.IsValid());
     const auto& fp = GetArgument(env, 0);
     
-    if(fp->GetType() != Value::Type::NativePtrType)Interpreter::RuntimeError("First argument in file_write is ...");
-    if(fp->ToNativeTypeId() != "EXTERNAL_FILE")Interpreter::RuntimeError("First argument in file_write is not a file");
+    if(!fp->IsNativePtr())THROW_WRONG_ARGUMENT;
+    if(fp->ToNativeTypeId() != NAT_POINTER_EXTERNAL_FILE)THROW_WRONG_ARGUMENT;
     
     const auto& filePtr = static_cast<FILE*>(fp->ToNativePtr());
     fseek(filePtr, 0, SEEK_END); 
     unsigned long size = ftell(filePtr);
     fseek(filePtr, 0, SEEK_SET);
     char* content = static_cast<char*>(malloc(sizeof(char)*size));
-    fread(content, 1, size, filePtr);
+    unsigned long readSize(fread(content, 1, size, filePtr));
+    assert(readSize == size);
     
     SET_RETVAL(content);
     free(content);
