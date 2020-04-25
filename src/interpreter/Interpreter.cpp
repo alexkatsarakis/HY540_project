@@ -46,7 +46,7 @@ const Value Interpreter::EvalAssign(Object &node) {
     if (lvalue.IsIndexString() &&
         IsLibFunc(lvalue.ToString()) &&
         IsGlobalScope(lvalue.GetContext()))
-        RuntimeError("Cannot modify library function \"" + lvalue.ToString() + "\".");
+        RuntimeError("Cannot modify library function \"" + lvalue.ToString() + "\".", GET_LINE(node));
 
     if (rvalue.IsNil())
         RemoveFromContext(lvalue, rvalue);
@@ -147,7 +147,7 @@ const Value Interpreter::EvalTerm(Object &node) {
 const Value Interpreter::EvalUnaryMinus(Object &node) {
     ASSERT_TYPE(AST_TAG_UMINUS);
     const Value val = EVAL_CHILD();
-    if (!val.IsNumber()) RuntimeError("Unary minus (-) cannot be applied to " + val.GetTypeToString());
+    if (!val.IsNumber()) RuntimeError("Unary minus (-) cannot be applied to " + val.GetTypeToString(), GET_LINE(node));
     return -val.ToNumber();
 }
 
@@ -218,7 +218,7 @@ const Value Interpreter::EvalLocal(Object &node) {
         return *(*currentScope)[symbol];
     }
 
-    if (IsLibFunc(symbol)) RuntimeError("Local variable \"" + symbol + "\" shadows library function");
+    if (IsLibFunc(symbol)) RuntimeError("Local variable \"" + symbol + "\" shadows library function", GET_LINE(node));
 
     currentScope->Set(symbol, Value());
     return Value();
@@ -232,7 +232,7 @@ const Value Interpreter::EvalDoubleColon(Object &node) {
 
     std::string symbol = node[AST_TAG_ID]->ToString();
     const Value *val = LookupGlobalScope(symbol);
-    if (!val) RuntimeError("Global symbol \"" + symbol + "\" does not exist (Undefined Symbol)");
+    if (!val) RuntimeError("Global symbol \"" + symbol + "\" does not exist (Undefined Symbol)", GET_LINE(node));
 
     return *val;
 }
@@ -265,27 +265,27 @@ const Value Interpreter::EvalCall(Object &node) {
     ASSERT_TYPE(AST_TAG_CALL);
     Value callable, lvalue;
 
-    if (node.ElementExists(AST_TAG_LVALUE)){
+    if (node.ElementExists(AST_TAG_LVALUE)) {
         lvalue = EVAL(AST_TAG_LVALUE);
-        const Object* idNode = node[AST_TAG_FUNCTION]->ToObject();
+        const Object *idNode = node[AST_TAG_FUNCTION]->ToObject();
         std::string id = (*idNode)[AST_TAG_ID]->ToString();
-        
-        callable = TableGetElem(lvalue, id);
-        
-        if (!callable.IsProgramFunction())
-            RuntimeError("Cannot call something that is not a function");
 
-    }else{
+        callable = TableGetElem(lvalue, id);
+
+        if (!callable.IsProgramFunction())
+            RuntimeError("Cannot call something that is not a function", GET_LINE(node));
+
+    } else {
         Value functionVal = EVAL(AST_TAG_FUNCTION);
-        if (functionVal.IsObject()){
+        if (functionVal.IsObject()) {
             const Value *element = (*functionVal.ToObject())["()"];
             if (!element)
-                RuntimeError("Cannot call an object if it is not a functor");
-            
+                RuntimeError("Cannot call an object if it is not a functor", GET_LINE(node));
+
             callable = *element;
-        }else{
+        } else {
             if (!functionVal.IsLibraryFunction() && !functionVal.IsProgramFunction())
-                RuntimeError("Cannot call something that is not a function");
+                RuntimeError("Cannot call something that is not a function", GET_LINE(node));
 
             callable = functionVal;
         }
@@ -296,26 +296,25 @@ const Value Interpreter::EvalCall(Object &node) {
     std::vector<std::string> actualNames = actuals.GetUserKeys();
 
     /* in the case of method call, adds "this" as the first argument */
-    if (node.ElementExists(AST_TAG_LVALUE)){
-        for (int i  = actuals.GetNumericSize(); i > 0; i--)
+    if (node.ElementExists(AST_TAG_LVALUE)) {
+        for (int i = actuals.GetNumericSize(); i > 0; i--)
             actuals.Set(i, *actuals[i - 1]);
 
         actuals.Set(0, lvalue);
     }
 
-    retvalRegister.FromUndef();    //reset retVal register
     Value result;
-
-    if (callable.IsProgramFunction()){
+    if (callable.IsProgramFunction()) {
         Object functionAst = *(callable.ToProgramFunctionAST_NoConst());
         Object functionClosure = *(callable.ToProgramFunctionClosure_NoConst());
-        result = CallProgramFunction(functionAst, functionClosure, actuals, actuals.GetUserKeys());
-    }else if (callable.IsLibraryFunction()){
+        result = CallProgramFunction(functionAst, functionClosure, actuals, actuals.GetUserKeys(), node);
+    } else if (callable.IsLibraryFunction()) {
         std::string functionId = callable.ToLibraryFunctionId();
         LibraryFunc functionLib = callable.ToLibraryFunction();
         result = CallLibraryFunction(functionId, functionLib, actuals);
-    }else
+    } else {
         assert(false);
+    }
 
     actuals.Clear();
     actualsVal.FromUndef();
@@ -337,7 +336,7 @@ const Value Interpreter::EvalArgumentList(Object &node) {
             const Object &idNode = *(argument[AST_TAG_NAMED_KEY]->ToObject());
             assert(idNode.ElementExists(AST_TAG_ID));
             std::string id = idNode[AST_TAG_ID]->ToString();
-            if (table->ElementExists(id)) RuntimeError("named recurrence\n");    //Comment if we allow this
+            // if (table->ElementExists(id)) RuntimeError("named recurrence\n", GET_LINE(node));    //Checked at compile time
             table->Set(id, Value(double(i)));
         } else {
             positionalSize++;
@@ -408,7 +407,7 @@ const Value Interpreter::EvalIndexedElem(Object &node) {
     else if (key.IsNumber())
         pair->Set(key.ToNumber(), value);
     else
-        RuntimeError("Keys of objects can only be strings or numbers");
+        RuntimeError("Keys of objects can only be strings or numbers", GET_LINE(node));
 
     return pair;
 }
@@ -435,8 +434,8 @@ const Value Interpreter::EvalFunctionDef(Object &node) {
     const Object *child = node[AST_TAG_FUNCTION_ID]->ToObject();
     std::string name = (*child)[AST_TAG_ID]->ToString();
 
-    if (IsLibFunc(name)) RuntimeError("Cannot define function \"" + name + "\". It shadows the library function.");
-    if (LookupCurrentScope(name)) RuntimeError("Cannot define function \"" + name + "\". Symbol name already exists.");
+    if (IsLibFunc(name)) RuntimeError("Cannot define function \"" + name + "\". It shadows the library function.", GET_LINE(node));
+    if (LookupCurrentScope(name)) RuntimeError("Cannot define function \"" + name + "\". Symbol name already exists.", GET_LINE(node));
 
     Object *functionScope = currentScope;
     currentScope->Set(name, Value(&node, currentScope));
@@ -485,8 +484,8 @@ const Value Interpreter::EvalIdList(Object &node) {
 
 const Value Interpreter::EvalFormal(Object &node) {
     std::string formalName = node[AST_TAG_ID]->ToString();
-    if (IsLibFunc(formalName)) RuntimeError("Formal argument \"" + formalName + "\" shadows library function");
-    if (LookupCurrentScope(formalName)) RuntimeError("Formal argument \"" + formalName + "\" already defined as a formal");
+    if (IsLibFunc(formalName)) RuntimeError("Formal argument \"" + formalName + "\" shadows library function", GET_LINE(node));
+    if (LookupCurrentScope(formalName)) RuntimeError("Formal argument \"" + formalName + "\" already defined as a formal", GET_LINE(node));
     const Value val = Value();
     currentScope->Set(formalName, val);
     return val;
@@ -548,7 +547,10 @@ const Value Interpreter::EvalFor(Object &node) {
 
 const Value Interpreter::EvalReturn(Object &node) {
     ASSERT_TYPE(AST_TAG_RETURN);
-    if (node.ElementExists(AST_TAG_CHILD)) throw ReturnException(EVAL_CHILD());
+    Value result;    // initialized to undef, in case function never returns a value
+    if (node.ElementExists(AST_TAG_CHILD)) result = EVAL_CHILD();
+    if (retvalRegister.IsObject()) retvalRegister.ToObject_NoConst()->DecreaseRefCounter();
+    retvalRegister = result;
     throw ReturnException();
 }
 

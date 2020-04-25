@@ -99,7 +99,7 @@ void VisualizeVisitor::VisitNormalStatements(const Object &node) {
 
 void VisualizeVisitor::VisitStatements(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_STMTS);
-    if (node.GetTotal() == 1)
+    if (node.GetNumericSize() == 0)
         VisitEmptyStatements(node);
     else
         VisitNormalStatements(node);
@@ -117,7 +117,7 @@ void VisualizeVisitor::VisitNormalStatement(const Object &node) {
 
 void VisualizeVisitor::VisitStatement(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_STMT);
-    if (node.GetTotal() == 1)
+    if (!node.ElementExists(AST_TAG_CHILD))
         VisitEmptyStatement(node);
     else
         VisitNormalStatement(node);
@@ -340,25 +340,7 @@ void VisualizeVisitor::VisitEmptyArgumentList(const Object &node) {
 
 void VisualizeVisitor::VisitNormalArgumentList(const Object &node) {
     CreateNewNode(AST_TAG_ARGLIST);
-    /*
-    auto named = node.GetUserKeys();
-    auto it = named.rbegin();
-    unsigned i = 0;
 
-    if (named.empty()) {
-        LinkToPreviousNode();
-        i = 1;
-    }
-    else LinkToNodeEdgeLabel(lastNode - 1, *(it++));
-
-    for(; it != named.rend(); ++it) {
-        assert(!orphans.empty());
-        LinkToNodeEdgeLabel(orphans.top(), *it);
-        orphans.pop();
-    }
-
-    for (; i < node.GetNumericSize(); ++i) LinkToOrphan();
- */
     LinkToPreviousNode();
     for (register unsigned i = 1; i < node.GetNumericSize(); ++i) LinkToOrphan();
 }
@@ -392,7 +374,7 @@ void VisualizeVisitor::VisitNormalExpressionList(const Object &node) {
 
 void VisualizeVisitor::VisitExpressionList(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ELIST);
-    if (node.GetTotal() == 1)
+    if (node.GetNumericSize() == 0)
         VisitEmptyExpressionList(node);
     else
         VisitNormalExpressionList(node);
@@ -418,7 +400,7 @@ void VisualizeVisitor::VisitNormalIndexed(const Object &node) {
 
 void VisualizeVisitor::VisitIndexed(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_INDEXED);
-    if (node.GetTotal() == 1)
+    if (node.GetNumericSize() == 0)
         VisitEmptyIndexed(node);
     else
         VisitNormalIndexed(node);
@@ -501,7 +483,7 @@ void VisualizeVisitor::VisitNormalIdlist(const Object &node) {
 
 void VisualizeVisitor::VisitIdList(const Object &node) {
     eassert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ID_LIST);
-    if (node.GetTotal() == 1)
+    if (node.GetNumericSize() == 0)
         VisitEmptyIdlist(node);
     else
         VisitNormalIdlist(node);

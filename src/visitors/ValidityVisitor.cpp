@@ -7,7 +7,7 @@
 #include <cassert>
 #include <iostream>
 
-#define PARENT_FIELD "$$Parent"
+#include "HiddenTags.h"
 
 #define IMPL_VISIT(type) \
     void ValidityVisitor::Visit##type(const Object &node) {}
@@ -76,11 +76,11 @@ TreeVisitor *ValidityVisitor::Clone(void) const {
 }
 
 void ValidityVisitor::VisitReturn(const Object &node) {
-    auto current = *node[PARENT_FIELD]->ToObject();
+    auto current = *node[PARENT_RESERVED_FIELD]->ToObject();
     while (current[AST_TAG_TYPE_KEY]->ToString() != AST_TAG_PROGRAM) {
         auto type = current[AST_TAG_TYPE_KEY]->ToString();
         if (type == AST_TAG_FUNCTION_DEF) return;
-        current = *current[PARENT_FIELD]->ToObject();
+        current = *current[PARENT_RESERVED_FIELD]->ToObject();
         assert(current.IsValid());
     }
     std::cerr << "Return isn't on a function" << std::endl;
@@ -88,11 +88,11 @@ void ValidityVisitor::VisitReturn(const Object &node) {
 }
 
 void ValidityVisitor::VisitBreak(const Object &node) {
-    auto current = *node[PARENT_FIELD]->ToObject();
+    auto current = *node[PARENT_RESERVED_FIELD]->ToObject();
     while (current[AST_TAG_TYPE_KEY]->ToString() != AST_TAG_PROGRAM && current[AST_TAG_TYPE_KEY]->ToString() != AST_TAG_FUNCTION_DEF) {
         auto type = current[AST_TAG_TYPE_KEY]->ToString();
         if (type == AST_TAG_FOR || type == AST_TAG_WHILE) return;
-        current = *current[PARENT_FIELD]->ToObject();
+        current = *current[PARENT_RESERVED_FIELD]->ToObject();
         assert(current.IsValid());
     }
     std::cerr << "Break isn't on a loop" << std::endl;
@@ -100,11 +100,11 @@ void ValidityVisitor::VisitBreak(const Object &node) {
 }
 
 void ValidityVisitor::VisitContinue(const Object &node) {
-    auto current = *node[PARENT_FIELD]->ToObject();
+    auto current = *node[PARENT_RESERVED_FIELD]->ToObject();
     while (current[AST_TAG_TYPE_KEY]->ToString() != AST_TAG_PROGRAM && current[AST_TAG_TYPE_KEY]->ToString() != AST_TAG_FUNCTION_DEF) {
         auto type = current[AST_TAG_TYPE_KEY]->ToString();
         if (type == AST_TAG_FOR || type == AST_TAG_WHILE) return;
-        current = *current[PARENT_FIELD]->ToObject();
+        current = *current[PARENT_RESERVED_FIELD]->ToObject();
         assert(current.IsValid());
     }
     std::cerr << "Continue isn't on a loop" << std::endl;

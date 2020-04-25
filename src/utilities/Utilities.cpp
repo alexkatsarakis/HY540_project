@@ -1,6 +1,7 @@
 #include "Utilities.h"
 
 #include <cmath>
+#include <iostream>
 #include <limits>
 
 bool Utilities::IsZero(double num) {
@@ -34,4 +35,23 @@ std::string Utilities::UnparserFormatEscChars(const std::string &str) {
             out += c;
     }
     return out;
+}
+
+void Utilities::SyntaxError(const std::string &msg, unsigned line) {
+    std::string lineMsg = (line != 0) ? "Line " + std::to_string(line) + " " : "";
+    std::cerr << "\033[36;1m"    //CYAN
+              << lineMsg
+              << "\033[31;1m"    //RED
+              << "Syntax Error: "
+              << "\033[0m" << msg << std::endl;
+    exit(EXIT_FAILURE);
+}
+
+void Utilities::SyntaxWarning(const std::string &msg, unsigned line) {
+    std::string lineMsg = (line != 0) ? "Line " + std::to_string(line) + " " : "";
+    std::cerr << "\033[36;1m"    //CYAN
+              << lineMsg
+              << "\033[33;1m"    //YELLOW
+              << "Syntax Warning: "
+              << "\033[0m" << msg << std::endl;
 }

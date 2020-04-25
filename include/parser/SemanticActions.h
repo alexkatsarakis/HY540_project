@@ -3,6 +3,9 @@
 
 #include "Object.h"
 
+/* The  number of the current line */
+extern int yylineno;
+
 Object *ParseProgram(Object *stmts);
 
 Object *ParseEmptyStmts(void);
@@ -79,7 +82,7 @@ Object *ParseCallCall(Object *call, Object *elist);
 
 Object *ParseLvalueCall(Object *lvalue, Object *suffix);
 
-Object *ParseLvalueMethodCall(Object *lvalue, Object *id, Object* arguments);
+Object *ParseLvalueMethodCall(Object *lvalue, Object *id, Object *arguments);
 
 Object *ParseFuncdefCall(Object *funcdef, Object *elist);
 
