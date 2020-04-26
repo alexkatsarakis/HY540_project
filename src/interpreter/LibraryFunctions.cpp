@@ -21,6 +21,7 @@ unsigned whitespace = 0;
 #define NAT_POINTER_EXTERNAL_FILE "EXTERNAL_FILE_PTR"
 #define SET_RETVAL(x) env.Set(RETVAL_RESERVED_FIELD,(x));
 #define THROW_WRONG_ARGUMENT Interpreter::RuntimeError("Wrong Argument Value");
+#define PRINT(x) std::cout << (x) << std::endl
 
 void PrintNumber(std::ostream & stream, const Value * value);
 void PrintString(std::ostream & stream, const Value * value);
@@ -326,7 +327,6 @@ void LibFunc::FileOpen(Object & env) {
     
     if(!path->IsString())THROW_WRONG_ARGUMENT;
     if(!mode->IsString())THROW_WRONG_ARGUMENT;
-
     auto* fp = fopen(path->ToString().c_str(),mode->ToString().c_str());
     if(fp){
         SET_RETVAL(Value(fp, NAT_POINTER_EXTERNAL_FILE));
@@ -342,10 +342,12 @@ void LibFunc::FileClose(Object & env) {
     if(!fp->IsNativePtr())THROW_WRONG_ARGUMENT;
     if(fp->ToNativeTypeId() != NAT_POINTER_EXTERNAL_FILE)THROW_WRONG_ARGUMENT;
     
-    fclose(static_cast<FILE*>(fp->ToNativePtr()));
-    //FREE FP //TODO
-
-    SET_RETVAL(true);
+    if(fclose(static_cast<FILE*>(fp->ToNativePtr()))){
+        SET_RETVAL(false);
+    }else{
+        //FREE FP //TODO
+        SET_RETVAL(true);
+    }
 }
 
 void LibFunc::FileWrite(Object & env) {
@@ -358,7 +360,6 @@ void LibFunc::FileWrite(Object & env) {
     if(!value->IsString())THROW_WRONG_ARGUMENT;
     
     fprintf(static_cast<FILE*>(fp->ToNativePtr()),"%s",value->ToString().c_str());
-    
     SET_RETVAL(true);
 }
 
@@ -373,10 +374,10 @@ void LibFunc::FileRead(Object & env) {
     fseek(filePtr, 0, SEEK_END); 
     unsigned long size = ftell(filePtr);
     fseek(filePtr, 0, SEEK_SET);
-    char* content = static_cast<char*>(malloc(sizeof(char)*size));
-    unsigned long readSize(fread(content, 1, size, filePtr));
+    char* content = static_cast<char*>(malloc(sizeof(char)*size+1));
+    unsigned long readSize = fread(content, 1, size, filePtr);
     assert(readSize == size);
-    
+    content[size] = '\0';
     SET_RETVAL(content);
     free(content);
 }
