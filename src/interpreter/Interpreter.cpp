@@ -226,9 +226,8 @@ const Value Interpreter::EvalLocal(Object &node) {
 
     std::string symbol = node[AST_TAG_ID]->ToString();
 
-    if (LookupCurrentScope(symbol)) {
-        return *(*currentScope)[symbol];
-    }
+    const Value * var = LookupCurrentScope(symbol);
+    if (var) return *var;
 
     if (IsLibFunc(symbol)) RuntimeError("Local variable \"" + symbol + "\" shadows library function");
 
@@ -333,6 +332,7 @@ const Value Interpreter::EvalCall(Object &node) {
     }
 
     actuals.Clear();
+    delete actualsVal.ToObject_NoConst();
     actualsVal.FromUndef();
     return result;
 }

@@ -160,6 +160,7 @@ Interpreter::~Interpreter() {
     libraryFuncs.clear();
     globalScope->Clear();
     delete globalScope;
+    scopeStack.clear();
 }
 
 /****** Lvalue Write Access ******/
