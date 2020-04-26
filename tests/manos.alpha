@@ -1,3 +1,157 @@
+
+/*
+
+function test(a = c) {
+    a.x = nil;
+    return a;
+}
+
+print(test([{"x":10}]));
+
+var = 42;
+table = [
+    { "x" : 23 * 10 },
+    { "y" : "Test string" },
+    { "z" : var },
+    { var : "z" }
+];
+
+print(table);
+print(object_keys(table));
+print(object_size(table));
+
+table.z = nil;
+table[var] = nil;
+
+print(table);
+print(object_keys(table));
+print(object_size(table));
+
+*/
+
+/*
+function f(x) { return ( function() { return x; } ); }
+f1 = f(1);
+print(f1());
+f1.x = 2;
+print(f1());
+print(f1.$closure);
+f1.$closure.x = 2;
+
+function t() {
+    return 1;
+    print(20);
+    return 2;
+}
+
+print(t());
+
+*/
+
+/*
+a = 25;
+function f() { }
+print(f.$closure);
+print(f.a);
+print(f.$closure.a);
+print("I concat " + "strings");
+t = [];
+print(t.f);
+
+print("\n\n");
+
+t.p = print;
+t.p("Hello");
+t.p = 23;
+print(t.p);
+
+a = nil;
+print(f.$closure);
+print(object_keys(f.$closure));
+*/
+
+/*
+x = 2;
+{
+    a1 = 1;
+    {
+        a2 = 2;
+        {
+            a3 = 3;
+            {
+                local x = "Test";
+                a4 = 4;
+                ::x = 7;
+                x = "Begin";
+                print(x);
+                {
+                    a5 = 5;
+                    {
+                        a6 = 6;
+                        print(a1);
+                        print(a2);
+                        print(a3);
+                        print(a4);
+                        print(a5);
+                        print(a6);
+                        print(::x);
+                    }
+                }
+            }
+        }
+    }
+}
+*/
+
+/*
+t = [];
+t.t = [ {"x" : "y" } ];
+t.t = nil;
+t = 23;
+
+for(i = 0; i < 10; ++i) {
+    t = [];
+    t[i] = i;
+    print(t[i]);
+}
+
+function foo() { }
+
+t = [];
+t.a = print;
+t.b = (function (){});
+t.c = foo;
+t.d = [];
+t.e = [ { "key" : "val" }];
+print(t);
+*/
+/*
+a = 25;
+function f() { }
+print(f.$closure);
+print(f.$closure.a);
+print(f.a);
+f.$closure.a = 23;
+print(a);
+f.a = 24;
+print(a);
+
+//print(f.$closure.y1);
+//print(f.y2);
+//f.$closure.y3 = 25;
+//f.y4 = 26;
+
+a = [];
+b = "$foo";
+//function foo() { return "$foog"; }
+//a[foo()] = 10;
+
+for(i = 0; i < 100; ++i) {
+    print(i);
+    sleep(1000);
+}
+*/
+
 print("Closures:");
 function f(x) { return (function() { return x; }); }
 f1 = f(1);
@@ -100,17 +254,26 @@ print("\n\n");
 
 print("Functor:");
 
-functor1 = [];
-functor1["()"] = (function() { print("I am a functor"); });
+{
+    {
+        {
+            {
+                functor1 = [];
+                functor1["()"] = (function() { print("I am a functor"); });
 
-functor2 = [
-    { "()" : (function (x) {
-        print("Functor's argument is", x);
-    }) }
-];
+                functor2 = [
+                    { "()" : (function (x) {
+                        print("Functor's argument is", x);
+                    }) }
+                ];
 
-functor3 = [];
-functor4 = [ { "()" : 1234 } ];
+                functor3 = [];
+                functor4 = [ { "()" : 1234 } ];
 
-functor1();
-functor2(42);
+                functor1();
+                functor2(42);
+                //functor3();
+            }
+        }
+    }
+}
