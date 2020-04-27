@@ -6,6 +6,10 @@
 #include <string>
 #include <cassert>
 
+#define SYMBOL_IS_TABLE true
+#define SYMBOL_IS_VAR false
+#define SYMBOL_IS_CLOSURE_CHANGE true
+
 class Symbol {
 private:
     Object * context = nullptr;
@@ -15,10 +19,11 @@ private:
     bool isIndexNumber = false;
     bool isIndexString = false;
     bool isContextTable = false;
+    bool isClosureChange = false;
 
 public:
 
-    Symbol(Object * _context, const std::string & str, bool isTable = false) : strVal(str) {
+    Symbol(Object * _context, const std::string & str, bool isTable = false, bool closureChange = false) : strVal(str) {
         assert(_context);
         assert(!str.empty());
 
@@ -26,15 +31,17 @@ public:
         isIndexString = true;
         isIndexNumber = false;
         isContextTable = isTable;
+        isClosureChange = closureChange;
     }
 
-    Symbol(Object * _context, double num, bool isTable = false) : numVal(num) {
+    Symbol(Object * _context, double num, bool isTable = false, bool closureChange = false) : numVal(num) {
         assert(_context);
 
         context = _context;
         isIndexString = false;
         isIndexNumber = true;
         isContextTable = isTable;
+        isClosureChange = closureChange;
     }
 
     bool IsValid(void) const {
@@ -44,9 +51,10 @@ public:
                 (isIndexString || isIndexNumber));
     }
 
-    bool IsIndexString(void) const { return isIndexString; }
-    bool IsIndexNumber(void) const { return isIndexNumber; }
-    bool IsContextTable(void) const { return isContextTable; }
+    bool IsIndexString(void)   const { return isIndexString; }
+    bool IsIndexNumber(void)   const { return isIndexNumber; }
+    bool IsContextTable(void)  const { return isContextTable; }
+    bool IsClosureChange(void) const { return isClosureChange; }
 
     double ToNumber(void) const {
         assert(IsIndexNumber());
@@ -61,6 +69,8 @@ public:
     Object * GetContext(void) const {
         return context;
     }
+
+    void SetIsClosureChange(bool value) { isClosureChange = value; }
 };
 
 #endif

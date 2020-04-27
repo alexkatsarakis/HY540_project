@@ -52,7 +52,15 @@ const Value Interpreter::EvalAssign(Object &node) {
         IsGlobalScope(lvalue.GetContext()))
         RuntimeError("Cannot modify library function \"" + lvalue.ToString() + "\"");
 
-    if (rvalue.IsNil())
+        /* Cases of assignment:
+         * 1) f.$closure = [];
+         * 2) t.x = nil;
+         * 3) Anything else
+         */
+
+    if (lvalue.IsClosureChange())
+        ChangeClosure(lvalue, rvalue);
+    else if (lvalue.IsContextTable() && rvalue.IsNil())
         RemoveFromContext(lvalue, rvalue);
     else
         AssignToContext(lvalue, rvalue);
@@ -321,7 +329,7 @@ const Value Interpreter::EvalCall(Object &node) {
     Value result;
     if (callable.IsProgramFunction()) {
         Object functionAst = *(callable.ToProgramFunctionAST_NoConst());
-        Object functionClosure = *(callable.ToProgramFunctionClosure_NoConst());
+        Object * functionClosure = (callable.ToProgramFunctionClosure_NoConst());
         result = CallProgramFunction(functionAst, functionClosure, actuals, actuals.GetUserKeys());
     } else if (callable.IsLibraryFunction()) {
         std::string functionId = callable.ToLibraryFunctionId();
@@ -425,7 +433,7 @@ const Value Interpreter::EvalIndexedElem(Object &node) {
     else if (key.IsNumber())
         pair->Set(key.ToNumber(), value);
     else
-        RuntimeError("Keys of objects can only be strings or numbers");
+        RuntimeError("Keys of objects can only be strings or numbers. Found " + key.GetTypeToString());
 
     return pair;
 }

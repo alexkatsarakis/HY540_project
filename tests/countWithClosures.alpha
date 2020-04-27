@@ -1,0 +1,57 @@
+function f(x) { return (function() { return x; }); }
+
+f1 = f(1);
+print(f1());
+
+f1.x = 2;
+print(f1());
+
+f1.$closure.x = 3;
+print(f1());
+
+f1["$closure"]["x"] = 4;
+print(f1());
+
+f1["$closure"].x = 5;
+print(f1());
+
+f1.$closure["x"] = 6;
+print(f1());
+
+f1.$closure = [ { "x" : 7} ];
+print(f1());
+
+f1.$closure = [];
+f1.$closure.x = 8;
+print(f1());
+
+f1.$closure.func = f(9);
+print(f1.func());
+
+f1.$closure.func.$closure.x = 10;
+print(f1.func());
+
+t = [];
+t.x = [];
+t.x.y = [];
+t.x.y.z = [];
+t.x.y.z[20] = f1;
+
+t.x.y.z[20].$closure.x = 11;
+print(t.x.y.z[20]());
+
+t.x.y.z[20]["$closure"]["x"] = 12;
+print(t.x.y.z[20]());
+
+t.x.y.z[20]["$closure"].x = 13;
+print(t.x.y.z[20]());
+
+t.x.y.z[20].$closure["x"] = 14;
+print(t.x.y.z[20]());
+
+t.x.y.z[10] = 10;
+t.x.y.z[20]["$closure"] = [ { "x" : 15 } ];
+print(t.x.y.z[20]());
+
+t.x.y.z[20] = nil;
+print(f1.$closure);
