@@ -675,7 +675,10 @@ Object *Interpreter::PopScope(void) {
 
     Object *scope = currentScope;
     currentScope = (*scope)[OUTER_RESERVED_FIELD]->ToObject_NoConst();
+    
     scope->DecreaseRefCounter();
+    scopeStack.pop_front();
+    scopeStack.push_front(currentScope);
     return scope;
 }
 
