@@ -254,19 +254,26 @@ print("\n\n");
 
 print("Functor:");
 
-functor1 = [];
-functor1["()"] = (function() { print("I am a functor"); });
+{
+    {
+        {
+            {
+                functor1 = [];
+                functor1["()"] = (function() { print("I am a functor"); });
 
-functor2 = [
-    { "()" : (function (x) {
-        print("Functor's argument is", x);
-    }) }
-];
+                functor2 = [
+                    { "()" : (function (x) {
+                        print("Functor's argument is", x);
+                    }) }
+                ];
 
-functor3 = [];
-functor4 = [ { "()" : 1234 } ];
+                functor3 = [];
+                functor4 = [ { "()" : 1234 } ];
 
-functor1();
-functor2(42);
-//functor3();
-//functor4();
+                functor1();
+                functor2(42);
+                //functor3();
+            }
+        }
+    }
+}

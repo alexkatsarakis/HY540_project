@@ -27,9 +27,6 @@
 
     void ProcessAST(Object * ast);
 
-    /* The  number of the current line */
-    extern int yylineno;
-
     /* Holds the text of the current token. It may be modified but not lengthened */
     extern char * yytext;
 
@@ -70,9 +67,6 @@
 %type <objectVal> lvalue;
 %type <objectVal> member;
 %type <objectVal> call;
-// %type <objectVal> callsuffix;
-// %type <objectVal> normcall;
-// %type <objectVal> methodcall;
 %type <objectVal> arglist;
 %type <objectVal> named_arg;
 %type <objectVal> comma_named_args;
@@ -339,7 +333,11 @@ continuestmt : CONTINUE SEMICOLON { $$ = ParseContinueStmt(); }
 %%
 
 int yyerror (char * yaccProvidedMessage) {
-    std::cerr << "\033[31;1mSyntax Error:\033[0m Invalid syntax at line " << yylineno << " before " << yytext << std::endl;
+    std::cerr   << "\033[31;1m"     //RED
+                << "Syntax Error: "
+                << "\033[0m"
+                << "Invalid syntax at line " << yylineno
+                << " before " << yytext << std::endl;
     exit(EXIT_FAILURE);
 }
 
@@ -392,6 +390,8 @@ int main(int argc, char ** argv) {
 
         delete unparseHost;
         delete visualizeHost;
+        delete setParentTreeHost;
+        delete validityVisitor;
         delete interpreter;
 
         fclose(yyin);

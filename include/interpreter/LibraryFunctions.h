@@ -30,6 +30,14 @@ namespace LibFunc {
 
     void Input(Object & env);
 
+    void FileOpen(Object & env);
+
+    void FileClose(Object & env);
+
+    void FileWrite(Object & env);
+
+    void FileRead(Object & env);
+
     void ObjectKeys(Object & env);
 
     void ObjectSize(Object & env);

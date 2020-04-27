@@ -117,7 +117,7 @@ bool Value::IsValid(void) const {
         (type == Type::ObjectType && data.objectVal.object) ||
         (type == Type::ProgramFunctionType && data.programFunctionVal.ast && data.programFunctionVal.closure) ||
         (type == Type::LibraryFunctionType && data.libraryFunctionVal.function && data.libraryFunctionVal.id) ||
-        (type == Type::NativePtrType && data.nativePtrVal.ptr && data.nativePtrVal.typeId) ||
+        (type == Type::NativePtrType && data.nativePtrVal.typeId) ||
         type == Type::NilType);
 }
 
@@ -257,7 +257,6 @@ void Value::FromLibraryFunction(LibraryFunc func, const std::string &str) {
 }
 
 void Value::FromNativePointer(void *ptr, const std::string &str) {
-    assert(ptr);
     assert(!str.empty());
     assert(IsValid());
     FreeMemory();

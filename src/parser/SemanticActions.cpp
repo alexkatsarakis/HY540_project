@@ -1,8 +1,12 @@
 #include "SemanticActions.h"
+
+#include "HiddenTags.h"
 #include "Object.h"
 #include "TreeTags.h"
+#include "Utilities.h"
 #include "Value.h"
 
+#include <algorithm>
 #include <cassert>
 
 /*********** Helper Functions ***********/
@@ -12,8 +16,9 @@ Object *ParseEmptyNode(const char *type) {
 
     auto node = new Object();
     node->Set(AST_TAG_TYPE_KEY, type);
+    SET_LINE(node);
 
-    assert(node->IsValid() && node->GetTotal() == 1);
+    assert(node->IsValid() && node->GetTotal() == 2);
     return node;
 }
 
@@ -24,8 +29,9 @@ Object *ParseSingleChild(const char *type, Object *child) {
     auto node = new Object();
     node->Set(AST_TAG_TYPE_KEY, type);
     node->Set(AST_TAG_CHILD, Value(child));
+    SET_LINE(node);
 
-    assert(node->IsValid() && node->GetTotal() == 2);
+    assert(node->IsValid() && node->GetTotal() == 3);
     return node;
 }
 
@@ -40,8 +46,9 @@ Object *ParseTwoChildren(const char *type, const char *type1, Object *child1, co
     node->Set(AST_TAG_TYPE_KEY, type);
     node->Set(type1, Value(child1));
     node->Set(type2, Value(child2));
+    SET_LINE(node);
 
-    assert(node->IsValid() && node->GetTotal() == 3);
+    assert(node->IsValid() && node->GetTotal() == 4);
     return node;
 }
 
@@ -52,6 +59,7 @@ Object *ParseID(const char *type, char *value) {
     auto node = new Object();
     node->Set(AST_TAG_TYPE_KEY, type);
     node->Set(AST_TAG_ID, Value(std::string(value)));
+    SET_LINE(node);
 
     /* When lexxer identifies an ID it always uses strdup */
     free(value);
@@ -65,7 +73,7 @@ Object *ParseRecursion(Object *parsed, Object *current) {
     assert(current && current->IsValid());
     assert(parsed->GetTotal() >= 1);
 
-    parsed->Set(parsed->GetTotal() - 1, Value(current));    //TODO: Convert GetTotal to GetNumeric ?
+    parsed->Set(parsed->GetNumericSize(), Value(current));
 
     assert(parsed->IsValid());
     return parsed;
@@ -85,6 +93,7 @@ Object *ParseCompleteRecursion(const char *type, Object *current, Object *rest) 
         Value v = *(*rest)[double(i)];
         table->Set(double(i + 1), v);
     }
+    SET_LINE(table);
 
     /* TODO: Should we delete rest? */
     rest->Clear();
@@ -110,12 +119,53 @@ Object *MergeLists(const char *type, Object *table1, Object *table2) {
         table->Set(double(table1->GetNumericSize() + i), v);
     }
     assert(table->GetNumericSize() == table1->GetNumericSize() + table2->GetNumericSize());
+    SET_LINE(table);
+
     /* TODO: Should we delete rest? */
     table1->Clear(), delete table1;
     table2->Clear(), delete table2;
 
     assert(table->IsValid());
     return table;
+}
+
+void CheckIdListRecurence(const Object &list) {
+    std::vector<std::string> vec;
+    for (register unsigned i = 0; i < list.GetNumericSize(); ++i) {
+        const Object node = *(list[i]->ToObject());
+        std::string name;
+        if (node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL) {
+            assert(node.ElementExists(AST_TAG_ID));
+            name = node[AST_TAG_ID]->ToString();
+        } else if (node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_ASSIGN) {
+            assert(node.ElementExists(AST_TAG_LVALUE));
+            const Object &formalNode = *(node[AST_TAG_LVALUE]->ToObject());
+            assert(formalNode[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FORMAL);
+            assert(formalNode.ElementExists(AST_TAG_ID));
+            name = formalNode[AST_TAG_ID]->ToString();
+        } else {
+            assert(false);
+        }
+        if (std::find(vec.begin(), vec.end(), name) != vec.end())
+            Utilities::SyntaxError("formal recurrence\n", GET_LINE(node));    //TODO Error or Warning
+        vec.push_back(name);
+    }
+}
+
+void CheckArgListRecurence(const Object &list) {
+    std::vector<std::string> vec;
+    for (register unsigned i = 0; i < list.GetNumericSize(); ++i) {
+        const Object node = *(list[i]->ToObject());
+        if (node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_NAMED) {
+            assert(node.ElementExists(AST_TAG_NAMED_KEY));
+            const Object &idNode = *(node[AST_TAG_NAMED_KEY]->ToObject());
+            assert(idNode.ElementExists(AST_TAG_ID));
+            std::string name = idNode[AST_TAG_ID]->ToString();
+            if (std::find(vec.begin(), vec.end(), name) != vec.end())
+                Utilities::SyntaxError("named argument recurrence\n", GET_LINE(node));    //TODO Error or Warning
+            vec.push_back(name);
+        }
+    }
 }
 
 /*********** Parse Functions ***********/
@@ -132,7 +182,8 @@ Object *ParseStmts(Object *stmts, Object *stmt) {
     assert(stmts && stmts->IsValid());
     assert(stmt && stmt->IsValid());
 
-    stmts->Set(stmts->GetTotal() - 1, Value(stmt));
+    stmts->Set(stmts->GetNumericSize(), Value(stmt));
+    SET_LINE(stmts);
 
     assert(stmts->IsValid());
     return stmts;
@@ -145,6 +196,7 @@ Object *ParseStmt(Object *stmt) {
 Object *ParseSemicolon(void) {
     auto node = new Object();
     node->Set(AST_TAG_TYPE_KEY, AST_TAG_STMT);
+    SET_LINE(node);
 
     assert(node->IsValid());
     return node;
@@ -282,8 +334,8 @@ Object *ParseLvalueCall(Object *lvalue, Object *elist) {
     return ParseTwoChildren(AST_TAG_CALL, AST_TAG_FUNCTION, lvalue, AST_TAG_ARGUMENTS, elist);
 }
 
-Object *ParseLvalueMethodCall(Object *lvalue, Object *id, Object* arguments){
-    Object* node = ParseTwoChildren(AST_TAG_CALL, AST_TAG_FUNCTION, id, AST_TAG_ARGUMENTS, arguments);
+Object *ParseLvalueMethodCall(Object *lvalue, Object *id, Object *arguments) {
+    Object *node = ParseTwoChildren(AST_TAG_CALL, AST_TAG_FUNCTION, id, AST_TAG_ARGUMENTS, arguments);    //Line set in here
     node->Set(AST_TAG_LVALUE, lvalue);
     return node;
 }
@@ -293,11 +345,15 @@ Object *ParseFuncdefCall(Object *funcdef, Object *elist) {
 }
 
 Object *ParseArgList(Object *arg, Object *rest) {
-    return ParseCompleteRecursion(AST_TAG_ARGLIST, arg, rest);
+    Object *list = ParseCompleteRecursion(AST_TAG_ARGLIST, arg, rest);
+    CheckArgListRecurence(*list);
+    return list;
 }
 
 Object *ParseMixedArgList(Object *positional, Object *named) {
-    return MergeLists(AST_TAG_ARGLIST, positional, named);
+    Object *list = MergeLists(AST_TAG_ARGLIST, positional, named);
+    CheckArgListRecurence(*list);
+    return list;
 }
 
 Object *ParseEmptyArgList(void) {
@@ -316,6 +372,7 @@ Object *ParseNamedArg(Object *id, Object *expr) {
     node->Set(AST_TAG_TYPE_KEY, AST_TAG_NAMED);
     node->Set(AST_TAG_NAMED_KEY, Value(id));
     node->Set(AST_TAG_NAMED_VALUE, Value(expr));
+    SET_LINE(node);
 
     assert(node->IsValid());
     return node;
@@ -367,6 +424,7 @@ Object *ParseFuncDef(Object *id, Object *idlist, Object *block) {
     node->Set(AST_TAG_FUNCTION_ID, Value(id));
     node->Set(AST_TAG_FUNCTION_FORMALS, Value(idlist));
     node->Set(AST_TAG_STMT, Value(block));
+    SET_LINE(node);
 
     assert(node->IsValid());
     return node;
@@ -380,6 +438,7 @@ Object *ParseNumber(double value) {
     auto node = new Object();
     node->Set(AST_TAG_TYPE_KEY, AST_TAG_NUMBER);
     node->Set(AST_TAG_VALUE, Value(value));
+    SET_LINE(node);
 
     assert(node->IsValid());
     return node;
@@ -391,6 +450,7 @@ Object *ParseString(char *value) {
     auto node = new Object();
     node->Set(AST_TAG_TYPE_KEY, AST_TAG_STRING);
     node->Set(AST_TAG_VALUE, Value(std::string(value)));
+    SET_LINE(node);
 
     /* When lexxer identifies an ID it always uses strdup */
     free(value);
@@ -403,6 +463,7 @@ Object *ParseNil(void) {
     auto node = new Object();
     node->Set(AST_TAG_TYPE_KEY, AST_TAG_NIL);
     node->Set(AST_TAG_VALUE, Value(NilTypeValue::Nil));
+    SET_LINE(node);
 
     assert(node->IsValid());
     return node;
@@ -412,6 +473,7 @@ Object *ParseTrue(void) {
     auto node = new Object();
     node->Set(AST_TAG_TYPE_KEY, AST_TAG_TRUE);
     node->Set(AST_TAG_VALUE, Value(true));
+    SET_LINE(node);
 
     assert(node->IsValid());
     return node;
@@ -421,6 +483,7 @@ Object *ParseFalse(void) {
     auto node = new Object();
     node->Set(AST_TAG_TYPE_KEY, AST_TAG_FALSE);
     node->Set(AST_TAG_VALUE, Value(false));
+    SET_LINE(node);
 
     assert(node->IsValid());
     return node;
@@ -439,11 +502,15 @@ Object *ParseOptionals(Object *rest, Object *assignment) {
 }
 
 Object *ParseIdList(Object *id, Object *rest) {
-    return ParseCompleteRecursion(AST_TAG_ID_LIST, id, rest);
+    Object *list = ParseCompleteRecursion(AST_TAG_ID_LIST, id, rest);
+    CheckIdListRecurence(*list);
+    return list;
 }
 
 Object *ParseMixedIdList(Object *required, Object *optionals) {
-    return MergeLists(AST_TAG_ID_LIST, required, optionals);
+    Object *list = MergeLists(AST_TAG_ID_LIST, required, optionals);
+    CheckIdListRecurence(*list);
+    return list;
 }
 
 // ParseOptionalIdList not used in parser.y, also not in header, delete?
@@ -466,6 +533,8 @@ Object *ParseIfStmt(Object *cond, Object *stmt, Object *elseStmt) {
 
     if (elseStmt) node->Set(AST_TAG_ELSE_STMT, Value(elseStmt));
 
+    SET_LINE(node);
+
     assert(node->IsValid());
     return node;
 }
@@ -486,6 +555,7 @@ Object *ParseForStmt(Object *elist1, Object *expr, Object *elist2, Object *stmt)
     node->Set(AST_TAG_CONDITION, Value(expr));
     node->Set(AST_TAG_FOR_POST_ELIST, Value(elist2));
     node->Set(AST_TAG_STMT, Value(stmt));
+    SET_LINE(node);
 
     assert(node->IsValid());
     return node;
@@ -496,6 +566,8 @@ Object *ParseReturnStmt(Object *expr) {
     node->Set(AST_TAG_TYPE_KEY, AST_TAG_RETURN);
 
     if (expr) node->Set(AST_TAG_CHILD, Value(expr));
+
+    SET_LINE(node);
 
     assert(node->IsValid());
     return node;

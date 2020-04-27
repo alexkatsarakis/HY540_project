@@ -2,6 +2,7 @@
 #define _INTERPRETER_H_
 
 #include "EvalDispatcher.h"
+#include "HiddenTags.h"
 #include "Object.h"
 #include "Symbol.h"
 #include "Value.h"
@@ -15,11 +16,7 @@ private:
 
     struct BreakException {};
     struct ContinueException {};
-    struct ReturnException {
-        const Value retVal;
-        ReturnException() : retVal(Value()) {}
-        ReturnException(const Value &_retVal) : retVal(_retVal) {}
-    };
+    struct ReturnException {};
 
     enum MathOp { Plus,
                   Minus,
@@ -35,6 +32,7 @@ private:
 
     EvalDispatcher dispatcher;
     Value retvalRegister;
+    static unsigned lineNumber;
     bool inFunctionScope;    // Do not recreate scope on function body enter. We do not allow shadowing. See EvalCall, EvalBlock.
 
     Object *currentScope;
@@ -64,6 +62,7 @@ private:
     bool ValuesAreEqual(const Value &v1, const Value &v2);
     void AssignToContext(const Symbol &lvalue, const Value &rvalue);
     void RemoveFromContext(const Symbol &lvalue, const Value &rvalue);
+    void CleanupForLoop(Value & elist1, Value & elist2);
 
     /****** Evaluation Side Actions ******/
 
@@ -109,6 +108,9 @@ private:
     const Value GetNumberFromContext(Object *table, const Value &index, bool lookupFail);
     Symbol ClosureSetElem(const Value &lvalue, const Value &index);
     Symbol ObjectSetElem(const Value &lvalue, const Value &index);
+    unsigned GetLineNumber(void) const;
+    void SetLineNumber(unsigned num);
+
     /****** Evaluators ******/
 
     const Value EvalProgram(Object &node);
@@ -177,19 +179,14 @@ public:
 
     void Execute(Object &program);
 
-    static void RuntimeError(const std::string &msg);
+    static void RuntimeError(const std::string &msg, unsigned line = 0);
 
-    static void Assert(const std::string &msg);
+    static void RuntimeWarning(const std::string &msg, unsigned line = 0);
+
+    static void Assert(const std::string &msg, unsigned line = 0);
 
     virtual ~Interpreter();
 };
-
-/****** Reserved Fields ******/
-#define PREVIOUS_RESERVED_FIELD "$previous"
-#define OUTER_RESERVED_FIELD "$outer"
-#define RETVAL_RESERVED_FIELD "$retval"
-#define CLOSURE_RESERVED_FIELD "$closure"
-#define POSITIONAL_SIZE_RESERVED_FIELD "$positional_size"
 
 /****** Macros Shortcuts ******/
 #define NIL_VAL Value(NilTypeValue::Nil)
@@ -199,5 +196,10 @@ public:
 #define INSTALL(tag, method) dispatcher.Install(tag, [this](Object &node) { return method(node); })
 #define INSTALL_WRITE_FUNC(tag, method) dispatcher.InstallWriteFunc(tag, [this](Object &node) { return method(node); })
 #define EVAL_WRITE(type) dispatcher.EvalWriteFunc(*node[type]->ToObject_NoConst())
+#define GET_LINE(node) static_cast<unsigned>(node[LINE_NUMBER_RESERVED_FIELD]->ToNumber())
+#define CHANGE_LINE() \
+    if (node.ElementExists(LINE_NUMBER_RESERVED_FIELD)) {\
+        SetLineNumber(static_cast<unsigned>(node[LINE_NUMBER_RESERVED_FIELD]->ToNumber()));\
+    }
 
 #endif

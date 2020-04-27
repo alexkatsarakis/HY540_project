@@ -7,7 +7,7 @@
 #include <cassert>
 #include <fstream>
 
-#define UNPARSE_VALUE "$$UnparseValue"
+#include "HiddenTags.h"
 using namespace std;
 
 void UnparseVisitor::WriteFile(const std::string &program) {
@@ -16,10 +16,10 @@ void UnparseVisitor::WriteFile(const std::string &program) {
     f.close();
 }
 const std::string UnparseVisitor::GetUnparsed(const Value *val) const {
-    const Value *unparseVal = val->ToObject_NoConst()->GetAndRemove(UNPARSE_VALUE);
+    const Value *unparseVal = val->ToObject_NoConst()->GetAndRemove(UNPARSE_VALUE_RESERVED_FIELD);
     string str = unparseVal->ToString();
     // unparseVal->FromUndef();    // bug on that
-    // delete unparseVal;
+    delete unparseVal;
     return str;
 }
 const std::string UnparseVisitor::UnparseProgram(const std::string &stmts) {
@@ -143,7 +143,7 @@ const std::string UnparseVisitor::UnparseCallPARENTHESIS(const std::string &call
 const std::string UnparseVisitor::UnparseCallPARENTHESISTWIN(const std::string &funcdef, const std::string &arglist) {
     return string("(" + funcdef + ")" + "(" + arglist + ")");
 }
-const std::string UnparseVisitor::UnparseMethodCall(const std::string &lvalue, const std::string id, const std::string arglist){
+const std::string UnparseVisitor::UnparseMethodCall(const std::string &lvalue, const std::string id, const std::string arglist) {
     return lvalue + ".." + id + "(" + arglist + ")";
 }
 const std::string UnparseVisitor::UnparseArgumentList(const std::vector<std::string> &arguments) {
@@ -248,7 +248,7 @@ TreeVisitor *UnparseVisitor::Clone(void) const {
 
 void UnparseVisitor::VisitProgram(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseProgram(GetUnparsed(node[AST_TAG_CHILD]))));
 }
 void UnparseVisitor::VisitStatements(const Object &node) {
@@ -256,112 +256,112 @@ void UnparseVisitor::VisitStatements(const Object &node) {
     for (unsigned i = 0; i < node.GetNumericSize(); ++i)
         statements.push_back(GetUnparsed(node[i]));
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseStatements(statements)));
 }
 void UnparseVisitor::VisitStatement(const Object &node) {
     if (!node.ElementExists(AST_TAG_CHILD))
         const_cast<Object &>(node).Set(
-            UNPARSE_VALUE,
+            UNPARSE_VALUE_RESERVED_FIELD,
             Value(UnparseStatement("")));
     else {
         Object child = *(node[AST_TAG_CHILD]->ToObject());
         if (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR)
             const_cast<Object &>(node).Set(
-                UNPARSE_VALUE,
+                UNPARSE_VALUE_RESERVED_FIELD,
                 Value(UnparseStatement(GetUnparsed(node[AST_TAG_CHILD]))));
         else
             const_cast<Object &>(node).Set(
-                UNPARSE_VALUE,
+                UNPARSE_VALUE_RESERVED_FIELD,
                 Value(UnparseStatementNOSEMICOLON(GetUnparsed(node[AST_TAG_CHILD]))));
     }
 }
 void UnparseVisitor::VisitExpression(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseExpression(GetUnparsed(node[AST_TAG_CHILD]))));
 }
 void UnparseVisitor::VisitAssign(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseAssign(GetUnparsed(node[AST_TAG_LVALUE]),
                             GetUnparsed(node[AST_TAG_RVALUE]))));
 }
 void UnparseVisitor::VisitPlus(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparsePlus(GetUnparsed(node[AST_TAG_FIRST_EXPR]),
                           GetUnparsed(node[AST_TAG_SECOND_EXPR]))));
 }
 void UnparseVisitor::VisitMinus(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseMinus(GetUnparsed(node[AST_TAG_FIRST_EXPR]),
                            GetUnparsed(node[AST_TAG_SECOND_EXPR]))));
 }
 void UnparseVisitor::VisitMul(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseMul(GetUnparsed(node[AST_TAG_FIRST_EXPR]),
                          GetUnparsed(node[AST_TAG_SECOND_EXPR]))));
 }
 void UnparseVisitor::VisitDiv(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseDiv(GetUnparsed(node[AST_TAG_FIRST_EXPR]),
                          GetUnparsed(node[AST_TAG_SECOND_EXPR]))));
 }
 void UnparseVisitor::VisitModulo(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseModulo(GetUnparsed(node[AST_TAG_FIRST_EXPR]),
                             GetUnparsed(node[AST_TAG_SECOND_EXPR]))));
 }
 void UnparseVisitor::VisitGreater(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseGreater(GetUnparsed(node[AST_TAG_FIRST_EXPR]),
                              GetUnparsed(node[AST_TAG_SECOND_EXPR]))));
 }
 void UnparseVisitor::VisitLess(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseLess(GetUnparsed(node[AST_TAG_FIRST_EXPR]),
                           GetUnparsed(node[AST_TAG_SECOND_EXPR]))));
 }
 void UnparseVisitor::VisitGreaterEqual(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseGreaterEqual(GetUnparsed(node[AST_TAG_FIRST_EXPR]),
                                   GetUnparsed(node[AST_TAG_SECOND_EXPR]))));
 }
 void UnparseVisitor::VisitLessEqual(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseLessEqual(GetUnparsed(node[AST_TAG_FIRST_EXPR]),
                                GetUnparsed(node[AST_TAG_SECOND_EXPR]))));
 }
 void UnparseVisitor::VisitEqual(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseEqual(GetUnparsed(node[AST_TAG_FIRST_EXPR]),
                            GetUnparsed(node[AST_TAG_SECOND_EXPR]))));
 }
 void UnparseVisitor::VisitNotEqual(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseNotEqual(GetUnparsed(node[AST_TAG_FIRST_EXPR]),
                               GetUnparsed(node[AST_TAG_SECOND_EXPR]))));
 }
 void UnparseVisitor::VisitAnd(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseAnd(GetUnparsed(node[AST_TAG_FIRST_EXPR]),
                          GetUnparsed(node[AST_TAG_SECOND_EXPR]))));
 }
 void UnparseVisitor::VisitOr(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseOr(GetUnparsed(node[AST_TAG_FIRST_EXPR]),
                         GetUnparsed(node[AST_TAG_SECOND_EXPR]))));
 }
@@ -369,93 +369,93 @@ void UnparseVisitor::VisitTerm(const Object &node) {
     auto child = *(node[AST_TAG_CHILD]->ToObject());
     if (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR)
         const_cast<Object &>(node).Set(
-            UNPARSE_VALUE,
+            UNPARSE_VALUE_RESERVED_FIELD,
             Value(UnparseTermPARENTHESIS(GetUnparsed(node[AST_TAG_CHILD]))));
     else
         const_cast<Object &>(node).Set(
-            UNPARSE_VALUE,
+            UNPARSE_VALUE_RESERVED_FIELD,
             Value(UnparseTerm(GetUnparsed(node[AST_TAG_CHILD]))));
 }
 void UnparseVisitor::VisitUnaryMinus(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseUnaryMinus(GetUnparsed(node[AST_TAG_CHILD]))));
 }
 void UnparseVisitor::VisitNot(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseNot(GetUnparsed(node[AST_TAG_CHILD]))));
 }
 void UnparseVisitor::VisitPlusPlusBefore(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparsePlusPlusBefore(GetUnparsed(node[AST_TAG_CHILD]))));
 }
 void UnparseVisitor::VisitPlusPlusAfter(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparsePlusPlusAfter(GetUnparsed(node[AST_TAG_CHILD]))));
 }
 void UnparseVisitor::VisitMinusMinusBefore(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseMinusMinusBefore(GetUnparsed(node[AST_TAG_CHILD]))));
 }
 void UnparseVisitor::VisitMinusMinusAfter(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseMinusMinusAfter(GetUnparsed(node[AST_TAG_CHILD]))));
 }
 void UnparseVisitor::VisitPrimary(const Object &node) {
     auto child = *(node[AST_TAG_CHILD]->ToObject());
     if (child[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FUNCTION_DEF)
         const_cast<Object &>(node).Set(
-            UNPARSE_VALUE,
+            UNPARSE_VALUE_RESERVED_FIELD,
             Value(UnparsePrimaryPARENTHESIS(GetUnparsed(node[AST_TAG_CHILD]))));
     else
         const_cast<Object &>(node).Set(
-            UNPARSE_VALUE,
+            UNPARSE_VALUE_RESERVED_FIELD,
             Value(UnparsePrimary(GetUnparsed(node[AST_TAG_CHILD]))));
 }
 void UnparseVisitor::VisitLValue(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseLValue(GetUnparsed(node[AST_TAG_CHILD]))));
 }
 void UnparseVisitor::VisitId(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseId(node[AST_TAG_ID]->ToString())));
 }
 void UnparseVisitor::VisitLocal(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseLocal(node[AST_TAG_ID]->ToString())));
 }
 void UnparseVisitor::VisitDoubleColon(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseDoubleColon(node[AST_TAG_ID]->ToString())));
 }
 void UnparseVisitor::VisitDollar(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseDollar(node[AST_TAG_ID]->ToString())));
 }
 void UnparseVisitor::VisitMember(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseMember(GetUnparsed(node[AST_TAG_CHILD]))));
 }
 void UnparseVisitor::VisitDot(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseDot(GetUnparsed(node[AST_TAG_LVALUE]),
                          GetUnparsed(node[AST_TAG_ID]))));
 }
 void UnparseVisitor::VisitBracket(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseBracket(GetUnparsed(node[AST_TAG_LVALUE]),
                              GetUnparsed(node[AST_TAG_EXPR]))));
 }
@@ -463,32 +463,26 @@ void UnparseVisitor::VisitCall(const Object &node) {
     const Object value = *(node[AST_TAG_FUNCTION]->ToObject());
     const string childType = value[AST_TAG_TYPE_KEY]->ToString();
 
-    if (node.ElementExists(AST_TAG_LVALUE)){
+    if (node.ElementExists(AST_TAG_LVALUE)) {
         const_cast<Object &>(node).Set(
-            UNPARSE_VALUE,
+            UNPARSE_VALUE_RESERVED_FIELD,
             Value(UnparseMethodCall(
                 GetUnparsed(node[AST_TAG_LVALUE]),
                 GetUnparsed(node[AST_TAG_FUNCTION]),
-                GetUnparsed(node[AST_TAG_ARGUMENTS])
-            ))
-        );
-    }else{
+                GetUnparsed(node[AST_TAG_ARGUMENTS]))));
+    } else {
         if (childType == AST_TAG_FUNCTION_DEF)
             const_cast<Object &>(node).Set(
-                UNPARSE_VALUE,
+                UNPARSE_VALUE_RESERVED_FIELD,
                 Value(UnparseCallPARENTHESISTWIN(
                     GetUnparsed(node[AST_TAG_FUNCTION]),
-                    GetUnparsed(node[AST_TAG_ARGUMENTS])
-                ))
-            );
+                    GetUnparsed(node[AST_TAG_ARGUMENTS]))));
         else
             const_cast<Object &>(node).Set(
-                UNPARSE_VALUE,
+                UNPARSE_VALUE_RESERVED_FIELD,
                 Value(UnparseCallPARENTHESIS(
                     GetUnparsed(node[AST_TAG_FUNCTION]),
-                    GetUnparsed(node[AST_TAG_ARGUMENTS])
-                ))
-            );
+                    GetUnparsed(node[AST_TAG_ARGUMENTS]))));
     }
 }
 void UnparseVisitor::VisitArgumentList(const Object &node) {
@@ -496,12 +490,12 @@ void UnparseVisitor::VisitArgumentList(const Object &node) {
     for (unsigned i = 0; i < node.GetNumericSize(); ++i)
         arguments.push_back(GetUnparsed(node[i]));
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseArgumentList(arguments)));
 }
 void UnparseVisitor::VisitNamedArgument(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseNamedArgument(GetUnparsed(node[AST_TAG_NAMED_KEY]),
                                    GetUnparsed(node[AST_TAG_NAMED_VALUE]))));
 }
@@ -510,12 +504,12 @@ void UnparseVisitor::VisitExpressionList(const Object &node) {
     for (unsigned i = 0; i < node.GetNumericSize(); ++i)
         expressions.push_back(GetUnparsed(node[i]));
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseExpressionList(expressions)));
 }
 void UnparseVisitor::VisitObjectDef(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseObjectDef(GetUnparsed(node[AST_TAG_CHILD]))));
 }
 void UnparseVisitor::VisitIndexed(const Object &node) {
@@ -523,63 +517,63 @@ void UnparseVisitor::VisitIndexed(const Object &node) {
     for (unsigned i = 0; i < node.GetNumericSize(); ++i)
         indexedElements.push_back(GetUnparsed(node[i]));
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseIndexed(indexedElements)));
 }
 void UnparseVisitor::VisitIndexedElem(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseIndexedElem(GetUnparsed(node[AST_TAG_OBJECT_KEY]),
                                  GetUnparsed(node[AST_TAG_OBJECT_VALUE]))));
 }
 void UnparseVisitor::VisitBlock(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseBlock(GetUnparsed(node[AST_TAG_CHILD]))));
 }
 void UnparseVisitor::VisitFunctionDef(const Object &node) {
     const string funcId = GetUnparsed(node[AST_TAG_FUNCTION_ID]);
     if (funcId.find("$") != std::string::npos)
         const_cast<Object &>(node).Set(
-            UNPARSE_VALUE,
+            UNPARSE_VALUE_RESERVED_FIELD,
             Value(UnparseFunctionDef("",
                                      GetUnparsed(node[AST_TAG_FUNCTION_FORMALS]),
                                      GetUnparsed(node[AST_TAG_STMT]))));
     else
         const_cast<Object &>(node).Set(
-            UNPARSE_VALUE,
+            UNPARSE_VALUE_RESERVED_FIELD,
             Value(UnparseFunctionDef(funcId,
                                      GetUnparsed(node[AST_TAG_FUNCTION_FORMALS]),
                                      GetUnparsed(node[AST_TAG_STMT]))));
 }
 void UnparseVisitor::VisitConst(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseConst(GetUnparsed(node[AST_TAG_CHILD]))));
 }
 void UnparseVisitor::VisitNumber(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseNumber(node[AST_TAG_VALUE]->ToNumber())));
 }
 void UnparseVisitor::VisitString(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseString(node[AST_TAG_VALUE]->ToString())));
 }
 void UnparseVisitor::VisitNil(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseNil()));
 }
 void UnparseVisitor::VisitTrue(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseTrue()));
 }
 void UnparseVisitor::VisitFalse(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseFalse()));
 }
 void UnparseVisitor::VisitIdList(const Object &node) {
@@ -587,36 +581,36 @@ void UnparseVisitor::VisitIdList(const Object &node) {
     for (unsigned i = 0; i < node.GetNumericSize(); ++i)
         ids.push_back(GetUnparsed(node[i]));
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseIdList(ids)));
 }
 void UnparseVisitor::VisitFormal(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseId(node[AST_TAG_ID]->ToString())));
 }
 void UnparseVisitor::VisitIf(const Object &node) {
     if (node.ElementExists(AST_TAG_ELSE_STMT))
         const_cast<Object &>(node).Set(
-            UNPARSE_VALUE,
+            UNPARSE_VALUE_RESERVED_FIELD,
             Value(UnparseIf(GetUnparsed(node[AST_TAG_CONDITION]),
                             GetUnparsed(node[AST_TAG_STMT]),
                             GetUnparsed(node[AST_TAG_ELSE_STMT]))));
     else
         const_cast<Object &>(node).Set(
-            UNPARSE_VALUE,
+            UNPARSE_VALUE_RESERVED_FIELD,
             Value(UnparseIf(GetUnparsed(node[AST_TAG_CONDITION]),
                             GetUnparsed(node[AST_TAG_STMT]))));
 }
 void UnparseVisitor::VisitWhile(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseWhile(GetUnparsed(node[AST_TAG_CONDITION]),
                            GetUnparsed(node[AST_TAG_STMT]))));
 }
 void UnparseVisitor::VisitFor(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseFor(GetUnparsed(node[AST_TAG_FOR_PRE_ELIST]),
                          GetUnparsed(node[AST_TAG_CONDITION]),
                          GetUnparsed(node[AST_TAG_FOR_POST_ELIST]),
@@ -625,20 +619,20 @@ void UnparseVisitor::VisitFor(const Object &node) {
 void UnparseVisitor::VisitReturn(const Object &node) {
     if (node.ElementExists(AST_TAG_CHILD))
         const_cast<Object &>(node).Set(
-            UNPARSE_VALUE,
+            UNPARSE_VALUE_RESERVED_FIELD,
             Value(UnparseReturn(GetUnparsed(node[AST_TAG_CHILD]))));
     else
         const_cast<Object &>(node).Set(
-            UNPARSE_VALUE,
+            UNPARSE_VALUE_RESERVED_FIELD,
             Value(UnparseReturn()));
 }
 void UnparseVisitor::VisitBreak(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseBreak()));
 }
 void UnparseVisitor::VisitContinue(const Object &node) {
     const_cast<Object &>(node).Set(
-        UNPARSE_VALUE,
+        UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseContinue()));
 }
