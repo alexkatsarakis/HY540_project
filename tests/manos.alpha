@@ -51,3 +51,16 @@ func();
 func = outer(35);
 func.$closure.x = 40;
 func();
+
+//func.$closure = "text";
+
+function killer() {
+    return "$";
+}
+
+t = [];
+//t.$foobar = 20;
+//t.$previous = "string";
+//t.$outer = 10;
+t.$parent = false;
+t[killer() + "out" + "er"] = 20;

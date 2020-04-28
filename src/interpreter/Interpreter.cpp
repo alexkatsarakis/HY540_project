@@ -42,22 +42,18 @@ const Value Interpreter::EvalAssign(Object &node) {
     Symbol lvalue = EVAL_WRITE(AST_TAG_LVALUE);
     const Value rvalue = EVAL(AST_TAG_RVALUE);
 
-    CHANGE_LINE();
-
     assert(lvalue.IsValid());
     assert(rvalue.IsValid());
 
-    if (lvalue.IsIndexString() &&
-        IsLibFunc(lvalue.ToString()) &&
-        IsGlobalScope(lvalue.GetContext()))
-        RuntimeError("Cannot modify library function \"" + lvalue.ToString() + "\"");
+    CHANGE_LINE();
 
-        /* Cases of assignment:
-         * 1) f.$closure = [];
-         * 2) t.x = nil;
-         * 3) Anything else
-         */
+    ValidateAssignment(lvalue, rvalue);
 
+    /* Cases of assignment:
+     * 1) f.$closure = [];
+     * 2) t.x = nil;
+     * 3) Anything else
+     */
     if (lvalue.IsClosureChange())
         ChangeClosure(lvalue, rvalue);
     else if (lvalue.IsContextTable() && rvalue.IsNil())

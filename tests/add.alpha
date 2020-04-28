@@ -1,8 +1,13 @@
-object1 = [];
-object1[0] = 1;
+{
+    x = 5;
+    function f(){}
 
-function get(this, ind){
-    return this[ind];
+    {
+        {
+            y = true;
+        }
+    }
+
+    f();
+    print(x);
 }
-
-print(get(object1, ind : 0));

@@ -65,6 +65,7 @@ private:
     void RemoveFromContext(const Symbol &lvalue, const Value &rvalue);
     void ChangeClosure(const Symbol & lvalue, const Value & rvalue);
     void CleanupForLoop(Value & elist1, Value & elist2);
+    void ValidateAssignment(const Symbol & lvalue, const Value & rvalue);
 
     /****** Evaluation Side Actions ******/
 
@@ -199,9 +200,35 @@ public:
 #define INSTALL_WRITE_FUNC(tag, method) dispatcher.InstallWriteFunc(tag, [this](Object &node) { return method(node); })
 #define EVAL_WRITE(type) dispatcher.EvalWriteFunc(*node[type]->ToObject_NoConst())
 #define GET_LINE(node) static_cast<unsigned>(node[LINE_NUMBER_RESERVED_FIELD]->ToNumber())
+
 #define CHANGE_LINE() \
     if (node.ElementExists(LINE_NUMBER_RESERVED_FIELD)) {\
         SetLineNumber(static_cast<unsigned>(node[LINE_NUMBER_RESERVED_FIELD]->ToNumber()));\
     }
+
+#define IS_CLOSURE_CHANGE() \
+    (lvalue.IsProgramFunction() && index.IsString() && index.ToString() == CLOSURE_RESERVED_FIELD)
+
+#define IS_LIB_FUNC()\
+    (lvalue.IsIndexString() &&\
+     IsLibFunc(lvalue.ToString()) &&\
+     IsGlobalScope(lvalue.GetContext()))
+
+#define IS_DOLLAR_ID()\
+    (lvalue.IsIndexString() &&\
+     lvalue.ToString()[0] == '$' &&\
+     lvalue.ToString() != CLOSURE_RESERVED_FIELD)
+
+#define OBJECT_REQUIRING_FIELD()\
+    (lvalue.ToString() == OUTER_RESERVED_FIELD ||\
+     lvalue.ToString() == CLOSURE_RESERVED_FIELD ||\
+     lvalue.ToString() == PREVIOUS_RESERVED_FIELD ||\
+     lvalue.ToString() == PARENT_RESERVED_FIELD)
+
+#define IS_OBJECT_REQUIRING_FIELD()\
+    (lvalue.IsIndexString() &&\
+     lvalue.ToString()[0] == '$' &&\
+     OBJECT_REQUIRING_FIELD() &&\
+     !rvalue.IsObject())\
 
 #endif
