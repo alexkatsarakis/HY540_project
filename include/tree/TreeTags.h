@@ -95,6 +95,7 @@
 #define AST_TAG_LOCAL_ID "local_id"
 #define AST_TAG_DOUBLECOLON_ID "doublecolon_id"
 #define AST_TAG_DOLLAR_ID "dollar_id"
+#define AST_TAG_DOLLAR_LAMBDA "dollar_lambda" //?!
 
 #define AST_TAG_MEMBER "member"
 

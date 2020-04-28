@@ -145,6 +145,7 @@ private:
     const Value EvalLocal(Object &node);
     const Value EvalDoubleColon(Object &node);
     const Value EvalDollar(Object &node);
+    const Value EvalDollarLambda(Object &node); //?!
     const Value EvalMember(Object &node);
     const Value EvalDot(Object &node);
     const Value EvalBracket(Object &node);

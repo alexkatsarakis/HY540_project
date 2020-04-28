@@ -51,6 +51,7 @@ public:
     IMPL_VISIT(Local)
     IMPL_VISIT(DoubleColon)
     IMPL_VISIT(Dollar)
+    IMPL_VISIT(DollarLambda) //?!
     IMPL_VISIT(Member)
     IMPL_VISIT(Dot)
     IMPL_VISIT(Bracket)

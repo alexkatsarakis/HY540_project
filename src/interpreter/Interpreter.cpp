@@ -281,6 +281,26 @@ const Value Interpreter::EvalBracket(Object &node) {
     return TableGetElem(lvalue, index);
 }
 
+
+
+const Value Interpreter::EvalDollarLambda(Object &node) {
+    ASSERT_TYPE(AST_TAG_DOLLAR_LAMBDA);
+    const Object* parent = node[PARENT_RESERVED_FIELD]->ToObject();
+    while((*parent)[AST_TAG_TYPE_KEY]->ToString() != AST_TAG_PROGRAM){
+        if((*parent)[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FUNCTION_DEF){
+            const Object* funcDefID = (*parent)[AST_TAG_FUNCTION_ID]->ToObject();
+            std::string symbol = (*funcDefID)[AST_TAG_ID]->ToString();
+            Object *scope = FindScope(symbol);
+            Value test = (*(*scope)[symbol]);
+            return (*(*scope)[symbol]);
+        }
+        parent = (*parent)[PARENT_RESERVED_FIELD]->ToObject();
+    }
+    RuntimeError("$lambda Can only be used inside of a function");
+    return NIL_VAL;
+}
+
+
 const Value Interpreter::EvalCall(Object &node) {
     ASSERT_TYPE(AST_TAG_CALL);
     Value callable, lvalue;

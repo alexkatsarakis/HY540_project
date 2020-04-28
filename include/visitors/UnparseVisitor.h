@@ -46,6 +46,7 @@ private:
     const std::string UnparseLocal(const std::string &value);
     const std::string UnparseDoubleColon(const std::string &value);
     const std::string UnparseDollar(const std::string &value);
+    const std::string UnparseDollarLambda(const std::string &value); //?!
     const std::string UnparseMember(const std::string &member);
     const std::string UnparseDot(const std::string &lvalue, const std::string &id);
     const std::string UnparseBracket(const std::string &lvalue, const std::string &id);
@@ -111,6 +112,7 @@ public:
     void VisitLocal(const Object &node) override;
     void VisitDoubleColon(const Object &node) override;
     void VisitDollar(const Object &node) override;
+    void VisitDollarLambda(const Object &node) override; //?!
     void VisitMember(const Object &node) override;
     void VisitDot(const Object &node) override;
     void VisitBracket(const Object &node) override;

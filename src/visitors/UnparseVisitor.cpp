@@ -128,6 +128,9 @@ const std::string UnparseVisitor::UnparseDoubleColon(const std::string &value) {
 const std::string UnparseVisitor::UnparseDollar(const std::string &value) {
     return string(value);
 }
+const std::string UnparseVisitor::UnparseDollarLambda(const std::string &value) { //?!
+    return string(value);
+}
 const std::string UnparseVisitor::UnparseMember(const std::string &member) {
     return member;
 }
@@ -441,6 +444,11 @@ void UnparseVisitor::VisitDollar(const Object &node) {
     const_cast<Object &>(node).Set(
         UNPARSE_VALUE_RESERVED_FIELD,
         Value(UnparseDollar(node[AST_TAG_ID]->ToString())));
+}
+void UnparseVisitor::VisitDollarLambda(const Object &node) { //?!
+    const_cast<Object &>(node).Set(
+        UNPARSE_VALUE_RESERVED_FIELD,
+        Value(UnparseDollarLambda(node[AST_TAG_ID]->ToString())));
 }
 void UnparseVisitor::VisitMember(const Object &node) {
     const_cast<Object &>(node).Set(

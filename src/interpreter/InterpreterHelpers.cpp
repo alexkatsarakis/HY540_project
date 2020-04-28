@@ -68,6 +68,7 @@ void Interpreter::InstallEvaluators(void) {
     INSTALL(AST_TAG_OBJECT_DEF, EvalObjectDef);
     INSTALL(AST_TAG_MEMBER, EvalMember);
     INSTALL(AST_TAG_DOT, EvalDot);
+    INSTALL(AST_TAG_DOLLAR_LAMBDA, EvalDollarLambda); //?!
     INSTALL(AST_TAG_BRACKET, EvalBracket);
     INSTALL(AST_TAG_FORMAL, EvalFormal);
     /* Evaluators used for write access */
@@ -820,6 +821,7 @@ bool Interpreter::IsReservedField(const std::string &index) const {
             index == UNPARSE_VALUE_RESERVED_FIELD ||
             index == PREVIOUS_RESERVED_FIELD ||
             index == OUTER_RESERVED_FIELD ||
+            index == LAMBDA_RESERVER_FIELD ||
             index == RETVAL_RESERVED_FIELD ||
             index == CLOSURE_RESERVED_FIELD ||
             index == LINE_NUMBER_RESERVED_FIELD ||

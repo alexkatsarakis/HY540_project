@@ -42,6 +42,7 @@ public:
     virtual void VisitLocal(const Object &node) override { DELETE(); }
     virtual void VisitDoubleColon(const Object &node) override { DELETE(); }
     virtual void VisitDollar(const Object &node) override { DELETE(); }
+    virtual void VisitDollarLambda(const Object &node) override { DELETE(); } //?!
     virtual void VisitMember(const Object &node) override { DELETE(); }
     virtual void VisitDot(const Object &node) override { DELETE(); }
     virtual void VisitBracket(const Object &node) override { DELETE(); }

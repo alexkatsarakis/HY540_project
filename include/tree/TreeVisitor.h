@@ -37,6 +37,7 @@ public:
     virtual void VisitLocal(const Object &node) = 0;
     virtual void VisitDoubleColon(const Object &node) = 0;
     virtual void VisitDollar(const Object &node) = 0;
+    virtual void VisitDollarLambda(const Object &node) = 0; //?!
     virtual void VisitMember(const Object &node) = 0;
     virtual void VisitDot(const Object &node) = 0;
     virtual void VisitBracket(const Object &node) = 0;

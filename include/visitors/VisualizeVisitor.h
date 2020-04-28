@@ -84,6 +84,7 @@ public:
     virtual void VisitLocal(const Object &node) override;
     virtual void VisitDoubleColon(const Object &node) override;
     virtual void VisitDollar(const Object &node) override;
+    virtual void VisitDollarLambda(const Object &node) override;//?!
     virtual void VisitMember(const Object &node) override;
     virtual void VisitDot(const Object &node) override;
     virtual void VisitBracket(const Object &node) override;

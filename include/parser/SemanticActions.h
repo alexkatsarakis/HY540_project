@@ -72,6 +72,8 @@ Object *ParseDoubleColonID(char *value);
 
 Object *ParseDollarID(char *value);
 
+Object *ParseDollarLambda(char *value); //?!
+
 Object *ParseMember(Object *member);
 
 Object *ParseMemberDot(Object *lvalue, Object *id);

@@ -51,6 +51,7 @@ void TreeHost::InstallAllAcceptors(void) {
     InstallAcceptor(AST_TAG_LOCAL_ID, LAMBDA(AcceptLocal));
     InstallAcceptor(AST_TAG_DOUBLECOLON_ID, LAMBDA(AcceptDoubleColon));
     InstallAcceptor(AST_TAG_DOLLAR_ID, LAMBDA(AcceptDollar));
+    InstallAcceptor(AST_TAG_DOLLAR_LAMBDA, LAMBDA(AcceptDollarLambda));
     InstallAcceptor(AST_TAG_MEMBER, LAMBDA(AcceptMember));
     InstallAcceptor(AST_TAG_DOT, LAMBDA(AcceptDot));
     InstallAcceptor(AST_TAG_BRACKET, LAMBDA(AcceptBracket));
@@ -355,6 +356,13 @@ void TreeHost::AcceptDollar(const Object &node) {
     visitor->VisitDollar(node);
 }
 
+void TreeHost::AcceptDollarLambda(const Object &node) { //?!
+    assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_DOLLAR_LAMBDA);
+    assert(node.ElementExists(AST_TAG_ID));
+
+    visitor->VisitDollarLambda(node);
+}
+
 void TreeHost::AcceptMember(const Object &node) {
     assert(node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_MEMBER);
     assert(node.ElementExists(AST_TAG_CHILD));
@@ -581,6 +589,6 @@ void TreeHost::AcceptContinue(const Object &node) {
 }
 
 TreeHost::~TreeHost() {
-    if (visitor) delete visitor;
+    //if (visitor) delete visitor;
     acceptors.clear();
 }

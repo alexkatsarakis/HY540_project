@@ -92,6 +92,7 @@
 %token <strVal> STRING;
 %token <strVal> ID;
 %token <strVal> DOLLAR_ID;
+%token <strVal> DOLLAR_LAMBDA;
 %token <doubleVal> NUMBER
 
 /* Operators */
@@ -219,11 +220,12 @@ primary : lvalue                     { $$ = ParsePrimary($1); }
         | const                      { $$ = ParsePrimary($1); }
         ;
 
-lvalue : ID              { $$ = ParseLvalue(ParseSimpleID($1)); }
-       | LOCAL ID        { $$ = ParseLvalue(ParseLocalID($2)); } //Parse Simple Id
-       | DOUBLE_COLON ID { $$ = ParseLvalue(ParseDoubleColonID($2)); } //Parse Simple Id
-       | member          { $$ = ParseLvalue($1); }
-       ;
+lvalue : ID               { $$ = ParseLvalue(ParseSimpleID($1)); }
+        | DOLLAR_LAMBDA   { $$ = ParseLvalue(ParseDollarLambda($1));} //?!
+        | LOCAL ID        { $$ = ParseLvalue(ParseLocalID($2)); } //Parse Simple Id
+        | DOUBLE_COLON ID { $$ = ParseLvalue(ParseDoubleColonID($2)); } //Parse Simple Id
+        | member          { $$ = ParseLvalue($1); }
+        ;
 
 member : lvalue DOT ID                          { $$ = ParseMember(ParseMemberDot($1, ParseSimpleID($3))); }
        | lvalue DOT DOLLAR_ID                   { $$ = ParseMember(ParseMemberDot($1, ParseDollarID($3))); }

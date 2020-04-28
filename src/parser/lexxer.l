@@ -45,6 +45,7 @@ string          \"((\\.)|([^\\\"]))*\"
 id              [a-zA-Z][a-zA-Z_0-9]*
 line_comment    \/\/[^\n]*
 dollar_id       $[a-zA-Z][a-zA-Z_0-9]*
+dollar_lambda   $lambda
 
 /* Exclusive state for when a block comment starts */
 %x COMMENT
@@ -114,6 +115,12 @@ dollar_id       $[a-zA-Z][a-zA-Z_0-9]*
   HandleToken(C_IDENTIFIER, A_NORMAL_ID);
   yylval.strVal = strdup(yytext);
   return ID;
+}
+
+{dollar_lambda} {
+  HandleToken(C_IDENTIFIER, A_DOLLAR_ID);
+  yylval.strVal = strdup(&yytext[0]);
+  return DOLLAR_LAMBDA;
 }
 
 {dollar_id} {

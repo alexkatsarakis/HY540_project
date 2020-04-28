@@ -314,6 +314,10 @@ Object *ParseDollarID(char *value) {
     return ParseID(AST_TAG_DOLLAR_ID, value);
 }
 
+Object *ParseDollarLambda(char *value) {
+    return ParseID(AST_TAG_DOLLAR_LAMBDA, value);
+}
+
 Object *ParseMember(Object *member) {
     return ParseSingleChild(AST_TAG_MEMBER, member);
 }
