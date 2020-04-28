@@ -381,3 +381,9 @@ void LibFunc::FileRead(Object & env) {
     SET_RETVAL(content);
     free(content);
 }
+
+void LibFunc::Undef(Object & env) {
+    assert(env.IsValid());
+    
+    SET_RETVAL(Value());
+}

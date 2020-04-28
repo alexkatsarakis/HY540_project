@@ -104,6 +104,7 @@ void Interpreter::InstallLibFuncs(void) {
     INSTALL_LIB_FUNC("file_read",FileRead);
     INSTALL_LIB_FUNC("to_number", ToNumber);
     INSTALL_LIB_FUNC("rand", Random);
+    INSTALL_LIB_FUNC("undef", Undef);
 }
 
 /****** Public Members ******/

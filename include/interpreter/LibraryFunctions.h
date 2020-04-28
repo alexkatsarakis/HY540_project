@@ -30,6 +30,8 @@ namespace LibFunc {
 
     void Input(Object & env);
 
+    void Undef(Object & env);
+
     void FileOpen(Object & env);
 
     void FileClose(Object & env);
