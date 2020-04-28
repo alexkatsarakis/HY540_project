@@ -52,6 +52,7 @@ private:
     Symbol EvalLocalIdWrite(Object &node);
     Symbol EvalFormalWrite(Object &node);
     Symbol TableSetElem(const Value &lvalue, const Value &index);
+    Symbol EvalClosureWrite(Object & node);
 
     /****** Evaluation Helpers ******/
 
@@ -62,6 +63,7 @@ private:
     bool ValuesAreEqual(const Value &v1, const Value &v2);
     void AssignToContext(const Symbol &lvalue, const Value &rvalue);
     void RemoveFromContext(const Symbol &lvalue, const Value &rvalue);
+    void ChangeClosure(const Symbol & lvalue, const Value & rvalue);
     void CleanupForLoop(Value & elist1, Value & elist2);
 
     /****** Evaluation Side Actions ******/
@@ -71,7 +73,7 @@ private:
 
     /****** Function Call Evaluation Helpers ******/
 
-    Value CallProgramFunction(Object &functionAst, Object &functionClosure, const Object &actuals, const std::vector<std::string> &actualNames);
+    Value CallProgramFunction(Object &functionAst, Object * functionClosure, const Object &actuals, const std::vector<std::string> &actualNames);
     Value CallLibraryFunction(const std::string &functionId, LibraryFunc functionLib, Object &actuals);
     void ProgramFunctionRuntimeChecks(const Object &formals, const std::vector<std::string> &formalNames, const Object &actuals, const std::vector<std::string> &actualNames);
     std::vector<std::string> GetFormalNames(const Object &formals);
@@ -103,7 +105,6 @@ private:
 
     bool IsLibFunc(const std::string &symbol) const;
     bool IsReservedField(const std::string &index) const;
-    const Value GetFromContext(Object *table, const Value &index, bool lookupFail);    // TODO not implemented, delete
     const Value GetStringFromContext(Object *table, const Value &index, bool lookupFail);
     const Value GetNumberFromContext(Object *table, const Value &index, bool lookupFail);
     Symbol ClosureSetElem(const Value &lvalue, const Value &index);
