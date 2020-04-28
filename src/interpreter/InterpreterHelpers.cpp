@@ -8,9 +8,6 @@
 #include <iostream>
 #include <set>
 
-#define IS_CLOSURE_CHANGE() \
-    (lvalue.IsProgramFunction() && index.IsString() && index.ToString() == CLOSURE_RESERVED_FIELD)
-
 /****** Start-up ******/
 
 void Interpreter::InstallEvaluators(void) {
@@ -475,7 +472,8 @@ void Interpreter::ChangeClosure(const Symbol & lvalue, const Value & rvalue) {
     Object * context = lvalue.GetContext();
     assert(context);
 
-    if (!rvalue.IsObject() && !rvalue.IsNil()) RuntimeError("Cannot change function closure to " + rvalue.GetTypeToString() + ". Only objects are allowed");
+    if (!rvalue.IsObject() && !rvalue.IsNil())
+        RuntimeError("Cannot change function closure to " + rvalue.GetTypeToString() + ". Only objects are allowed");
 
     if (rvalue.IsNil()) closure = new Object();
     else closure = rvalue.ToObject_NoConst();
@@ -508,6 +506,23 @@ void Interpreter::CleanupForLoop(Value & elist1, Value & elist2) {
         elist2.ToObject_NoConst()->Clear();
         delete elist2.ToObject_NoConst();
     }
+}
+
+void Interpreter::ValidateAssignment(const Symbol & lvalue, const Value & rvalue) {
+    assert(lvalue.IsValid());
+    assert(rvalue.IsValid());
+
+    if (IS_LIB_FUNC())
+        RuntimeError("Cannot modify library function \"" + lvalue.ToString() + "\"");
+
+#define NO_WRITE_ACCESS_TO_DOLLAR_IDS
+#ifdef NO_WRITE_ACCESS_TO_DOLLAR_IDS
+    if (IS_DOLLAR_ID())
+        RuntimeError("Cannot write to field \"" + lvalue.ToString() + "\". No write access to $ indices");
+#endif
+
+    if (IS_OBJECT_REQUIRING_FIELD())
+        RuntimeError("Cannot change \"" + lvalue.ToString() + "\" to " + rvalue.GetTypeToString() + ". Only objects are allowed");
 }
 
 /****** Evaluation Side Actions ******/
@@ -785,7 +800,7 @@ Object *Interpreter::PopScope(void) {
 
     Object *scope = currentScope;
     currentScope = (*scope)[OUTER_RESERVED_FIELD]->ToObject_NoConst();
-    
+
     scope->DecreaseRefCounter();
     scopeStack.pop_front();
     scopeStack.push_front(currentScope);

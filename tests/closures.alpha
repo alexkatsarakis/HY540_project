@@ -1,0 +1,25 @@
+function Move(dx, dy) { x = x + dx; y = y + dy; }
+function Print() { print("Test"); }
+
+function Point(x, y) {
+    local pt = [ { "x" : x } , { "y" : y } , { "move" : Move } , { "print" : Print } ];
+    pt.move.$closure = pt;
+    return pt;
+}
+
+pt = Point(10, 2);
+pt.move(20, 30);
+pt.print();
+
+print(pt.x);
+print(pt.y);
+
+x = 20;
+function f() { }
+
+print(f.$closure.x == nil);
+
+g = f;
+f.$closure.x = nil;
+
+print(f.$closure.x == nil);
