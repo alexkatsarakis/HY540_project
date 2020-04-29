@@ -83,8 +83,7 @@ void ValidityVisitor::VisitDollarLambda(const Object& node){
         }
         parent = (*parent)[PARENT_RESERVED_FIELD]->ToObject();
     }
-    std::cerr << ("$lambda Can only be used inside of a function") << std::endl;
-    exit(0);
+    Utilities::SyntaxError("$lambda can only be used inside of a function");
 }
 
 void ValidityVisitor::VisitReturn(const Object &node) {
@@ -95,8 +94,7 @@ void ValidityVisitor::VisitReturn(const Object &node) {
         current = *current[PARENT_RESERVED_FIELD]->ToObject();
         assert(current.IsValid());
     }
-    std::cerr << "Return isn't on a function" << std::endl;
-    exit(0);
+    Utilities::SyntaxError("Return can only be used inside of a function");
 }
 
 void ValidityVisitor::VisitBreak(const Object &node) {
@@ -107,8 +105,7 @@ void ValidityVisitor::VisitBreak(const Object &node) {
         current = *current[PARENT_RESERVED_FIELD]->ToObject();
         assert(current.IsValid());
     }
-    std::cerr << "Break isn't on a loop" << std::endl;
-    exit(0);
+    Utilities::SyntaxError("Break can only be used inside of a loop");
 }
 
 void ValidityVisitor::VisitContinue(const Object &node) {
@@ -119,6 +116,5 @@ void ValidityVisitor::VisitContinue(const Object &node) {
         current = *current[PARENT_RESERVED_FIELD]->ToObject();
         assert(current.IsValid());
     }
-    std::cerr << "Continue isn't on a loop" << std::endl;
-    exit(0);
+    Utilities::SyntaxError("Continue can only be used inside of a loop");
 }
