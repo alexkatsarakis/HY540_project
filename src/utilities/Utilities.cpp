@@ -38,20 +38,18 @@ std::string Utilities::UnparserFormatEscChars(const std::string &str) {
 }
 
 void Utilities::SyntaxError(const std::string &msg, unsigned line) {
-    std::string lineMsg = (line != 0) ? "Line " + std::to_string(line) + " " : "";
-    std::cerr << "\033[36;1m"    //CYAN
-              << lineMsg
-              << "\033[31;1m"    //RED
-              << "Syntax Error: "
+    std::string lineMsg = (line != 0) ? (" at line " + std::to_string(line)) : "";
+
+    std::cerr << "\033[31;1m"    //RED
+              << "Syntax Error" << lineMsg << ": "
               << "\033[0m" << msg << std::endl;
     exit(EXIT_FAILURE);
 }
 
 void Utilities::SyntaxWarning(const std::string &msg, unsigned line) {
-    std::string lineMsg = (line != 0) ? "Line " + std::to_string(line) + " " : "";
-    std::cerr << "\033[36;1m"    //CYAN
-              << lineMsg
-              << "\033[33;1m"    //YELLOW
-              << "Syntax Warning: "
+    std::string lineMsg = (line != 0) ? (" at line " + std::to_string(line)) : "";
+
+    std::cerr << "\033[31;1m"    //RED
+              << "Syntax Warning" << lineMsg << ": "
               << "\033[0m" << msg << std::endl;
 }

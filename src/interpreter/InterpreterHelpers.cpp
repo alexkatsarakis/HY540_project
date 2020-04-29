@@ -77,6 +77,7 @@ void Interpreter::InstallEvaluators(void) {
     INSTALL_WRITE_FUNC(AST_TAG_DOUBLECOLON_ID, EvalGlobalIdWrite);
     INSTALL_WRITE_FUNC(AST_TAG_LOCAL_ID, EvalLocalIdWrite);
     INSTALL_WRITE_FUNC(AST_TAG_FORMAL, EvalFormalWrite);
+    INSTALL_WRITE_FUNC(AST_TAG_DOLLAR_LAMBDA, EvalDollarLambdaWrite);
 }
 
 #define INSTALL_LIB_FUNC(x, y)                 \
@@ -237,6 +238,12 @@ Symbol Interpreter::EvalFormalWrite(Object &node) {
     if (LookupCurrentScope(formalName)) RuntimeError("Formal argument \"" + formalName + "\" already defined as a formal");
 
     return Symbol(currentScope, formalName);
+}
+
+Symbol Interpreter::EvalDollarLambdaWrite(Object &node) {
+    ASSERT_TYPE(AST_TAG_DOLLAR_LAMBDA);
+    RuntimeError("Cannot modify $lambda. No write access");
+    assert(false);
 }
 
 Symbol Interpreter::TableSetElem(const Value &lvalue, const Value &index) {

@@ -30,6 +30,8 @@ function Move(dx, dy) {
 phi = 1;
 function Print() {
     print(x, y);
+    print($lambda);
+    //print($lambda.$closure);
     print(::phi);
 }
 
@@ -61,3 +63,50 @@ p1.print();
 p2 = Point(0,0);
 p2.move(30,30);
 p2.print();
+
+print("\n\n\n\n");
+
+(function outer() {
+    print($lambda);
+    (function inner() {
+        print($lambda);
+        (function more_inner() {
+            print($lambda);
+            (function () {
+                print($lambda);
+                (function most_inner() {
+                    print($lambda);
+                })();
+            })();
+        })();
+    })();
+})();
+
+print("\n\n\n");
+function foo(x) {
+    return (function() {
+        if($lambda.$closure.x != nil) print(x);
+    });
+}
+
+func1 = foo(1);
+func2 = foo(2);
+func3 = foo(3);
+func4 = foo(4);
+func5 = foo(5);
+
+func4.$closure = [ { "x" : "hacked" } ];
+func5.$closure = nil;
+
+func1();
+func2();
+func3();
+func4();
+func5();
+
+
+function hacking() {
+    $lambda = 231;
+    $lambda.$closure.print = 10;
+}
+hacking(); // Not allowed

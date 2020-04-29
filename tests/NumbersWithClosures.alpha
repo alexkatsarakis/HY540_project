@@ -1,0 +1,25 @@
+iterations = 30;
+
+odds = [];
+evens = [];
+
+function CallbackCreator(x) {
+    return (function() {
+        if ($lambda.$closure.x != nil) ::print(x);
+    });
+}
+
+for(i = 0; i < iterations; ++i) {
+    odds[i] = CallbackCreator(i);
+    evens[i] = CallbackCreator(i);
+}
+
+for(i = 0; i < iterations; ++i) {
+    if (i % 2 == 0) odds[i].$closure.x = nil;
+    if (i % 2 == 1) evens[i].$closure.x = nil;
+}
+
+print("Odd numbers: ");
+for(i = 0; i < iterations; ++i) odds[i]();
+print("Even numbers: ");
+for(i = 0; i < iterations; ++i) evens[i]();

@@ -286,14 +286,14 @@ const Value Interpreter::EvalBracket(Object &node) {
     return TableGetElem(lvalue, index);
 }
 
-
-
 const Value Interpreter::EvalDollarLambda(Object &node) {
     ASSERT_TYPE(AST_TAG_DOLLAR_LAMBDA);
-    
-    return NIL_VAL;
-}
 
+    assert(!callStack.IsEmpty());
+    const Value top = callStack.Top();
+    assert(top.IsProgramFunction());
+    return top;
+}
 
 const Value Interpreter::EvalCall(Object &node) {
     ASSERT_TYPE(AST_TAG_CALL);
@@ -344,7 +344,9 @@ const Value Interpreter::EvalCall(Object &node) {
     if (callable.IsProgramFunction()) {
         Object functionAst = *(callable.ToProgramFunctionAST_NoConst());
         Object * functionClosure = (callable.ToProgramFunctionClosure_NoConst());
+        callStack.Push(callable);
         result = CallProgramFunction(functionAst, functionClosure, actuals, actuals.GetUserKeys());
+        callStack.Pop();
     } else if (callable.IsLibraryFunction()) {
         std::string functionId = callable.ToLibraryFunctionId();
         LibraryFunc functionLib = callable.ToLibraryFunction();
