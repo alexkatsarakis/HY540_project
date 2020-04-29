@@ -589,6 +589,6 @@ void TreeHost::AcceptContinue(const Object &node) {
 }
 
 TreeHost::~TreeHost() {
-    //if (visitor) delete visitor;
+    if (visitor) delete visitor;
     acceptors.clear();
 }
