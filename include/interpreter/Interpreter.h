@@ -223,6 +223,7 @@ public:
     (lvalue.ToString() == OUTER_RESERVED_FIELD ||\
      lvalue.ToString() == CLOSURE_RESERVED_FIELD ||\
      lvalue.ToString() == PREVIOUS_RESERVED_FIELD ||\
+     lvalue.ToString() == LOCAL_RESERVED_FIELD ||\
      lvalue.ToString() == PARENT_RESERVED_FIELD)
 
 #define IS_OBJECT_REQUIRING_FIELD()\
@@ -230,5 +231,9 @@ public:
      lvalue.ToString()[0] == '$' &&\
      OBJECT_REQUIRING_FIELD() &&\
      !rvalue.IsObject())\
+
+#define IS_READ_ONLY_SYMBOL()\
+    (lvalue.IsIndexString() &&\
+     (lvalue.ToString() == LAMBDA_RESERVER_FIELD || lvalue.ToString() == ENV_RESERVED_FIELD))
 
 #endif

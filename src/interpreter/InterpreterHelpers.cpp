@@ -516,7 +516,10 @@ void Interpreter::ValidateAssignment(const Symbol & lvalue, const Value & rvalue
     if (IS_LIB_FUNC())
         RuntimeError("Cannot modify library function \"" + lvalue.ToString() + "\"");
 
-#define NO_WRITE_ACCESS_TO_DOLLAR_IDS
+    if (IS_READ_ONLY_SYMBOL())
+        RuntimeError("Cannot write to \"" + lvalue.ToString() + "\". No write access");
+
+#undef NO_WRITE_ACCESS_TO_DOLLAR_IDS
 #ifdef NO_WRITE_ACCESS_TO_DOLLAR_IDS
     if (IS_DOLLAR_ID())
         RuntimeError("Cannot write to field \"" + lvalue.ToString() + "\". No write access to $ indices");
@@ -696,10 +699,20 @@ const Value *Interpreter::LookupScope(Object *scope, const std::string &symbol) 
     assert(scope && scope->IsValid());
     assert(!symbol.empty());
 
-    /* If this scope contains the symbol simply return it */
+    Object * tmp = nullptr;
+
+    /* 1) Lookup starting scope */
     if (scope->ElementExists(symbol)) return (*scope)[symbol];
 
-    /* Check if the scope is sliced */
+    /* 2) Check recursively in local scope */
+    tmp = scope;
+    while (tmp->ElementExists(LOCAL_RESERVED_FIELD)) {
+        Object *local = (*scope)[LOCAL_RESERVED_FIELD]->ToObject_NoConst();
+        if (local->ElementExists(symbol)) return (*local)[symbol];
+        tmp = local;
+    }
+
+    /* 3) Checkup previous slices */
     while (scope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
         Object *previous = (*scope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
         if (previous->ElementExists(symbol)) return (*previous)[symbol];
@@ -725,12 +738,22 @@ Object *Interpreter::FindScope(const std::string &symbol) const {
     assert(!symbol.empty());
     assert(currentScope);
 
+    Object * tmp = nullptr;
     Object *scope = currentScope;
 
     while (true) {
+        /* 1) Lookup starting scope */
         if (scope->ElementExists(symbol)) return scope;
 
-        /* Check if the scope is sliced */
+        /* 2) Check recursively in local scope */
+        tmp = scope;
+        while (tmp->ElementExists(LOCAL_RESERVED_FIELD)) {
+            Object *local = (*scope)[LOCAL_RESERVED_FIELD]->ToObject_NoConst();
+            if (local->ElementExists(symbol)) return local;
+            tmp = local;
+        }
+
+        /* 3) Checkup previous slices */
         while (scope->ElementExists(PREVIOUS_RESERVED_FIELD)) {
             Object *previous = (*scope)[PREVIOUS_RESERVED_FIELD]->ToObject_NoConst();
             if (previous->ElementExists(symbol)) return previous;
@@ -746,16 +769,8 @@ Object *Interpreter::FindScope(const std::string &symbol) const {
 }
 
 Object *Interpreter::GetGlobalScope(void) const {
-    assert(currentScope);
-
-    Object *scope = currentScope;
-    const Value *value = LookupScope(scope, OUTER_RESERVED_FIELD);
-    while (value) {
-        scope = value->ToObject_NoConst();
-        value = LookupScope(scope, OUTER_RESERVED_FIELD);
-    }
-
-    return scope;
+    assert(!scopeStack.empty());
+    return scopeStack.back();
 }
 
 bool Interpreter::IsGlobalScope(Object *scope) const {
@@ -840,6 +855,8 @@ bool Interpreter::IsReservedField(const std::string &index) const {
             index == PREVIOUS_RESERVED_FIELD ||
             index == OUTER_RESERVED_FIELD ||
             index == LAMBDA_RESERVER_FIELD ||
+            index == ENV_RESERVED_FIELD ||
+            index == LOCAL_RESERVED_FIELD ||
             index == RETVAL_RESERVED_FIELD ||
             index == CLOSURE_RESERVED_FIELD ||
             index == LINE_NUMBER_RESERVED_FIELD ||

@@ -210,13 +210,22 @@ const Value Interpreter::EvalId(Object &node) {
      * If the symbol already exists in a scope, we get its value */
 
     std::string symbol = node[AST_TAG_ID]->ToString();
-    Object *scope = FindScope(symbol);
 
+#define NO_LIBFUNC_LOOKUP
+#ifdef NO_LIBFUNC_LOOKUP
+    if (IsLibFunc(symbol)) {
+        assert(globalScope->ElementExists(symbol));
+        return (*(*globalScope)[symbol]);
+    }
+#endif
+
+    Object *scope = FindScope(symbol);
     if (!scope) {
         currentScope->Set(symbol, Value());
         scope = currentScope;
     }
 
+    assert(scope && scope->ElementExists(symbol));
     return (*(*scope)[symbol]);
 }
 
@@ -444,10 +453,14 @@ const Value Interpreter::EvalIndexedElem(Object &node) {
 
     CHANGE_LINE();
 
-    if (key.IsString())
+    if (key.IsString()) {
+        ValidateAssignment(Symbol(pair, key.ToString()), value);
         pair->Set(key.ToString(), value);
-    else if (key.IsNumber())
+    }
+    else if (key.IsNumber()) {
+        ValidateAssignment(Symbol(pair, key.ToNumber()), value);
         pair->Set(key.ToNumber(), value);
+    }
     else
         RuntimeError("Keys of objects can only be strings or numbers. Found " + key.GetTypeToString());
 

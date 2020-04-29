@@ -1,66 +1,63 @@
-t = [];
+function f1() { }
+function f2() { }
+function f3() { }
+function f4() { }
+function f5() { }
+function f6() { }
 
-t.x = 1;
-t.y = 2;
-t.z = 3;
-
-oldSize = object_size(t);
-
-t.x = nil;
-assert(oldSize == object_size(t) + 1);
-t.y = nil;
-assert(oldSize == object_size(t) + 2);
-
-x = t.x;
-print(x);
-print(t.x);
-
-assert(t.x == x);
-assert(x == nil);
-assert(t.x == nil);
-
-function foobar() { }
-
-foobar.x = nil;
-print(t.x);
-print(x);
-assert(typeof(x) == "undef");
-assert(typeof(t.x) == "nil");
-
-function outer(x) {
-    function inner() {
-        if (inner.$closure.x and
-            typeof(print) == "library function") print(x);
+function f() {
+    function g() {
+        g.$closure.print = 0;
+        print(g.$closure.print);
+        print(10);
+        ::print(20);
     }
-
-    return inner;
+    g();
+    print(30);
 }
 
-func = outer(10);
-func();
+f();
 
-func.x = 20;
-func();
+print("\n\n\n");
 
-func.x = nil;
-func();
-
-func.x = 30;
-func();
-
-func = outer(35);
-func.$closure.x = 40;
-func();
-
-//func.$closure = "text";
-
-function killer() {
-    return "$";
+pi = 3.14159;
+function Move(dx, dy) {
+    x = x + dx;
+    y = y + dy;
+    print(::pi);
 }
 
-t = [];
-//t.$foobar = 20;
-//t.$previous = "string";
-//t.$outer = 10;
-t.$parent = false;
-t[killer() + "out" + "er"] = 20;
+phi = 1;
+function Print() {
+    print(x, y);
+    print(::phi);
+}
+
+function Point(x, y) {
+    local pt = [
+        { "x" : x },
+        { "y" : y },
+        { "move" : Move },
+        { "print" : Print }
+    ];
+
+    pt.move.$closure = [
+        { "$local" : pt },
+        { "$outer" : Move.$closure }
+    ];
+
+    pt.print.$closure = [
+        { "$local" : pt },
+        { "$outer" : Print.$closure }
+    ];
+
+    return pt;
+}
+
+p1 = Point(1,1);
+p1.move(10,21);
+p1.print();
+
+p2 = Point(0,0);
+p2.move(30,30);
+p2.print();
