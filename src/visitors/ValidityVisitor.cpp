@@ -42,7 +42,6 @@ IMPL_VISIT(Id)
 IMPL_VISIT(Local)
 IMPL_VISIT(DoubleColon)
 IMPL_VISIT(Dollar)
-IMPL_VISIT(DollarLambda)
 IMPL_VISIT(Member)
 IMPL_VISIT(Dot)
 IMPL_VISIT(Bracket)
@@ -74,6 +73,18 @@ ValidityVisitor::ValidityVisitor() {
 TreeVisitor *ValidityVisitor::Clone(void) const {
     ValidityVisitor *clone = new ValidityVisitor();
     return clone;
+}
+
+void ValidityVisitor::VisitDollarLambda(const Object& node){
+    const Object* parent = node[PARENT_RESERVED_FIELD]->ToObject();
+    while((*parent)[AST_TAG_TYPE_KEY]->ToString() != AST_TAG_PROGRAM){
+        if((*parent)[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FUNCTION_DEF){
+            return;
+        }
+        parent = (*parent)[PARENT_RESERVED_FIELD]->ToObject();
+    }
+    std::cerr << ("$lambda Can only be used inside of a function") << std::endl;
+    exit(0);
 }
 
 void ValidityVisitor::VisitReturn(const Object &node) {

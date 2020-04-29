@@ -1,4 +1,5 @@
 x = 1;
 (function (){
-    print($lambda.$closure);
+    print($lambda);
 })();
+$lambda;
