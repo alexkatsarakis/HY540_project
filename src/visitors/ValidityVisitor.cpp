@@ -42,7 +42,6 @@ IMPL_VISIT(Id)
 IMPL_VISIT(Local)
 IMPL_VISIT(DoubleColon)
 IMPL_VISIT(Dollar)
-IMPL_VISIT(DollarLambda)
 IMPL_VISIT(Member)
 IMPL_VISIT(Dot)
 IMPL_VISIT(Bracket)
@@ -76,6 +75,17 @@ TreeVisitor *ValidityVisitor::Clone(void) const {
     return clone;
 }
 
+void ValidityVisitor::VisitDollarLambda(const Object& node){
+    const Object* parent = node[PARENT_RESERVED_FIELD]->ToObject();
+    while((*parent)[AST_TAG_TYPE_KEY]->ToString() != AST_TAG_PROGRAM){
+        if((*parent)[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_FUNCTION_DEF){
+            return;
+        }
+        parent = (*parent)[PARENT_RESERVED_FIELD]->ToObject();
+    }
+    Utilities::SyntaxError("$lambda can only be used inside of a function");
+}
+
 void ValidityVisitor::VisitReturn(const Object &node) {
     auto current = *node[PARENT_RESERVED_FIELD]->ToObject();
     while (current[AST_TAG_TYPE_KEY]->ToString() != AST_TAG_PROGRAM) {
@@ -84,8 +94,7 @@ void ValidityVisitor::VisitReturn(const Object &node) {
         current = *current[PARENT_RESERVED_FIELD]->ToObject();
         assert(current.IsValid());
     }
-    std::cerr << "Return isn't on a function" << std::endl;
-    exit(0);
+    Utilities::SyntaxError("Return can only be used inside of a function");
 }
 
 void ValidityVisitor::VisitBreak(const Object &node) {
@@ -96,8 +105,7 @@ void ValidityVisitor::VisitBreak(const Object &node) {
         current = *current[PARENT_RESERVED_FIELD]->ToObject();
         assert(current.IsValid());
     }
-    std::cerr << "Break isn't on a loop" << std::endl;
-    exit(0);
+    Utilities::SyntaxError("Break can only be used inside of a loop");
 }
 
 void ValidityVisitor::VisitContinue(const Object &node) {
@@ -108,6 +116,5 @@ void ValidityVisitor::VisitContinue(const Object &node) {
         current = *current[PARENT_RESERVED_FIELD]->ToObject();
         assert(current.IsValid());
     }
-    std::cerr << "Continue isn't on a loop" << std::endl;
-    exit(0);
+    Utilities::SyntaxError("Continue can only be used inside of a loop");
 }
